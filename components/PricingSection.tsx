@@ -118,11 +118,13 @@ export const PricingSection: React.FC<PricingSectionProps> = ({ onSelectPackage 
                   {/* Optional Tool Selector for Single Tool Package */}
                   {pkg.id === 'single-tool' && (
                     <div className="mb-6 p-3 bg-white border border-gray-200 rounded-2xl shadow-sm">
-                      <label className="block text-xs font-extrabold text-[#0B1220] mb-2 flex items-center gap-1.5">
+                      <label htmlFor="pricing-single-tool-select" className="block text-xs font-extrabold text-[#0B1220] mb-2 flex items-center gap-1.5">
                         <Sparkles className="w-3.5 h-3.5 text-[#0F9D58]" />
                         <span>اختر البرنامج المفضل لديك من بين الـ 12 أداة:</span>
                       </label>
                       <select
+                        id="pricing-single-tool-select"
+                        aria-label="اختر البرنامج المفضل لديك من بين الـ 12 أداة"
                         suppressHydrationWarning
                         value={selectedToolId}
                         onChange={(e) => setSelectedToolId(e.target.value)}

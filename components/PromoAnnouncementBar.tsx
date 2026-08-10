@@ -9,7 +9,7 @@ export const PromoAnnouncementBar: React.FC = () => {
   if (!PROMO_BAR_CONFIG.enabled) return null;
 
   // Single item block helper to render styled text with highlighted elements
-  const renderItemContent = (keyPrefix: string) => (
+  const renderItemContent = (keyPrefix: string, isDuplicate = false) => (
     <div key={keyPrefix} className="inline-flex items-center gap-3 sm:gap-6 px-4 shrink-0 font-bold text-xs sm:text-sm text-white">
       {/* Item 1: Discount & Customer limit */}
       <div className="inline-flex items-center gap-1.5">
@@ -43,7 +43,12 @@ export const PromoAnnouncementBar: React.FC = () => {
       <span className="text-emerald-500/40 font-normal">|</span>
 
       {/* CTA Link */}
-      <Link href="/checkout?package=bundle-vip" className="inline-flex items-center gap-1 text-[#2ECC8F] hover:text-amber-300 transition-colors text-xs font-black underline">
+      <Link 
+        href="/checkout?package=bundle-vip" 
+        tabIndex={isDuplicate ? -1 : undefined}
+        aria-hidden={isDuplicate ? true : undefined}
+        className="inline-flex items-center gap-1 text-[#2ECC8F] hover:text-amber-300 transition-colors text-xs font-black underline"
+      >
         <span>احجز الآن مع التفعيل الفوري</span>
         <ArrowLeft className="w-3 h-3" />
       </Link>
@@ -66,17 +71,13 @@ export const PromoAnnouncementBar: React.FC = () => {
             {renderItemContent('a1')}
             {renderItemContent('a2')}
             {renderItemContent('a3')}
-            {renderItemContent('a4')}
-            {renderItemContent('a5')}
           </div>
 
           {/* Second Half (Identical duplicate for seamless 100% -> 0% loop) */}
           <div className="flex items-center shrink-0 dir-rtl" dir="rtl" aria-hidden="true">
-            {renderItemContent('b1')}
-            {renderItemContent('b2')}
-            {renderItemContent('b3')}
-            {renderItemContent('b4')}
-            {renderItemContent('b5')}
+            {renderItemContent('b1', true)}
+            {renderItemContent('b2', true)}
+            {renderItemContent('b3', true)}
           </div>
         </div>
       </div>

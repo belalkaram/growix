@@ -13,8 +13,8 @@ export const TestimonialsSection: React.FC = () => {
         
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto space-y-4 mb-16">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#0F9D58]/10 text-[#0F9D58] text-xs font-black">
-            <ThumbsUp className="w-4 h-4" />
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#0B1220] text-[#2ECC8F] text-xs font-black shadow-sm">
+            <ThumbsUp className="w-4 h-4 text-[#2ECC8F]" />
             <span>آراء وتجارب مشتركين GROWIX</span>
           </div>
 

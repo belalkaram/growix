@@ -48,9 +48,9 @@ export const TrustAboutSection: React.FC<TrustAboutSectionProps> = ({ onOpenPaym
         
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto space-y-4 mb-16">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#0F9D58]/10 text-[#0F9D58] text-xs font-extrabold">
-            <ShieldCheck className="w-4 h-4" />
-            <span>من نحن ولمذا تختار GROWIX؟</span>
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#0B1220] text-[#2ECC8F] text-xs font-black shadow-sm">
+            <ShieldCheck className="w-4 h-4 text-[#2ECC8F]" />
+            <span>من نحن ولماذا تختار GROWIX؟</span>
           </div>
 
           <h2 className="text-3xl sm:text-4xl font-black text-[#0B1220]">

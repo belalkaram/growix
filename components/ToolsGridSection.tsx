@@ -80,8 +80,8 @@ export const ToolsGridSection: React.FC<ToolsGridSectionProps> = ({ onOpenPaymen
         
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto space-y-4 mb-12">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#0F9D58]/10 text-[#0F9D58] text-xs font-extrabold">
-            <Sparkles className="w-4 h-4" />
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#0B1220] text-[#2ECC8F] text-xs font-black shadow-sm">
+            <Sparkles className="w-4 h-4 text-[#2ECC8F]" />
             <span>باقة الـ 12 أداة تسويقية المتكاملة</span>
           </div>
 
@@ -170,11 +170,11 @@ export const ToolsGridSection: React.FC<ToolsGridSectionProps> = ({ onOpenPaymen
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-mono font-bold text-gray-400 bg-gray-100 px-2.5 py-1 rounded-lg">
+                    <span className="text-xs font-mono font-extrabold text-gray-700 bg-gray-100 px-2.5 py-1 rounded-lg">
                       #{tool.number}
                     </span>
                     {tool.badge && (
-                      <span className="text-[11px] font-extrabold px-2.5 py-1 bg-[#0F9D58]/10 text-[#0F9D58] rounded-full border border-[#0F9D58]/20">
+                      <span className="text-[11px] font-extrabold px-2.5 py-1 bg-[#0F9D58] text-white rounded-full shadow-xs">
                         {tool.badge}
                       </span>
                     )}

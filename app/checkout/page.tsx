@@ -205,7 +205,7 @@ function CheckoutContent() {
           {activePkgId === 'single-tool' && (
             <div className="bg-emerald-50/90 border border-emerald-200 rounded-2xl p-4 sm:p-5 space-y-3 mt-3">
               <div className="flex items-center justify-between">
-                <label className="block text-xs sm:text-sm font-extrabold text-[#0B1220] flex items-center gap-1.5">
+                <label htmlFor="checkout-tool-select" className="block text-xs sm:text-sm font-extrabold text-[#0B1220] flex items-center gap-1.5">
                   <Wrench className="w-4 h-4 text-[#0F9D58]" />
                   <span>حدد البرنامج المطلوب ({SITE_PRICING.singleToolPrice} جنيه):</span>
                 </label>
@@ -215,6 +215,8 @@ function CheckoutContent() {
               </div>
 
               <select
+                id="checkout-tool-select"
+                aria-label="حدد البرنامج المطلوب"
                 value={selectedToolId}
                 onChange={(e) => setSelectedToolId(e.target.value)}
                 className="w-full bg-white border border-emerald-300 rounded-xl p-3 text-xs sm:text-sm font-bold text-[#0B1220] focus:outline-none focus:ring-2 focus:ring-[#0F9D58] cursor-pointer shadow-sm"
