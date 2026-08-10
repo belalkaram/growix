@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { Sparkles, Loader2 } from 'lucide-react';
 
@@ -10,25 +10,22 @@ export const GlobalNavigationLoader: React.FC = () => {
   const [isNavigating, setIsNavigating] = useState(false);
   const [progress, setProgress] = useState(0);
 
+  const lastPathnameRef = useRef(pathname);
   const searchParamsString = searchParams?.toString();
 
-  // Reset loading when route or search params change
+  // Reset/Complete loading when route or search params change
   useEffect(() => {
-    let timer: NodeJS.Timeout;
-    let fadeTimer: NodeJS.Timeout;
+    lastPathnameRef.current = pathname;
 
-    timer = setTimeout(() => {
-      setProgress(100);
-      fadeTimer = setTimeout(() => {
-        setIsNavigating(false);
-        setProgress(0);
-      }, 200);
-    }, 0);
+    if (!isNavigating) return;
 
-    return () => {
-      clearTimeout(timer);
-      clearTimeout(fadeTimer);
-    };
+    setProgress(100);
+    const fadeTimer = setTimeout(() => {
+      setIsNavigating(false);
+      setProgress(0);
+    }, 250);
+
+    return () => clearTimeout(fadeTimer);
   }, [pathname, searchParamsString]);
 
   // Global Link Click Listener & Browser History Interceptor
@@ -45,40 +42,68 @@ export const GlobalNavigationLoader: React.FC = () => {
       const href = anchor.getAttribute('href');
       if (!href) return;
 
-      // Ignore external links, mailto, tel, whatsapp, or hash-only links on current page
+      // Ignore anchor links starting with # directly
+      if (href.startsWith('#')) return;
+
+      // Ignore external links, mailto, tel, whatsapp, javascript
       if (
-        href.startsWith('http') ||
+        href.startsWith('http://') ||
+        href.startsWith('https://') ||
         href.startsWith('mailto:') ||
         href.startsWith('tel:') ||
-        href.startsWith('https://wa.me') ||
-        href.startsWith('#')
+        href.startsWith('javascript:')
       ) {
         return;
       }
 
-      // Check if destination differs from current path
-      const currentUrl = window.location.pathname + window.location.search;
-      if (href !== currentUrl) {
+      try {
+        const targetUrl = new URL(href, window.location.origin);
+
+        // If target pathname is the exact same as current page pathname (e.g. #hero, #tools, /#course, /), DO NOT show loader!
+        if (targetUrl.pathname === window.location.pathname) {
+          return;
+        }
+
+        // Target is a different page (e.g., /checkout) -> Trigger loader!
         setIsNavigating(true);
-        setProgress(30);
+        setProgress(35);
 
         if (intervalId) clearInterval(intervalId);
         intervalId = setInterval(() => {
           setProgress((prev) => (prev >= 85 ? 85 : prev + 10));
-        }, 150);
+        }, 120);
+      } catch (err) {
+        return;
       }
     };
 
+    const handleCustomNavStart = () => {
+      setIsNavigating(true);
+      setProgress(35);
+      if (intervalId) clearInterval(intervalId);
+      intervalId = setInterval(() => {
+        setProgress((prev) => (prev >= 85 ? 85 : prev + 10));
+      }, 120);
+    };
+
     const handlePopState = () => {
+      // Ignore popstate if the pathname did not change (e.g., hash change / anchor scroll)
+      if (lastPathnameRef.current === window.location.pathname) {
+        return;
+      }
+
+      lastPathnameRef.current = window.location.pathname;
       setIsNavigating(true);
       setProgress(40);
     };
 
     document.addEventListener('click', handleAnchorClick);
+    window.addEventListener('growix-nav-start', handleCustomNavStart);
     window.addEventListener('popstate', handlePopState);
 
     return () => {
       document.removeEventListener('click', handleAnchorClick);
+      window.removeEventListener('growix-nav-start', handleCustomNavStart);
       window.removeEventListener('popstate', handlePopState);
       if (intervalId) clearInterval(intervalId);
     };

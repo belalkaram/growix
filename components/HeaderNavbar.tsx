@@ -55,25 +55,16 @@ export const HeaderNavbar: React.FC<HeaderNavbarProps> = ({ onOpenPaymentModal }
         isScrolled ? 'py-2.5' : 'py-3.5'
       }`}>
         
-        {/* Right Side (In RTL): Brand Logo & Mobile Toggle */}
-        <div className="flex items-center gap-4">
-          {/* Mobile Menu Toggle Button (On Right on Mobile) */}
-          <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className={`lg:hidden p-2 rounded-xl transition-colors flex items-center gap-2 ${
-              isScrolled ? 'text-[#0B1220] hover:bg-gray-100' : 'text-white hover:bg-white/10'
-            }`}
-            aria-label="القائمة"
-          >
-            {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-            <span className="text-xs font-bold sm:hidden">القائمة</span>
-          </button>
-
-          {/* Brand Logo */}
-          <a href="#hero" className="flex items-center gap-3 group">
-            <GrowixLogo theme={isScrolled ? 'light' : 'dark'} iconSize={38} showSubtitle />
-          </a>
-        </div>
+        {/* Mobile Menu Toggle Button (On Right in RTL on Mobile, hidden on desktop) */}
+        <button
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          className={`lg:hidden p-2 rounded-xl transition-colors flex items-center justify-center ${
+            isScrolled ? 'text-[#0B1220] hover:bg-gray-100' : 'text-white hover:bg-white/10'
+          }`}
+          aria-label="فتح القائمة"
+        >
+          {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+        </button>
 
         {/* Center Side (In RTL): Desktop Navigation Links */}
         <nav className="hidden lg:flex items-center gap-6 xl:gap-8">
@@ -114,6 +105,11 @@ export const HeaderNavbar: React.FC<HeaderNavbarProps> = ({ onOpenPaymentModal }
             <span>اشترك الآن</span>
           </button>
         </div>
+
+        {/* Brand Logo: On mobile (RTL) it sits on the LEFT (last child). On desktop (lg+) it stays on the RIGHT (order-first) */}
+        <a href="#hero" className="flex items-center gap-3 group lg:order-first">
+          <GrowixLogo theme={isScrolled ? 'light' : 'dark'} iconSize={38} showSubtitle />
+        </a>
       </div>
 
       {/* Smooth Animated Mobile Navigation Drawer */}

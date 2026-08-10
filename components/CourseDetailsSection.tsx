@@ -151,11 +151,13 @@ export const CourseDetailsSection: React.FC<CourseDetailsSectionProps> = ({ onOp
                 transition={{ duration: 0.3, delay: idx * 0.1 }}
                 className="p-6 rounded-3xl bg-[#F7F9FA] border border-gray-200 hover:border-[#0F9D58] hover:bg-white hover:shadow-lg transition-all space-y-3"
               >
-                <div className="w-10 h-10 rounded-xl bg-[#0B1220] text-[#2ECC8F] flex items-center justify-center font-black text-sm">
-                  0{idx + 1}
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-[#0B1220] text-[#2ECC8F] flex items-center justify-center font-black text-sm shrink-0 shadow-sm">
+                    0{idx + 1}
+                  </div>
+                  <h4 className="text-base sm:text-lg font-bold text-[#0B1220] leading-snug">{item.title}</h4>
                 </div>
-                <h4 className="text-lg font-bold text-[#0B1220]">{item.title}</h4>
-                <p className="text-xs text-gray-600 leading-relaxed">{item.desc}</p>
+                <p className="text-xs text-gray-600 leading-relaxed pt-1">{item.desc}</p>
               </motion.div>
             ))}
           </div>
