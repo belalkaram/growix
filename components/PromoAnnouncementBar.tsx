@@ -63,9 +63,26 @@ export const PromoAnnouncementBar: React.FC = () => {
       title="شريط العروض - قف بالمؤشر لإيقاف الحركة مؤقتاً"
       dir="ltr"
     >
+      {/* Inline style block to guarantee immediate browser update without cache delays */}
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
+            @keyframes marquee-force-ltr {
+              0% { transform: translate3d(-50%, 0, 0); }
+              100% { transform: translate3d(0, 0, 0); }
+            }
+            .animate-marquee-force-ltr {
+              animation: marquee-force-ltr 60s linear infinite !important;
+            }
+            .pause-on-hover:hover .animate-marquee-force-ltr {
+              animation-play-state: paused !important;
+            }
+          `,
+        }}
+      />
       <div className="py-2.5 flex items-center justify-start overflow-hidden w-full max-w-full dir-ltr" dir="ltr">
         {/* Continuous track wrapper with dir="ltr" so duplicate half sits to the right of first half */}
-        <div className="animate-marquee-track flex flex-row shrink-0 w-max dir-ltr" dir="ltr">
+        <div className="animate-marquee-force-ltr flex flex-row shrink-0 w-max dir-ltr" dir="ltr">
           {/* First Half */}
           <div className="flex items-center shrink-0 dir-rtl" dir="rtl">
             {renderItemContent('a1')}

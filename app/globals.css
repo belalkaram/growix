@@ -77,28 +77,31 @@
   background: #2ECC8F;
 }
 
-/* Continuous Seamless Ticker Marquee for Promo Bar */
-@keyframes marquee-continuous {
+/* Continuous Seamless Ticker Marquee for Promo Bar (Left to Right) */
+@keyframes marquee-reverse-ltr {
   0% {
-    transform: translate3d(0, 0, 0);
+    transform: translate3d(-50%, 0, 0);
   }
   100% {
-    transform: translate3d(-50%, 0, 0);
+    transform: translate3d(0, 0, 0);
   }
 }
 
-.animate-marquee-track {
+.animate-marquee-track,
+.animate-marquee-track-ltr {
   display: flex;
   flex-direction: row;
   width: max-content;
   white-space: nowrap;
-  animation: marquee-continuous 32s linear infinite;
+  animation: marquee-reverse-ltr 60s linear infinite !important;
   will-change: transform;
 }
 
 /* Pause marquee animation smoothly on hover */
 .pause-on-hover:hover .animate-marquee-track,
-.animate-marquee-track:hover {
+.pause-on-hover:hover .animate-marquee-track-ltr,
+.animate-marquee-track:hover,
+.animate-marquee-track-ltr:hover {
   animation-play-state: paused !important;
 }
 
