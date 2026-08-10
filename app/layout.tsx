@@ -26,11 +26,24 @@ export const metadata: Metadata = {
     'كورس تسويق',
     'داتا مصر التسويقية'
   ],
+  icons: {
+    icon: '/logo.png',
+    shortcut: '/logo.png',
+    apple: '/logo.png',
+  },
   openGraph: {
     title: 'GROWIX | منصة التسويق الإلكتروني الشاملة وحزمة الـ 12 أداة',
     description: 'كورس كامل + 12 أداة تسويق وتطبيقات أتمتة مع داتا مصر التسويقية وتفعيل فوري.',
     locale: 'ar_EG',
     type: 'website',
+    images: [
+      {
+        url: '/logo.png',
+        width: 1200,
+        height: 630,
+        alt: 'GROWIX Logo',
+      },
+    ],
   },
 };
 
@@ -40,8 +53,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="ar" dir="rtl" className={`${ibmPlexSansArabic.variable}`} suppressHydrationWarning>
-      <body className={`${ibmPlexSansArabic.className} bg-[#F7F9FA] text-[#0B1220] antialiased selection:bg-[#2ECC8F]/30 selection:text-[#0B1220]`} suppressHydrationWarning>
+    <html lang="ar" dir="rtl" className={`${ibmPlexSansArabic.variable} font-sans`} suppressHydrationWarning>
+      <body className={`${ibmPlexSansArabic.className} font-sans bg-[#F7F9FA] text-[#0B1220] antialiased selection:bg-[#2ECC8F]/30 selection:text-[#0B1220]`} suppressHydrationWarning>
         <Suspense fallback={null}>
           <GlobalNavigationLoader />
         </Suspense>

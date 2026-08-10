@@ -54,26 +54,29 @@ export const PromoAnnouncementBar: React.FC = () => {
 
   return (
     <div 
-      className="bg-[#060B15] text-white border-b border-[#0F9D58]/40 relative z-50 overflow-hidden select-none pause-on-hover shadow-md group w-full"
+      className="bg-[#060B15] text-white border-b border-[#0F9D58]/40 relative z-50 overflow-hidden select-none pause-on-hover shadow-md group w-full dir-ltr"
       title="شريط العروض - قف بالمؤشر لإيقاف الحركة مؤقتاً"
+      dir="ltr"
     >
-      <div className="py-2.5 flex items-center overflow-hidden w-full max-w-full">
+      <div className="py-2.5 flex items-center justify-start overflow-hidden w-full max-w-full dir-ltr" dir="ltr">
         {/* Continuous track wrapper with dir="ltr" so duplicate half sits to the right of first half */}
-        <div className="animate-marquee-track" dir="ltr">
+        <div className="animate-marquee-track flex flex-row shrink-0 w-max dir-ltr" dir="ltr">
           {/* First Half */}
-          <div className="flex items-center shrink-0" dir="rtl">
+          <div className="flex items-center shrink-0 dir-rtl" dir="rtl">
             {renderItemContent('a1')}
             {renderItemContent('a2')}
             {renderItemContent('a3')}
             {renderItemContent('a4')}
+            {renderItemContent('a5')}
           </div>
 
           {/* Second Half (Identical duplicate for seamless 100% -> 0% loop) */}
-          <div className="flex items-center shrink-0" dir="rtl" aria-hidden="true">
+          <div className="flex items-center shrink-0 dir-rtl" dir="rtl" aria-hidden="true">
             {renderItemContent('b1')}
             {renderItemContent('b2')}
             {renderItemContent('b3')}
             {renderItemContent('b4')}
+            {renderItemContent('b5')}
           </div>
         </div>
       </div>

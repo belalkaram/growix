@@ -55,9 +55,9 @@ export const HeaderNavbar: React.FC<HeaderNavbarProps> = ({ onOpenPaymentModal }
         isScrolled ? 'py-2.5' : 'py-3.5'
       }`}>
         
-        {/* Right Side (In RTL): Mobile Toggle Button & Desktop Nav Links */}
-        <div className="flex items-center gap-6">
-          {/* Mobile Menu Toggle Button (On Right in RTL) */}
+        {/* Right Side (In RTL): Brand Logo & Mobile Toggle */}
+        <div className="flex items-center gap-4">
+          {/* Mobile Menu Toggle Button (On Right on Mobile) */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             className={`lg:hidden p-2 rounded-xl transition-colors flex items-center gap-2 ${
@@ -69,23 +69,28 @@ export const HeaderNavbar: React.FC<HeaderNavbarProps> = ({ onOpenPaymentModal }
             <span className="text-xs font-bold sm:hidden">القائمة</span>
           </button>
 
-          {/* Desktop Navigation Links */}
-          <nav className="hidden lg:flex items-center gap-6 xl:gap-8">
-            {navLinks.map((link) => (
-              <a
-                key={link.href}
-                href={link.href}
-                className={`text-sm font-semibold transition-colors hover:text-[#2ECC8F] ${
-                  isScrolled ? 'text-gray-700 hover:text-[#0F9D58]' : 'text-gray-200'
-                }`}
-              >
-                {link.name}
-              </a>
-            ))}
-          </nav>
+          {/* Brand Logo */}
+          <a href="#hero" className="flex items-center gap-3 group">
+            <GrowixLogo theme={isScrolled ? 'light' : 'dark'} iconSize={38} showSubtitle />
+          </a>
         </div>
 
-        {/* Center / Left-Middle: Desktop Action Buttons */}
+        {/* Center Side (In RTL): Desktop Navigation Links */}
+        <nav className="hidden lg:flex items-center gap-6 xl:gap-8">
+          {navLinks.map((link) => (
+            <a
+              key={link.href}
+              href={link.href}
+              className={`text-sm font-semibold transition-colors hover:text-[#2ECC8F] ${
+                isScrolled ? 'text-gray-700 hover:text-[#0F9D58]' : 'text-gray-200'
+              }`}
+            >
+              {link.name}
+            </a>
+          ))}
+        </nav>
+
+        {/* Left Side (In RTL): Desktop Action Buttons */}
         <div className="hidden sm:flex items-center gap-3">
           <a
             href={`https://wa.me/${SITE_CONFIG.whatsappNumber}`}
@@ -109,11 +114,6 @@ export const HeaderNavbar: React.FC<HeaderNavbarProps> = ({ onOpenPaymentModal }
             <span>اشترك الآن</span>
           </button>
         </div>
-
-        {/* Left Side (In RTL): Brand Logo */}
-        <a href="#hero" className="flex items-center gap-3 group">
-          <GrowixLogo theme={isScrolled ? 'light' : 'dark'} iconSize={38} showSubtitle />
-        </a>
       </div>
 
       {/* Smooth Animated Mobile Navigation Drawer */}
