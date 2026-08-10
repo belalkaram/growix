@@ -43,11 +43,11 @@ export interface Testimonial {
 
 export const SITE_PRICING = {
   fullPackagePrice: '300',
-  fullPackageOriginalPrice: '1,000',
+  fullPackageOriginalPrice: '1200',
   singleToolPrice: '200',
-  singleToolOriginalPrice: '500',
+  singleToolOriginalPrice: '700',
   currency: 'جنية',
-  
+
   fullPackageCtaText: 'احصل على الباقة الكاملة بـ 300 ج',
   singleToolCtaText: 'اختر برنامجك واشترك بـ 200 ج',
 };
@@ -69,7 +69,7 @@ export const SITE_CONFIG = {
   tagline: 'منصة التسويق الإلكتروني الشاملة وحزمة الـ 12 أداة تسويقية',
   heroTitle: 'اتعلّم التسويق الإلكتروني... وامتلك 12 أداة تسويق ذكية في مكان واحد',
   heroSubtitle: ' احصل على أقوى كورس تسويق إلكتروني عملي في الوطن العربي + 12 برنامج وأداة تسويقية احترافية لزيادة مبيعاتك وتكبير عملك تلقائياً + هدية داتا مصر التسويقية.',
-  
+
   // Contact & Payment Details
   whatsappNumber: '201019033661', // غيّر الرقم هنا بسهولة
   whatsappDisplayNumber: '01019033661',

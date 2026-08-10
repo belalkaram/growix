@@ -3,6 +3,7 @@
 import React from 'react';
 import { motion } from 'motion/react';
 import { SITE_CONFIG, PricingPackage } from '@/config/site';
+import { CustomToolSelector } from '@/components/CustomToolSelector';
 import { Check, X as XIcon, Sparkles, ArrowLeft, ShieldCheck, Clock, Zap } from 'lucide-react';
 
 interface PricingSectionProps {
@@ -115,27 +116,15 @@ export const PricingSection: React.FC<PricingSectionProps> = ({ onSelectPackage 
                     ))}
                   </ul>
 
-                  {/* Optional Tool Selector for Single Tool Package */}
+                  {/* Custom Tool Selector for Single Tool Package */}
                   {pkg.id === 'single-tool' && (
-                    <div className="mb-6 p-3 bg-white border border-gray-200 rounded-2xl shadow-sm">
-                      <label htmlFor="pricing-single-tool-select" className="block text-xs font-extrabold text-[#0B1220] mb-2 flex items-center gap-1.5">
-                        <Sparkles className="w-3.5 h-3.5 text-[#0F9D58]" />
-                        <span>اختر البرنامج المفضل لديك من بين الـ 12 أداة:</span>
-                      </label>
-                      <select
-                        id="pricing-single-tool-select"
-                        aria-label="اختر البرنامج المفضل لديك من بين الـ 12 أداة"
-                        suppressHydrationWarning
-                        value={selectedToolId}
-                        onChange={(e) => setSelectedToolId(e.target.value)}
-                        className="w-full py-2.5 px-3 bg-[#F7F9FA] border border-gray-300 rounded-xl text-xs font-bold text-[#0B1220] focus:outline-none focus:border-[#0F9D58] focus:ring-1 focus:ring-[#0F9D58]"
-                      >
-                        {SITE_CONFIG.tools.map((tool) => (
-                          <option key={tool.id} value={tool.id}>
-                            {tool.number}. {tool.name}
-                          </option>
-                        ))}
-                      </select>
+                    <div className="mb-6">
+                      <CustomToolSelector
+                        id="pricing-single-tool-selector"
+                        selectedToolId={selectedToolId}
+                        onSelectTool={(toolId) => setSelectedToolId(toolId)}
+                        label="اختر البرنامج المفضل لديك من بين الـ 12 أداة:"
+                      />
                     </div>
                   )}
                 </div>

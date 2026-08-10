@@ -24,6 +24,7 @@ import {
 import { SITE_CONFIG, SITE_PRICING, PricingPackage } from '@/config/site';
 import { GrowixLogo } from '@/components/GrowixLogo';
 import { PromoAnnouncementBar } from '@/components/PromoAnnouncementBar';
+import { CustomToolSelector } from '@/components/CustomToolSelector';
 import { Footer } from '@/components/Footer';
 
 function CheckoutContent() {
@@ -201,39 +202,15 @@ function CheckoutContent() {
             </button>
           </div>
 
-          {/* Sub-selector for Single Tool Package */}
+          {/* Custom Interactive Tool Selector for Single Tool Package */}
           {activePkgId === 'single-tool' && (
-            <div className="bg-emerald-50/90 border border-emerald-200 rounded-2xl p-4 sm:p-5 space-y-3 mt-3">
-              <div className="flex items-center justify-between">
-                <label htmlFor="checkout-tool-select" className="block text-xs sm:text-sm font-extrabold text-[#0B1220] flex items-center gap-1.5">
-                  <Wrench className="w-4 h-4 text-[#0F9D58]" />
-                  <span>حدد البرنامج المطلوب ({SITE_PRICING.singleToolPrice} جنيه):</span>
-                </label>
-                <span className="text-[11px] bg-[#0F9D58] text-white px-2.5 py-0.5 rounded-full font-bold">
-                  12 أداة متاحة
-                </span>
-              </div>
-
-              <select
-                id="checkout-tool-select"
-                aria-label="حدد البرنامج المطلوب"
-                value={selectedToolId}
-                onChange={(e) => setSelectedToolId(e.target.value)}
-                className="w-full bg-white border border-emerald-300 rounded-xl p-3 text-xs sm:text-sm font-bold text-[#0B1220] focus:outline-none focus:ring-2 focus:ring-[#0F9D58] cursor-pointer shadow-sm"
-              >
-                {SITE_CONFIG.tools.map((tool) => (
-                  <option key={tool.id} value={tool.id}>
-                    {tool.number}. {tool.name}
-                  </option>
-                ))}
-              </select>
-
-              <div className="text-xs font-semibold text-emerald-900 bg-white p-3 rounded-xl border border-emerald-200 flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-[#0F9D58] shrink-0" />
-                <span>
-                  البرنامج المختار حالياً: <strong className="text-[#0F9D58] font-black underline">{currentTool.name}</strong>
-                </span>
-              </div>
+            <div className="bg-emerald-50/90 border border-emerald-200 rounded-2xl p-4 sm:p-5 mt-3">
+              <CustomToolSelector
+                id="checkout-tool-selector"
+                selectedToolId={selectedToolId}
+                onSelectTool={(toolId) => setUserToolId(toolId)}
+                label={`حدد البرنامج المطلوب (${SITE_PRICING.singleToolPrice} جنيه):`}
+              />
             </div>
           )}
         </div>
