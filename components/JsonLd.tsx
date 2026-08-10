@@ -1,5 +1,6 @@
 import React from 'react';
 import { SITE_CONFIG, SITE_PRICING } from '@/config/site';
+import { TOOLS_SEO } from '@/config/seo';
 
 export const JsonLd: React.FC = () => {
   const baseUrl = 'https://growix.belalkaram.dev';
@@ -119,6 +120,26 @@ export const JsonLd: React.FC = () => {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'ItemList',
+            name: 'أدوات التسويق الإلكتروني من GROWIX',
+            description: '12 أداة تسويقية احترافية لأتمتة التسويق وتكبير الأعمال',
+            numberOfItems: TOOLS_SEO.filter((t) => t.toolId !== 'course' && t.toolId !== 'data-egypt').length,
+            itemListElement: TOOLS_SEO
+              .filter((t) => t.toolId !== 'course' && t.toolId !== 'data-egypt')
+              .map((tool, i) => ({
+                '@type': 'ListItem',
+                position: i + 1,
+                name: tool.schemaName,
+                url: `https://growix.belalkaram.dev/tools/${tool.slug}`,
+              })),
+          }),
+        }}
       />
     </>
   );

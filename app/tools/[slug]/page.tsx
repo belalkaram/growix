@@ -1,0 +1,218 @@
+import { Metadata } from 'next';
+import { notFound } from 'next/navigation';
+import { TOOLS_SEO } from '@/config/seo';
+import { SITE_CONFIG } from '@/config/site';
+
+interface ToolPageProps {
+  params: Promise<{ slug: string }>;
+}
+
+export async function generateStaticParams() {
+  return TOOLS_SEO.map((tool) => ({ slug: tool.slug }));
+}
+
+export async function generateMetadata({ params }: ToolPageProps): Promise<Metadata> {
+  const { slug } = await params;
+  const toolSeo = TOOLS_SEO.find((t) => t.slug === slug);
+
+  if (!toolSeo) return {};
+
+  return {
+    title: toolSeo.metaTitle,
+    description: toolSeo.metaDescription,
+    keywords: toolSeo.keywords,
+    alternates: {
+      canonical: `/tools/${slug}`,
+    },
+    openGraph: {
+      title: toolSeo.metaTitle,
+      description: toolSeo.metaDescription,
+      url: `https://growix.belalkaram.dev/tools/${slug}`,
+      siteName: 'GROWIX',
+      locale: 'ar_EG',
+      type: 'website',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: toolSeo.metaTitle,
+      description: toolSeo.metaDescription,
+    },
+  };
+}
+
+export default async function ToolPage({ params }: ToolPageProps) {
+  const { slug } = await params;
+  const toolSeo = TOOLS_SEO.find((t) => t.slug === slug);
+
+  if (!toolSeo) notFound();
+
+  // Match tool data from SITE_CONFIG
+  const toolData = SITE_CONFIG.tools.find((t) => t.id === toolSeo.toolId);
+
+  // JSON-LD structured data for this tool page
+  const productSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: toolSeo.schemaName,
+    description: toolSeo.schemaDescription,
+    brand: { '@type': 'Brand', name: 'GROWIX' },
+    url: `https://growix.belalkaram.dev/tools/${slug}`,
+    offers: {
+      '@type': 'Offer',
+      price: '200',
+      priceCurrency: 'EGP',
+      availability: 'https://schema.org/InStock',
+      url: `https://growix.belalkaram.dev/checkout?package=single-tool&tool=${toolSeo.toolId}`,
+    },
+  };
+
+  const faqSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: toolSeo.faqItems.map((faq) => ({
+      '@type': 'Question',
+      name: faq.question,
+      acceptedAnswer: { '@type': 'Answer', text: faq.answer },
+    })),
+  };
+
+  const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'الرئيسية', item: 'https://growix.belalkaram.dev' },
+      { '@type': 'ListItem', position: 2, name: 'الأدوات', item: 'https://growix.belalkaram.dev/tools' },
+      { '@type': 'ListItem', position: 3, name: toolSeo.schemaName, item: `https://growix.belalkaram.dev/tools/${slug}` },
+    ],
+  };
+
+  return (
+    <>
+      {/* JSON-LD Structured Data */}
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(productSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
+
+      <main
+        className="min-h-screen bg-[#F7F9FA] text-[#0B1220] font-sans"
+        dir="rtl"
+      >
+        {/* ─── Hero Banner ─── */}
+        <section className="bg-[#0B1220] text-white pt-28 pb-20 relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-[#0F9D58]/10 to-transparent pointer-events-none" />
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            {/* Breadcrumb */}
+            <nav className="mb-6 text-sm text-gray-400" aria-label="Breadcrumb">
+              <ol className="flex items-center gap-2">
+                <li><a href="/" className="hover:text-[#2ECC8F] transition-colors">الرئيسية</a></li>
+                <li className="text-gray-600">/</li>
+                <li><a href="/tools" className="hover:text-[#2ECC8F] transition-colors">الأدوات</a></li>
+                <li className="text-gray-600">/</li>
+                <li className="text-[#2ECC8F] font-semibold truncate max-w-xs">{toolSeo.schemaName}</li>
+              </ol>
+            </nav>
+
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#0F9D58]/20 text-[#2ECC8F] text-xs font-black border border-[#2ECC8F]/30 mb-5">
+              <span>GROWIX — أداة تسويقية احترافية</span>
+            </div>
+
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-black leading-tight mb-5">
+              {toolSeo.h1}
+            </h1>
+
+            <p className="text-gray-300 text-base sm:text-lg leading-relaxed max-w-3xl mb-8">
+              {toolSeo.metaDescription}
+            </p>
+
+            {/* H2 Keywords as feature pills */}
+            <div className="flex flex-wrap gap-2 mb-10">
+              {toolSeo.h2Keywords.map((kw, i) => (
+                <span key={i} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 border border-white/10 text-white text-xs font-semibold">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#2ECC8F] shrink-0" />
+                  {kw}
+                </span>
+              ))}
+            </div>
+
+            {/* CTA */}
+            <div className="flex flex-col sm:flex-row gap-4">
+              <a
+                href={`/checkout?package=single-tool&tool=${toolSeo.toolId}`}
+                className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-2xl bg-gradient-to-l from-[#0F9D58] to-[#2ECC8F] text-white font-extrabold text-sm shadow-xl shadow-[#0F9D58]/30 hover:scale-105 transition-transform"
+              >
+                <span>احصل على الأداة الآن — 200 جنيه فقط</span>
+              </a>
+              <a
+                href="/checkout?package=bundle-vip"
+                className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-2xl bg-white/10 border border-white/20 text-white font-semibold text-sm hover:bg-white/15 transition-colors"
+              >
+                <span>أو احصل على الباقة الكاملة (12 أداة + كورس)</span>
+              </a>
+            </div>
+          </div>
+        </section>
+
+        {/* ─── Tool Features ─── */}
+        {toolData && (
+          <section className="py-20 bg-white">
+            <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+              <h2 className="text-2xl sm:text-3xl font-black text-[#0B1220] mb-10 text-center">
+                مميزات {toolData.name}
+              </h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                {toolData.features.map((feature, i) => (
+                  <div key={i} className="flex items-start gap-3 p-5 rounded-2xl bg-[#F7F9FA] border border-gray-200">
+                    <span className="w-6 h-6 rounded-full bg-[#0F9D58] text-white flex items-center justify-center shrink-0 text-xs font-black">✓</span>
+                    <p className="text-sm sm:text-base font-medium text-gray-700 leading-relaxed">{feature}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* ─── FAQ (Rich Snippets) ─── */}
+        <section className="py-20 bg-[#F7F9FA]">
+          <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h2 className="text-2xl sm:text-3xl font-black text-[#0B1220] mb-10 text-center">
+              أسئلة شائعة حول{' '}
+              <span className="text-[#0F9D58]">{toolSeo.schemaName.split('—')[0].trim()}</span>
+            </h2>
+            <div className="space-y-4">
+              {toolSeo.faqItems.map((faq, i) => (
+                <details
+                  key={i}
+                  className="group p-6 rounded-2xl bg-white border border-gray-200 hover:border-[#0F9D58]/40 transition-colors"
+                >
+                  <summary className="cursor-pointer font-bold text-[#0B1220] text-sm sm:text-base flex items-center justify-between gap-4 list-none">
+                    <span>{faq.question}</span>
+                    <span className="text-[#0F9D58] shrink-0 group-open:rotate-45 transition-transform">+</span>
+                  </summary>
+                  <p className="mt-4 text-gray-600 text-sm leading-relaxed">{faq.answer}</p>
+                </details>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ─── Internal Link to Bundle ─── */}
+        <section className="py-16 bg-[#0B1220] text-white text-center">
+          <div className="max-w-3xl mx-auto px-4">
+            <h2 className="text-2xl sm:text-3xl font-black mb-4">
+              وفّر أكثر مع <span className="text-[#2ECC8F]">الباقة الكاملة</span>
+            </h2>
+            <p className="text-gray-300 mb-8 text-sm sm:text-base">
+              احصل على جميع الأدوات الـ 12 + كورس التسويق الإلكتروني + داتا مصر التسويقية — كل ده بـ 300 جنيه فقط بدل 2,400 جنيه.
+            </p>
+            <a
+              href="/checkout?package=bundle-vip"
+              className="inline-flex items-center gap-2 px-10 py-4 rounded-2xl bg-gradient-to-l from-[#0F9D58] to-[#2ECC8F] text-white font-extrabold text-base shadow-xl shadow-[#0F9D58]/30 hover:scale-105 transition-transform"
+            >
+              احصل على الباقة الكاملة — 300 ج فقط
+            </a>
+          </div>
+        </section>
+      </main>
+    </>
+  );
+}
