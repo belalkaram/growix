@@ -1,0 +1,86 @@
+'use client';
+
+import React from 'react';
+import { motion } from 'motion/react';
+import { SITE_CONFIG } from '@/config/site';
+import { CheckCircle2, ArrowLeft, Clock, ShieldCheck, Sparkles } from 'lucide-react';
+
+interface HowItWorksSectionProps {
+  onOpenPaymentModal: () => void;
+}
+
+export const HowItWorksSection: React.FC<HowItWorksSectionProps> = ({ onOpenPaymentModal }) => {
+  return (
+    <section id="how-it-works" className="py-24 bg-[#F7F9FA] relative overflow-hidden">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        
+        {/* Section Header */}
+        <div className="text-center max-w-3xl mx-auto space-y-4 mb-16">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#0F9D58]/10 text-[#0F9D58] text-xs font-extrabold">
+            <Clock className="w-4 h-4" />
+            <span>خطوات التفعيل والاستلام</span>
+          </div>
+
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-[#0B1220]">
+            كيف تصلك <span className="text-growix-gradient">الباقة والأدوات؟</span>
+          </h2>
+
+          <p className="text-gray-600 text-base sm:text-lg">
+            4 خطوات بسيطة وسريعة جداً لبدء الاستفادة الفورية من المنصة والتفعيل خلال أقل من ساعة:
+          </p>
+        </div>
+
+        {/* 4 Steps Stepper */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+          {SITE_CONFIG.steps.map((step, idx) => (
+            <motion.div
+              key={idx}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.4, delay: idx * 0.1 }}
+              className="bg-white rounded-3xl p-6 border border-gray-200/80 shadow-sm hover:shadow-md hover:border-[#0F9D58] transition-all relative flex flex-col justify-between"
+            >
+              <div>
+                {/* Step Number Circle */}
+                <div className="w-12 h-12 rounded-2xl bg-[#0B1220] text-[#2ECC8F] font-black text-lg flex items-center justify-center mb-5 shadow-md">
+                  {step.number}
+                </div>
+
+                <h3 className="text-lg font-bold text-[#0B1220] mb-2">{step.title}</h3>
+                <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">{step.desc}</p>
+              </div>
+
+              {idx < SITE_CONFIG.steps.length - 1 && (
+                <div className="hidden lg:block absolute top-12 -left-3 transform -translate-x-1/2 text-gray-300 pointer-events-none">
+                  <ArrowLeft className="w-6 h-6 text-[#0F9D58]" />
+                </div>
+              )}
+            </motion.div>
+          ))}
+        </div>
+
+        {/* Guarantee Callout Banner */}
+        <div className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-200 max-w-3xl mx-auto shadow-sm text-center space-y-4">
+          <div className="inline-flex items-center gap-2 text-xs font-bold text-[#0F9D58] bg-[#0F9D58]/10 px-3 py-1.5 rounded-full">
+            <ShieldCheck className="w-4 h-4" />
+            <span>ضمان التفعيل الفوري مع الدعم الفني المباشر</span>
+          </div>
+
+          <h3 className="text-xl font-bold text-[#0B1220]">
+            فريق الدعم الفني جاهز لمساعدتك وإرشادك فور استلام إيصال التحويل
+          </h3>
+
+          <button
+            onClick={() => onOpenPaymentModal()}
+            className="py-3.5 px-8 rounded-2xl bg-growix-gradient hover:bg-growix-gradient-hover text-white font-extrabold text-sm inline-flex items-center gap-2 shadow-lg shadow-[#0F9D58]/20 transition-all hover:scale-105"
+          >
+            <Sparkles className="w-4 h-4" />
+            <span>ابدأ الآن واختر باقتك</span>
+          </button>
+        </div>
+
+      </div>
+    </section>
+  );
+};

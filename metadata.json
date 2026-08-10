@@ -1,0 +1,6 @@
+{
+  "name": "GROWIX - منصة التسويق الإلكتروني والأدوات",
+  "description": "منصة GROWIX لكورسات التسويق الإلكتروني وباقة الـ 12 أداة تسويقية المتكاملة مع داتا مصر التسويقية والدعم الفني.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

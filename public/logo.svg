@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="100%" height="100%">
+  <!-- Background -->
+  <rect width="500" height="500" fill="#ffffff" rx="32"/>
+  
+  <g transform="translate(100, 40)">
+    <!-- Main G Circle Symbol -->
+    <!-- Dark Outer G Arc -->
+    <path d="M 150 40 
+             C 80 40, 30 90, 30 160 
+             C 30 230, 80 280, 150 280 
+             C 195 280, 230 255, 245 220 
+             L 170 220 
+             L 170 180 
+             L 280 180 
+             L 280 235 
+             C 255 295, 205 320, 150 320 
+             C 60 320, -10 250, -10 160 
+             C -10 70, 60 0, 150 0 
+             C 195 0, 235 15, 265 42 
+             L 230 75 
+             C 208 53, 180 40, 150 40 Z" 
+          fill="#0B1220"/>
+
+    <!-- Green Rising Arrow inside Top-Right -->
+    <path d="M 150 140 L 250 40 L 210 40 L 280 10 L 280 80 L 250 40 L 150 140 Z" fill="#0F9D58"/>
+
+    <!-- Bottom Right Green Bar -->
+    <rect x="235" y="190" width="45" height="90" fill="#0F9D58" rx="4"/>
+  </g>
+
+  <!-- Typography GROWIX -->
+  <g transform="translate(40, 380)">
+    <!-- GROW in Dark Navy -->
+    <text x="0" y="0" font-family="'Cairo', 'Montserrat', 'Arial Black', sans-serif" font-weight="900" font-size="64" fill="#0B1220" letter-spacing="2">GROW</text>
+    <!-- I in Dark Navy -->
+    <text x="230" y="0" font-family="'Cairo', 'Montserrat', 'Arial Black', sans-serif" font-weight="900" font-size="64" fill="#0B1220" letter-spacing="2">I</text>
+    <!-- X with Green Right Diagonal -->
+    <text x="260" y="0" font-family="'Cairo', 'Montserrat', 'Arial Black', sans-serif" font-weight="900" font-size="64" fill="#0F9D58" letter-spacing="2">X</text>
+  </g>
+
+  <!-- Subtitle with side lines -->
+  <g transform="translate(50, 430)">
+    <line x1="0" y1="-8" x2="30" y2="-8" stroke="#0F9D58" stroke-width="3" stroke-linecap="round"/>
+    <text x="45" y="0" font-family="'Cairo', 'Arial', sans-serif" font-weight="800" font-size="16" fill="#0B1220" letter-spacing="2">DIGITAL MARKETING COURSES &amp; TOOLS</text>
+    <line x1="370" y1="-8" x2="400" y2="-8" stroke="#0F9D58" stroke-width="3" stroke-linecap="round"/>
+  </g>
+</svg>
