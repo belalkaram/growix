@@ -12,20 +12,29 @@ const ibmPlexSansArabic = IBM_Plex_Sans_Arabic({
 });
 
 export const metadata: Metadata = {
-  title: 'GROWIX | منصة التسويق الإلكتروني الشاملة وحزمة الـ 12 أداة',
+  metadataBase: new URL('https://growix.belalkaram.dev'),
+  title: {
+    default: 'GROWIX | منصة التسويق الإلكتروني الشاملة وحزمة الـ 12 أداة',
+    template: '%s | GROWIX',
+  },
   description: 'اتعلّم التسويق الإلكتروني من الصفر للاحتراف وامتلك 12 أداة تسويق ذكية مع داتا مصر التسويقية والدعم الفني المباشر.',
   keywords: [
     'GROWIX',
     'جرويكس',
-    'تسويق إلكتروني',
-    'أدوات تسويق',
+    'تسويق إلكتروني مصر',
+    'أدوات تسويق إلكتروني',
     'واتساب سندر',
     'فايسبوك بوت',
     'تليجرام سندر',
     'انستجرام بوت',
-    'كورس تسويق',
-    'داتا مصر التسويقية'
+    'كورس تسويق إلكتروني',
+    'داتا مصر التسويقية',
+    'برنامج سحب داتا',
+    'أتمتة السوشيال ميديا'
   ],
+  alternates: {
+    canonical: '/',
+  },
   icons: {
     icon: '/logo.png',
     shortcut: '/logo.png',
@@ -34,16 +43,21 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'GROWIX | منصة التسويق الإلكتروني الشاملة وحزمة الـ 12 أداة',
     description: 'كورس كامل + 12 أداة تسويق وتطبيقات أتمتة مع داتا مصر التسويقية وتفعيل فوري.',
+    url: 'https://growix.belalkaram.dev',
+    siteName: 'GROWIX',
     locale: 'ar_EG',
     type: 'website',
-    images: [
-      {
-        url: '/logo.png',
-        width: 1200,
-        height: 630,
-        alt: 'GROWIX Logo',
-      },
-    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'GROWIX | منصة التسويق الإلكتروني الشاملة وحزمة الـ 12 أداة',
+    description: 'اتعلّم التسويق الإلكتروني من الصفر للاحتراف وامتلك 12 أداة تسويق ذكية مع داتا مصر التسويقية.',
+  },
+  other: {
+    'geo.region': 'EG',
+    'geo.placename': 'Egypt',
+    'geo.position': '26.820553;30.802498',
+    'ICBM': '26.820553, 30.802498',
   },
 };
 

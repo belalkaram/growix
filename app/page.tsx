@@ -16,6 +16,7 @@ import { TestimonialsSection } from '@/components/TestimonialsSection';
 import { Footer } from '@/components/Footer';
 import { FloatingElements } from '@/components/FloatingElements';
 import { LiveSalesToast } from '@/components/LiveSalesToast';
+import { JsonLd } from '@/components/JsonLd';
 
 export default function Home() {
   const router = useRouter();
@@ -40,6 +41,9 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-[#F7F9FA] text-[#0B1220] flex flex-col font-sans">
+      {/* Structured Data (JSON-LD) */}
+      <JsonLd />
+
       {/* Sticky Header Navbar */}
       <HeaderNavbar onOpenPaymentModal={() => handleNavigateToCheckout()} />
 
