@@ -3,10 +3,15 @@
 import React from 'react';
 import Image from 'next/image';
 import { motion } from 'motion/react';
-import { SITE_CONFIG } from '@/config/site';
+import { SITE_CONFIG, Testimonial } from '@/config/site';
 import { Star, ShieldCheck, Quote, ThumbsUp } from 'lucide-react';
 
-export const TestimonialsSection: React.FC = () => {
+interface TestimonialsSectionProps {
+  testimonials?: Testimonial[];
+}
+
+export const TestimonialsSection: React.FC<TestimonialsSectionProps> = ({ testimonials }) => {
+  const testimonialsList = testimonials && testimonials.length > 0 ? testimonials : SITE_CONFIG.testimonials;
   return (
     <section className="py-24 bg-white relative overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
@@ -29,7 +34,7 @@ export const TestimonialsSection: React.FC = () => {
 
         {/* Testimonial Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {SITE_CONFIG.testimonials.map((item, idx) => (
+          {testimonialsList.map((item, idx) => (
             <motion.div
               key={item.id}
               initial={{ opacity: 0, y: 20 }}

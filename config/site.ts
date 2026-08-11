@@ -5,6 +5,7 @@ export interface MarketingTool {
   category: 'social' | 'messaging' | 'design' | 'ai' | 'data';
   badge?: string;
   shortDesc: string;
+  longDesc?: string;
   features: string[];
   iconName: string; // Lucide icon identifier
 }

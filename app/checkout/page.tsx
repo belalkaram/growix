@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
 import { motion } from 'motion/react';
 import { 
   ArrowRight, 
@@ -26,9 +25,22 @@ import { GrowixLogo } from '@/components/GrowixLogo';
 import { PromoAnnouncementBar } from '@/components/PromoAnnouncementBar';
 import { CustomToolSelector } from '@/components/CustomToolSelector';
 import { Footer } from '@/components/Footer';
+import { useSearchParams, useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
+import { createOrderAction } from '@/lib/actions/orders';
 
 function CheckoutContent() {
+  const router = useRouter();
   const searchParams = useSearchParams();
+  const { data: session, status } = useSession();
+
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      const currentUrl = window.location.pathname + window.location.search;
+      router.push(`/login?callbackUrl=${encodeURIComponent(currentUrl)}`);
+    }
+  }, [status, router]);
+
   const initialPkgParam = searchParams.get('package');
   const initialToolParam = searchParams.get('tool');
 
@@ -48,6 +60,8 @@ function CheckoutContent() {
   // Sender phone number / account input box state
   const [senderNumber, setSenderNumber] = useState<string>('');
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
+  const [orderMessage, setOrderMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const currentPkg = SITE_CONFIG.packages.find((p) => p.id === activePkgId) || SITE_CONFIG.packages[0];
   const currentTool = SITE_CONFIG.tools.find((t) => t.id === selectedToolId) || SITE_CONFIG.tools[0];
@@ -57,6 +71,43 @@ function CheckoutContent() {
     navigator.clipboard.writeText(text);
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 2500);
+  };
+
+  const handleOrderSubmit = async () => {
+    if (!senderNumber || senderNumber.trim().length < 6) {
+      setOrderMessage({ type: 'error', text: 'يرجى إدخال رقم المحفظة أو الحساب المحوّل منه أولاً' });
+      return;
+    }
+
+    setIsSubmittingOrder(true);
+    setOrderMessage(null);
+
+    const res = await createOrderAction({
+      packageId: currentPkg.id,
+      toolId: currentPkg.id === 'single-tool' ? currentTool.id : undefined,
+      paymentMethod: activePaymentMethod,
+      senderNumber: senderNumber.trim(),
+      amount: currentPkg.discountedPrice,
+    });
+
+    setIsSubmittingOrder(false);
+
+    if (!res.success) {
+      setOrderMessage({ type: 'error', text: res.error || 'حدث خطأ أثناء حفظ الطلب' });
+    } else {
+      setOrderMessage({
+        type: 'success',
+        text: 'تم تسليم طلبك بنجاح وفي انتظار مراجعة وقبول الأدمن! جارٍ التوجيه للواتساب لارسال الإثبات المالي...',
+      });
+
+      // Construct WhatsApp message URL
+      const text = `مرحباً فريق GROWIX 👋%0A%0Aأنا قمت بتحويل المبلغ لتأكيد اشتراكي:%0A- الباقة: ${encodeURIComponent(currentPkg.name)}%0A- المبلغ: ${currentPkg.discountedPrice} ${currentPkg.currency}%0A- طريقة الدفع: ${encodeURIComponent(currentPayment.name)}%0A- رقم المحفظة/الحساب المحول منه: ${encodeURIComponent(senderNumber.trim())}%0A- رقم الطلب: ${res.orderId}%0A%0Aبرجاء تفعيل حسابي فوراً وشكراً!`;
+      const waUrl = `https://wa.me/${SITE_CONFIG.whatsappNumber}?text=${text}`;
+
+      setTimeout(() => {
+        window.open(waUrl, '_blank');
+      }, 1000);
+    }
   };
 
   // Generate WhatsApp pre-filled message with sender phone number
@@ -338,34 +389,47 @@ function CheckoutContent() {
           </div>
         </div>
 
-        {/* STEP 4: Steps & Confirmation Action Button */}
-        <div className="bg-amber-50/80 border border-amber-200/90 rounded-3xl p-5 sm:p-7 space-y-4">
-          <div className="flex items-center gap-2 text-amber-900 font-extrabold text-sm sm:text-base">
-            <HelpCircle className="w-5 h-5 text-amber-700 shrink-0" />
-            <span>خطوات إتمام الدفع والتفعيل:</span>
+        {/* STEP 4: Input Sender Phone Number & Order Submission */}
+        <div className="bg-white border border-gray-200 rounded-3xl p-5 sm:p-7 space-y-5 shadow-sm">
+          <div className="flex items-center gap-2 text-[#0B1220] font-black text-base">
+            <Smartphone className="w-5 h-5 text-[#0F9D58]" />
+            <span>ادخل رقم المحفظة/الحساب المحوّل منه للمطابقة:</span>
           </div>
 
-          <ol className="list-decimal list-inside space-y-2 text-xs sm:text-sm text-amber-950 font-medium leading-relaxed pr-1">
-            <li>قم بتحويل مبلغ <strong className="text-amber-950 font-black underline">{currentPkg.discountedPrice} {currentPkg.currency}</strong> على الرقم/الحساب الموضح أعلاه.</li>
-            <li>التقط صورة شاشة (Screenshot) أو صورة لإيصال عملية التحويل.</li>
-            <li>اضغط على زر الواتساب الأخضر أدناه لإرسال الإثبات مباشرة وتفعيل حسابك.</li>
-          </ol>
+          <div>
+            <label className="block text-xs font-bold text-gray-700 mb-1.5">
+              رقم الموبايل أو المحفظة الإلكترونية المحوّل منها المبلغ:
+            </label>
+            <input
+              type="tel"
+              required
+              value={senderNumber}
+              onChange={(e) => setSenderNumber(e.target.value)}
+              placeholder="مثال: 01012345678"
+              className="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-300 text-sm font-bold text-[#0B1220] focus:outline-none focus:border-[#0F9D58]"
+            />
+          </div>
 
-          <a
-            href={generateWhatsAppUrl()}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="w-full py-4 px-6 rounded-2xl bg-[#0F9D58] hover:bg-[#0D8B4E] active:scale-[0.99] text-white font-extrabold text-sm sm:text-base flex items-center justify-center gap-3 shadow-xl shadow-[#0F9D58]/30 transition-all text-center group cursor-pointer"
+          {orderMessage && (
+            <div className={`p-4 rounded-2xl text-xs font-bold flex items-center gap-2 ${
+              orderMessage.type === 'success'
+                ? 'bg-emerald-50 text-emerald-800 border border-emerald-300'
+                : 'bg-red-50 text-red-800 border border-red-300'
+            }`}>
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <span>{orderMessage.text}</span>
+            </div>
+          )}
+
+          <button
+            type="button"
+            disabled={isSubmittingOrder}
+            onClick={handleOrderSubmit}
+            className="w-full py-4 px-6 rounded-2xl bg-[#0F9D58] hover:bg-[#0D8B4E] active:scale-[0.99] text-white font-extrabold text-sm sm:text-base flex items-center justify-center gap-3 shadow-xl shadow-[#0F9D58]/30 transition-all text-center cursor-pointer disabled:opacity-50"
           >
-            <MessageSquare className="w-5 h-5 shrink-0 group-hover:scale-110 transition-transform" />
-            <span>تأكيد التحويل وإرسال الإثبات عبر الواتساب</span>
-          </a>
-
-          <div className="text-center">
-            <span className="text-[11px] text-gray-500 font-medium">
-              سيفتح الواتساب مع رسالة جاهزة تتضمن تفاصيل الطلب ورقم المحفظة لتأكيد حسابك فوراً.
-            </span>
-          </div>
+            <MessageSquare className="w-5 h-5 shrink-0" />
+            <span>{isSubmittingOrder ? 'جاري تسجيل الطلب...' : 'إرسال وتأكيد الطلب عبر الواتساب'}</span>
+          </button>
         </div>
 
         {/* Trust Badges Bar */}

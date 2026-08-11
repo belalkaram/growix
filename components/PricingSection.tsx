@@ -2,16 +2,20 @@
 
 import React from 'react';
 import { motion } from 'motion/react';
-import { SITE_CONFIG, PricingPackage } from '@/config/site';
+import { SITE_CONFIG, PricingPackage, MarketingTool } from '@/config/site';
 import { CustomToolSelector } from '@/components/CustomToolSelector';
 import { Check, X as XIcon, Sparkles, ArrowLeft, ShieldCheck, Clock, Zap } from 'lucide-react';
 
 interface PricingSectionProps {
+  packages?: PricingPackage[];
+  tools?: MarketingTool[];
   onSelectPackage: (pkg: PricingPackage, toolId?: string) => void;
 }
 
-export const PricingSection: React.FC<PricingSectionProps> = ({ onSelectPackage }) => {
-  const [selectedToolId, setSelectedToolId] = React.useState<string>(SITE_CONFIG.tools[0].id);
+export const PricingSection: React.FC<PricingSectionProps> = ({ packages, tools, onSelectPackage }) => {
+  const packageList = packages && packages.length > 0 ? packages : SITE_CONFIG.packages;
+  const initialToolId = tools && tools.length > 0 ? tools[0].id : SITE_CONFIG.tools[0].id;
+  const [selectedToolId, setSelectedToolId] = React.useState<string>(initialToolId);
 
   return (
     <section id="pricing" className="py-24 bg-white relative overflow-hidden">
@@ -38,7 +42,7 @@ export const PricingSection: React.FC<PricingSectionProps> = ({ onSelectPackage 
 
         {/* 2 Pricing Cards Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-5xl mx-auto items-stretch">
-          {SITE_CONFIG.packages.map((pkg) => {
+          {packageList.map((pkg) => {
             const isPopular = pkg.isPopular;
 
             return (

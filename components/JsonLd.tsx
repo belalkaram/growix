@@ -1,8 +1,12 @@
-import React from 'react';
 import { SITE_CONFIG, SITE_PRICING } from '@/config/site';
-import { TOOLS_SEO } from '@/config/seo';
+import { TOOLS_SEO, ToolSeoData } from '@/config/seo';
 
-export const JsonLd: React.FC = () => {
+interface JsonLdProps {
+  toolsSeo?: ToolSeoData[];
+}
+
+export const JsonLd: React.FC<JsonLdProps> = ({ toolsSeo }) => {
+  const seoList = toolsSeo && toolsSeo.length > 0 ? toolsSeo : TOOLS_SEO;
   const baseUrl = 'https://growix.belalkaram.dev';
 
   // 1. Organization Schema
@@ -129,8 +133,8 @@ export const JsonLd: React.FC = () => {
             '@type': 'ItemList',
             name: 'أدوات التسويق الإلكتروني من GROWIX',
             description: '12 أداة تسويقية احترافية لأتمتة التسويق وتكبير الأعمال',
-            numberOfItems: TOOLS_SEO.filter((t) => t.toolId !== 'course' && t.toolId !== 'data-egypt').length,
-            itemListElement: TOOLS_SEO
+            numberOfItems: seoList.filter((t) => t.toolId !== 'course' && t.toolId !== 'data-egypt').length,
+            itemListElement: seoList
               .filter((t) => t.toolId !== 'course' && t.toolId !== 'data-egypt')
               .map((tool, i) => ({
                 '@type': 'ListItem',

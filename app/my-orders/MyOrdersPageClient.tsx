@@ -1,0 +1,145 @@
+'use client';
+
+import React from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { HeaderNavbar } from '@/components/HeaderNavbar';
+import { Footer } from '@/components/Footer';
+import { PackageCheck, Clock, CheckCircle2, XCircle, ArrowRight } from 'lucide-react';
+
+interface MyOrdersPageClientProps {
+  orders: any[];
+  userSession: any;
+}
+
+export const MyOrdersPageClient: React.FC<MyOrdersPageClientProps> = ({ orders, userSession }) => {
+  const router = useRouter();
+
+  const handleNavigateToCheckout = () => {
+    router.push('/#pricing');
+  };
+
+  return (
+    <div className="min-h-screen bg-[#F7F9FA] text-[#0B1220] flex flex-col font-sans" dir="rtl">
+      <HeaderNavbar onOpenPaymentModal={handleNavigateToCheckout} session={userSession} />
+
+      <main className="flex-1 max-w-4xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-32 pb-20 space-y-8">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-black text-[#0B1220] flex items-center gap-2">
+              <PackageCheck className="w-7 h-7 text-[#0F9D58]" />
+              <span>طلباتي واشتراكاتي</span>
+            </h1>
+            <p className="text-xs sm:text-sm text-gray-600 mt-1">
+              مرحباً <strong className="text-[#0F9D58] font-bold">{userSession?.user?.name}</strong>، هنا يمكنك متابعة حالة طلباتك وتفعيل حسابتك
+            </p>
+          </div>
+
+          <Link
+            href="/"
+            className="text-xs font-extrabold text-gray-600 hover:text-[#0F9D58] flex items-center gap-1"
+          >
+            <span>العودة للموقع</span>
+            <ArrowRight className="w-4 h-4" />
+          </Link>
+        </div>
+
+        {orders.length === 0 ? (
+          <div className="bg-white border border-gray-200 rounded-3xl p-12 text-center space-y-4 shadow-sm">
+            <PackageCheck className="w-12 h-12 text-gray-300 mx-auto" />
+            <h2 className="text-lg font-bold text-gray-800">ليس لديك أي طلبات اشتراك بعد</h2>
+            <p className="text-xs text-gray-500 max-w-md mx-auto">
+              تصفح الباقات المتاحة واشترك للحصول على الكورس الشامل وأدوات التسويق الـ 12.
+            </p>
+            <Link
+              href="/#pricing"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-growix-gradient text-white font-extrabold text-xs shadow-md"
+            >
+              استعرض الباقات والأسعار
+            </Link>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {orders.map((ord) => {
+              const isPending = ord.status === 'pending';
+              const isApproved = ord.status === 'approved';
+              const isRejected = ord.status === 'rejected';
+
+              return (
+                <div
+                  key={ord.id}
+                  className="bg-white border border-gray-200 rounded-3xl p-6 shadow-sm space-y-4 hover:border-[#0F9D58]/40 transition-colors"
+                >
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-gray-100">
+                    <div>
+                      <span className="text-[10px] font-mono text-gray-400 block mb-0.5">رقم الطلب: {ord.id}</span>
+                      <h3 className="text-base font-black text-[#0B1220]">
+                        {ord.packageId === 'bundle-vip' ? '👑 الباقة الكاملة (الكورس + الـ 12 أداة + الداتا)' : '🛠️ باقة برنامج واحد'}
+                      </h3>
+                    </div>
+
+                    <div>
+                      {isPending && (
+                        <span className="px-3 py-1.5 rounded-full text-xs font-extrabold bg-amber-500/10 text-amber-600 border border-amber-500/30 flex items-center gap-1.5">
+                          <Clock className="w-4 h-4" />
+                          <span>جاري مراجعة التحويل وتفعيل الحساب 🟡</span>
+                        </span>
+                      )}
+                      {isApproved && (
+                        <span className="px-3 py-1.5 rounded-full text-xs font-extrabold bg-emerald-500/10 text-emerald-600 border border-emerald-500/30 flex items-center gap-1.5">
+                          <CheckCircle2 className="w-4 h-4" />
+                          <span>تم قبول التحويل وتفعيل الحساب بنجاح! 🟢</span>
+                        </span>
+                      )}
+                      {isRejected && (
+                        <span className="px-3 py-1.5 rounded-full text-xs font-extrabold bg-red-500/10 text-red-600 border border-red-500/30 flex items-center gap-1.5">
+                          <XCircle className="w-4 h-4" />
+                          <span>الطلب مرفوض 🔴</span>
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs text-gray-600">
+                    <div className="p-3 bg-gray-50 rounded-xl">
+                      <span className="text-gray-400 block mb-1">طريقة الدفع المحوّل بها:</span>
+                      <span className="font-bold text-gray-800">
+                        {ord.paymentMethod === 'instapay' ? 'إنستاباي (InstaPay)' : 'محفظة إلكترونية'}
+                      </span>
+                    </div>
+
+                    <div className="p-3 bg-gray-50 rounded-xl">
+                      <span className="text-gray-400 block mb-1">الرقم المحوّل منه:</span>
+                      <span className="font-bold text-gray-800 font-mono dir-ltr inline-block">{ord.senderNumber}</span>
+                    </div>
+
+                    <div className="p-3 bg-gray-50 rounded-xl">
+                      <span className="text-gray-400 block mb-1">المبلغ المطلوب:</span>
+                      <span className="font-extrabold text-[#0F9D58]">{ord.amount} جنية</span>
+                    </div>
+                  </div>
+
+                  {isApproved && (
+                    <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs leading-relaxed space-y-2">
+                      <p className="font-bold">🎉 مبروك! حسابك مفعل الآن بالكامل.</p>
+                      <p>تواصل مع فريق الدعم الفني عبر الواتساب للاستلام الفوري لرابط الكورس وماتريال الأدوات الـ 12 مع السيريال والشرح.</p>
+                    </div>
+                  )}
+
+                  {isRejected && (
+                    <div className="p-4 rounded-2xl bg-red-50 border border-red-200 text-red-900 text-xs leading-relaxed">
+                      <p className="font-bold">لم نتمكن من المطابقة المالية لبيانات التحويل.</p>
+                      {ord.adminNotes && <p className="mt-1">ملاحظة الأدمن: {ord.adminNotes}</p>}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </main>
+
+      <Footer />
+    </div>
+  );
+};

@@ -2,10 +2,15 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { SITE_CONFIG } from '@/config/site';
+import { SITE_CONFIG, FAQItem } from '@/config/site';
 import { ChevronDown, HelpCircle, MessageSquare } from 'lucide-react';
 
-export const FaqSection: React.FC = () => {
+interface FaqSectionProps {
+  faqs?: FAQItem[];
+}
+
+export const FaqSection: React.FC<FaqSectionProps> = ({ faqs }) => {
+  const faqList = faqs && faqs.length > 0 ? faqs : SITE_CONFIG.faqs;
   const [openIndex, setOpenIndex] = useState<number | null>(0);
 
   const toggleAccordion = (index: number) => {
@@ -34,7 +39,7 @@ export const FaqSection: React.FC = () => {
 
         {/* Accordion List */}
         <div className="space-y-4">
-          {SITE_CONFIG.faqs.map((faq, idx) => {
+          {faqList.map((faq, idx) => {
             const isOpen = openIndex === idx;
 
             return (

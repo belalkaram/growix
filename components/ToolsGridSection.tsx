@@ -28,10 +28,12 @@ import {
 } from 'lucide-react';
 
 interface ToolsGridSectionProps {
+  tools?: MarketingTool[];
   onOpenPaymentModal: (pkg?: PricingPackage, toolId?: string) => void;
 }
 
-export const ToolsGridSection: React.FC<ToolsGridSectionProps> = ({ onOpenPaymentModal }) => {
+export const ToolsGridSection: React.FC<ToolsGridSectionProps> = ({ tools, onOpenPaymentModal }) => {
+  const toolsList = tools && tools.length > 0 ? tools : SITE_CONFIG.tools;
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [activeToolModal, setActiveToolModal] = useState<MarketingTool | null>(null);
@@ -66,7 +68,7 @@ export const ToolsGridSection: React.FC<ToolsGridSectionProps> = ({ onOpenPaymen
     }
   };
 
-  const filteredTools = SITE_CONFIG.tools.filter((tool) => {
+  const filteredTools = toolsList.filter((tool) => {
     const matchesCategory = selectedCategory === 'all' || tool.category === selectedCategory;
     const matchesSearch = tool.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       tool.shortDesc.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -280,14 +282,20 @@ export const ToolsGridSection: React.FC<ToolsGridSectionProps> = ({ onOpenPaymen
                 </div>
               </div>
 
-              <p className="text-sm text-gray-600 mb-6 leading-relaxed">
+              <p className="text-sm text-gray-600 mb-4 leading-relaxed font-medium">
                 {activeToolModal.shortDesc}
               </p>
+
+              {activeToolModal.longDesc && (
+                <div className="p-3.5 mb-5 rounded-2xl bg-emerald-50/60 border border-emerald-200/80 text-xs text-gray-800 leading-relaxed">
+                  <p className="font-semibold">{activeToolModal.longDesc}</p>
+                </div>
+              )}
 
               <div className="space-y-3 mb-6 bg-gray-50 p-4 rounded-2xl border border-gray-200">
                 <h4 className="text-xs font-bold text-gray-800 uppercase tracking-wider mb-2">مميزات وتفاصيل الأداة:</h4>
                 {activeToolModal.features.map((feat, i) => (
-                  <div key={i} className="flex items-start gap-2 text-xs text-gray-700">
+                  <div key={i} className="flex items-start gap-2 text-xs text-gray-700 font-medium">
                     <Check className="w-4 h-4 text-[#0F9D58] shrink-0 mt-0.5" />
                     <span>{feat}</span>
                   </div>

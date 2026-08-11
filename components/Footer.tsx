@@ -7,9 +7,12 @@ import { MessageSquare, Send, Mail, ShieldCheck, Sparkles, ArrowUp } from 'lucid
 
 interface FooterProps {
   onOpenPaymentModal?: () => void;
+  settings?: Record<string, string>;
 }
 
-export const Footer: React.FC<FooterProps> = ({ onOpenPaymentModal }) => {
+export const Footer: React.FC<FooterProps> = ({ onOpenPaymentModal, settings }) => {
+  const whatsappNum = settings?.whatsapp_number || SITE_CONFIG.whatsappNumber;
+  const telegramUser = settings?.telegram_username || SITE_CONFIG.telegramUsername;
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };

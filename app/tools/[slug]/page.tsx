@@ -1,19 +1,21 @@
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { TOOLS_SEO } from '@/config/seo';
-import { SITE_CONFIG } from '@/config/site';
+import { getToolSeoBySlug, getAllToolsSeo, getTools, getSiteSettings } from '@/lib/queries';
+import { auth } from '@/lib/auth';
+import { MaintenanceScreen } from '@/components/MaintenanceScreen';
 
 interface ToolPageProps {
   params: Promise<{ slug: string }>;
 }
 
 export async function generateStaticParams() {
-  return TOOLS_SEO.map((tool) => ({ slug: tool.slug }));
+  const allSeo = await getAllToolsSeo();
+  return allSeo.map((tool) => ({ slug: tool.slug }));
 }
 
 export async function generateMetadata({ params }: ToolPageProps): Promise<Metadata> {
   const { slug } = await params;
-  const toolSeo = TOOLS_SEO.find((t) => t.slug === slug);
+  const toolSeo = await getToolSeoBySlug(slug);
 
   if (!toolSeo) return {};
 
@@ -42,12 +44,27 @@ export async function generateMetadata({ params }: ToolPageProps): Promise<Metad
 
 export default async function ToolPage({ params }: ToolPageProps) {
   const { slug } = await params;
-  const toolSeo = TOOLS_SEO.find((t) => t.slug === slug);
+  const [toolSeo, siteSettings, session] = await Promise.all([
+    getToolSeoBySlug(slug),
+    getSiteSettings(),
+    auth(),
+  ]);
+
+  if (siteSettings?.maintenance_mode === 'true' && (session?.user as { role?: string })?.role !== 'admin') {
+    return (
+      <MaintenanceScreen
+        message={siteSettings.maintenance_message}
+        whatsappNumber={siteSettings.whatsapp_number}
+        telegramUsername={siteSettings.telegram_username}
+      />
+    );
+  }
 
   if (!toolSeo) notFound();
 
-  // Match tool data from SITE_CONFIG
-  const toolData = SITE_CONFIG.tools.find((t) => t.id === toolSeo.toolId);
+  // Match tool data from DB
+  const allTools = await getTools();
+  const toolData = allTools.find((t) => t.id === toolSeo.toolId);
 
   // JSON-LD structured data for this tool page
   const productSchema = {
@@ -156,9 +173,16 @@ export default async function ToolPage({ params }: ToolPageProps) {
         {toolData && (
           <section className="py-20 bg-white">
             <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-              <h2 className="text-2xl sm:text-3xl font-black text-[#0B1220] mb-10 text-center">
-                مميزات {toolData.name}
+              <h2 className="text-2xl sm:text-3xl font-black text-[#0B1220] mb-6 text-center">
+                مميزات واستخدامات {toolData.name}
               </h2>
+
+              {toolData.longDesc && (
+                <div className="max-w-3xl mx-auto mb-10 p-6 rounded-3xl bg-[#F7F9FA] border border-gray-200 text-sm text-gray-700 leading-relaxed font-medium text-center">
+                  {toolData.longDesc}
+                </div>
+              )}
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 {toolData.features.map((feature, i) => (
                   <div key={i} className="flex items-start gap-3 p-5 rounded-2xl bg-[#F7F9FA] border border-gray-200">

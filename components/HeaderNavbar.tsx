@@ -6,13 +6,16 @@ import { SITE_CONFIG } from '@/config/site';
 import { GrowixLogo } from '@/components/GrowixLogo';
 import { PromoAnnouncementBar } from '@/components/PromoAnnouncementBar';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
-import { Menu, X, Sparkles, MessageSquare } from 'lucide-react';
+import { signOut } from 'next-auth/react';
+import Link from 'next/link';
+import { Menu, X, Sparkles, MessageSquare, User, LogOut, PackageCheck, Shield } from 'lucide-react';
 
 interface HeaderNavbarProps {
   onOpenPaymentModal: () => void;
+  session?: any;
 }
 
-export const HeaderNavbar: React.FC<HeaderNavbarProps> = ({ onOpenPaymentModal }) => {
+export const HeaderNavbar: React.FC<HeaderNavbarProps> = ({ onOpenPaymentModal, session }) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -35,7 +38,6 @@ export const HeaderNavbar: React.FC<HeaderNavbarProps> = ({ onOpenPaymentModal }
     { name: 'الـ 12 أداة', href: '#tools' },
     { name: 'محتوى الكورس', href: '#course' },
     { name: 'هدية الداتا', href: '#data-bonus' },
-    { name: 'كيف تعمل المنصة', href: '#how-it-works' },
     { name: 'الأسعار والباقات', href: '#pricing' },
     { name: 'الأسئلة الشائعة', href: '#faq' },
   ];
@@ -55,7 +57,7 @@ export const HeaderNavbar: React.FC<HeaderNavbarProps> = ({ onOpenPaymentModal }
         isScrolled ? 'py-2.5' : 'py-3.5'
       }`}>
         
-        {/* Mobile Menu Toggle Button (On Right in RTL on Mobile, hidden on desktop) */}
+        {/* Mobile Menu Toggle Button */}
         <button
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           className={`lg:hidden p-2 rounded-xl transition-colors flex items-center justify-center ${
@@ -67,12 +69,12 @@ export const HeaderNavbar: React.FC<HeaderNavbarProps> = ({ onOpenPaymentModal }
         </button>
 
         {/* Center Side (In RTL): Desktop Navigation Links */}
-        <nav className="hidden lg:flex items-center gap-6 xl:gap-8">
+        <nav className="hidden lg:flex items-center gap-5 xl:gap-7">
           {navLinks.map((link) => (
             <a
               key={link.href}
               href={link.href}
-              className={`text-sm font-semibold transition-colors hover:text-[#2ECC8F] ${
+              className={`text-xs font-bold transition-colors hover:text-[#2ECC8F] ${
                 isScrolled ? 'text-gray-700 hover:text-[#0F9D58]' : 'text-gray-200'
               }`}
             >
@@ -81,21 +83,53 @@ export const HeaderNavbar: React.FC<HeaderNavbarProps> = ({ onOpenPaymentModal }
           ))}
         </nav>
 
-        {/* Left Side (In RTL): Desktop Action Buttons */}
+        {/* Left Side (In RTL): Desktop Action Buttons & Auth */}
         <div className="hidden sm:flex items-center gap-3">
-          <a
-            href={`https://wa.me/${SITE_CONFIG.whatsappNumber}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={`p-2.5 rounded-2xl border transition-colors flex items-center gap-2 text-xs font-bold ${
-              isScrolled
-                ? 'border-gray-200 text-gray-700 hover:bg-gray-100'
-                : 'border-white/15 text-gray-200 hover:bg-white/10'
-            }`}
-          >
-            <MessageSquare className="w-4 h-4 text-[#2ECC8F]" />
-            <span>تواصل معنا</span>
-          </a>
+          {session?.user ? (
+            <div className="flex items-center gap-2">
+              {session.user.role === 'admin' && (
+                <Link
+                  href="/admin"
+                  className="py-2 px-3 rounded-xl bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-black flex items-center gap-1.5 hover:bg-amber-500/30 transition-colors"
+                >
+                  <Shield className="w-3.5 h-3.5" />
+                  <span>لوحة الأدمن</span>
+                </Link>
+              )}
+
+              <Link
+                href="/my-orders"
+                className={`py-2 px-3 rounded-xl border text-xs font-bold flex items-center gap-1.5 transition-colors ${
+                  isScrolled
+                    ? 'border-gray-300 text-gray-800 hover:bg-gray-100'
+                    : 'border-white/20 text-gray-100 hover:bg-white/10'
+                }`}
+              >
+                <PackageCheck className="w-4 h-4 text-[#2ECC8F]" />
+                <span>طلباتي وحسابي</span>
+              </Link>
+
+              <button
+                onClick={() => signOut({ callbackUrl: '/' })}
+                title="تسجيل الخروج"
+                className="p-2 rounded-xl text-red-400 hover:bg-red-500/10 transition-colors"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            </div>
+          ) : (
+            <Link
+              href="/login"
+              className={`py-2 px-4 rounded-xl border text-xs font-extrabold flex items-center gap-1.5 transition-colors ${
+                isScrolled
+                  ? 'border-[#0F9D58] text-[#0F9D58] hover:bg-[#0F9D58]/10'
+                  : 'border-[#2ECC8F] text-[#2ECC8F] hover:bg-[#2ECC8F]/10'
+              }`}
+            >
+              <User className="w-4 h-4" />
+              <span>تسجيل الدخول</span>
+            </Link>
+          )}
 
           <button
             onClick={() => onOpenPaymentModal()}

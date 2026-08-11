@@ -6,14 +6,17 @@ import { MessageSquare, Sparkles, ArrowLeft } from 'lucide-react';
 
 interface FloatingElementsProps {
   onOpenPaymentModal: () => void;
+  settings?: Record<string, string>;
 }
 
-export const FloatingElements: React.FC<FloatingElementsProps> = ({ onOpenPaymentModal }) => {
+export const FloatingElements: React.FC<FloatingElementsProps> = ({ onOpenPaymentModal, settings }) => {
+  const whatsappNum = settings?.whatsapp_number || SITE_CONFIG.whatsappNumber;
+
   return (
     <>
       {/* Floating WhatsApp Button (Fixed Bottom-Right) */}
       <a
-        href={`https://wa.me/${SITE_CONFIG.whatsappNumber}`}
+        href={`https://wa.me/${whatsappNum}`}
         target="_blank"
         rel="noopener noreferrer"
         className="fixed bottom-20 sm:bottom-8 right-5 z-40 p-3.5 rounded-full bg-[#25D366] text-white shadow-2xl hover:scale-110 active:scale-95 transition-transform flex items-center justify-center group"

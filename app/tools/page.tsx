@@ -1,6 +1,5 @@
 import { Metadata } from 'next';
-import { TOOLS_SEO } from '@/config/seo';
-import { SITE_CONFIG } from '@/config/site';
+import { getTools, getAllToolsSeo } from '@/lib/queries';
 
 export const metadata: Metadata = {
   title: 'جميع أدوات التسويق الإلكتروني | 12 برنامج تسويق احترافي | GROWIX',
@@ -23,15 +22,18 @@ export const metadata: Metadata = {
   },
 };
 
-export default function ToolsIndexPage() {
+export default async function ToolsIndexPage() {
+  const toolsList = await getTools();
+  const allSeo = await getAllToolsSeo();
+
   // JSON-LD ItemList schema for all tools
   const itemListSchema = {
     '@context': 'https://schema.org',
     '@type': 'ItemList',
     name: 'أدوات التسويق الإلكتروني من GROWIX',
     description: '12 أداة تسويقية احترافية لأتمتة التسويق وزيادة المبيعات',
-    numberOfItems: TOOLS_SEO.filter((t) => t.toolId !== 'course' && t.toolId !== 'data-egypt').length,
-    itemListElement: TOOLS_SEO.filter((t) => t.toolId !== 'course' && t.toolId !== 'data-egypt').map((tool, i) => ({
+    numberOfItems: allSeo.filter((t) => t.toolId !== 'course' && t.toolId !== 'data-egypt').length,
+    itemListElement: allSeo.filter((t) => t.toolId !== 'course' && t.toolId !== 'data-egypt').map((tool, i) => ({
       '@type': 'ListItem',
       position: i + 1,
       name: tool.schemaName,
@@ -50,8 +52,8 @@ export default function ToolsIndexPage() {
   };
 
   // Group tools by category
-  const toolsWithSlug = SITE_CONFIG.tools.map((tool) => {
-    const seo = TOOLS_SEO.find((s) => s.toolId === tool.id);
+  const toolsWithSlug = toolsList.map((tool) => {
+    const seo = allSeo.find((s) => s.toolId === tool.id);
     return { ...tool, slug: seo?.slug };
   });
 

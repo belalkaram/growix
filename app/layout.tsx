@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import { IBM_Plex_Sans_Arabic } from 'next/font/google';
 import { Suspense } from 'react';
 import { GlobalNavigationLoader } from '@/components/GlobalNavigationLoader';
+import { AnalyticsTracker } from '@/components/AnalyticsTracker';
+import { AuthProvider } from '@/components/AuthProvider';
 import './globals.css';
 
 const ibmPlexSansArabic = IBM_Plex_Sans_Arabic({
@@ -89,10 +91,13 @@ export default function RootLayout({
   return (
     <html lang="ar" dir="rtl" className={`${ibmPlexSansArabic.variable} font-sans`} suppressHydrationWarning>
       <body className={`${ibmPlexSansArabic.className} font-sans bg-[#F7F9FA] text-[#0B1220] antialiased selection:bg-[#2ECC8F]/30 selection:text-[#0B1220]`} suppressHydrationWarning>
-        <Suspense fallback={null}>
-          <GlobalNavigationLoader />
-        </Suspense>
-        {children}
+        <AuthProvider>
+          <Suspense fallback={null}>
+            <GlobalNavigationLoader />
+            <AnalyticsTracker />
+          </Suspense>
+          {children}
+        </AuthProvider>
       </body>
     </html>
   );
