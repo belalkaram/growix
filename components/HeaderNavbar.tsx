@@ -85,20 +85,6 @@ export const HeaderNavbar: React.FC<HeaderNavbarProps> = ({ onOpenPaymentModal, 
 
         {/* Left Side (In RTL): Desktop Action Buttons & Auth */}
         <div className="hidden sm:flex items-center gap-3">
-          <a
-            href={`https://wa.me/${SITE_CONFIG.whatsappNumber}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={`py-2 px-3 rounded-xl border transition-colors flex items-center gap-1.5 text-xs font-extrabold ${
-              isScrolled
-                ? 'border-gray-200 text-gray-700 hover:bg-gray-100'
-                : 'border-white/15 text-gray-200 hover:bg-white/10'
-            }`}
-          >
-            <MessageSquare className="w-3.5 h-3.5 text-[#2ECC8F]" />
-            <span>تواصل معنا</span>
-          </a>
-
           {session?.user ? (
             <div className="flex items-center gap-2">
               {session.user.role === 'admin' && (
@@ -150,17 +136,6 @@ export const HeaderNavbar: React.FC<HeaderNavbarProps> = ({ onOpenPaymentModal, 
             className="py-2.5 px-5 rounded-2xl bg-growix-gradient hover:bg-growix-gradient-hover text-white font-extrabold text-xs sm:text-sm flex items-center gap-2 shadow-md shadow-[#0F9D58]/20 transition-all hover:scale-105 active:scale-95"
           >
             <Sparkles className="w-4 h-4" />
-            <span>اشترك الآن</span>
-          </button>
-        </div>
-
-        {/* Mobile Quick Action Button (Visible on mobile header bar when sm:hidden) */}
-        <div className="flex sm:hidden items-center gap-2">
-          <button
-            onClick={() => onOpenPaymentModal()}
-            className="py-1.5 px-3 rounded-xl bg-growix-gradient text-white font-black text-xs flex items-center gap-1 shadow-md shadow-[#0F9D58]/20"
-          >
-            <Sparkles className="w-3.5 h-3.5" />
             <span>اشترك الآن</span>
           </button>
         </div>
@@ -251,16 +226,6 @@ export const HeaderNavbar: React.FC<HeaderNavbarProps> = ({ onOpenPaymentModal, 
                   <Sparkles className="w-4 h-4" />
                   <span>اشترك الآن</span>
                 </button>
-                
-                <a
-                  href={`https://wa.me/${SITE_CONFIG.whatsappNumber}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full py-3 px-5 rounded-2xl border border-white/20 text-white font-semibold text-xs flex items-center justify-center gap-2 hover:bg-white/5"
-                >
-                  <MessageSquare className="w-4 h-4 text-[#2ECC8F]" />
-                  <span>تواصل معنا</span>
-                </a>
               </div>
             </div>
           </motion.div>
