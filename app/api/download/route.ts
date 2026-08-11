@@ -46,8 +46,16 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    // 3. Generate temporary secure presigned download URL (valid for 5 mins)
-    const downloadUrl = await generatePresignedDownloadUrl(fileKey, 300);
+    // 3. Generate download URL (use R2 Custom Domain if configured, otherwise Public Dev URL or S3 Presigned URL)
+    let downloadUrl = '';
+    const customDomain = process.env.R2_CUSTOM_DOMAIN || process.env.NEXT_PUBLIC_R2_DEV_URL;
+
+    if (customDomain) {
+      const baseUrl = customDomain.replace(/\/$/, '');
+      downloadUrl = `${baseUrl}/${fileKey}`;
+    } else {
+      downloadUrl = await generatePresignedDownloadUrl(fileKey, 300);
+    }
 
     // If client requested JSON (e.g. fetch), return URL JSON
     const format = searchParams.get('format');
@@ -55,7 +63,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ success: true, downloadUrl });
     }
 
-    // Default: Redirect browser directly to R2 presigned download URL
+    // Default: Redirect browser directly to R2 download URL
     return NextResponse.redirect(downloadUrl);
   } catch (error: any) {
     console.error('Download route error:', error);

@@ -2,16 +2,42 @@
 
 import { db } from '@/db';
 import { packageFiles, orders } from '@/db/schema';
-import { eq, and, or, inArray, desc } from 'drizzle-orm';
+import { eq, and, or, sql, desc } from 'drizzle-orm';
 import { auth } from '@/lib/auth';
 import { revalidatePath } from 'next/cache';
 import { SITE_CONFIG } from '@/config/site';
+
+export async function ensurePackageFilesTableExists() {
+  try {
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS package_files (
+        id SERIAL PRIMARY KEY,
+        package_id VARCHAR(100) NOT NULL,
+        tool_id VARCHAR(100),
+        file_name VARCHAR(255) NOT NULL,
+        file_key VARCHAR(500) NOT NULL UNIQUE,
+        file_size TEXT,
+        file_type VARCHAR(50) DEFAULT 'zip' NOT NULL,
+        category VARCHAR(50) DEFAULT 'tool' NOT NULL,
+        description TEXT,
+        is_active BOOLEAN DEFAULT true NOT NULL,
+        sort_order INTEGER DEFAULT 0 NOT NULL,
+        created_at TIMESTAMP DEFAULT NOW() NOT NULL,
+        updated_at TIMESTAMP DEFAULT NOW() NOT NULL
+      );
+    `);
+  } catch (err) {
+    console.error('Error ensuring package_files table exists:', err);
+  }
+}
 
 export async function getUserDownloadableFilesAction(orderId: string) {
   const session = await auth();
   if (!session?.user?.id) {
     return { success: false, error: 'يجب تسجيل الدخول أولاً', files: [] };
   }
+
+  await ensurePackageFilesTableExists();
 
   try {
     const userOrders = await db
@@ -135,6 +161,8 @@ export async function getAllPackageFilesForAdminAction() {
     throw new Error('غير مصرح بالوصول');
   }
 
+  await ensurePackageFilesTableExists();
+
   return await db
     .select()
     .from(packageFiles)
@@ -248,3 +276,108 @@ export async function seedInitialDefaultFilesAction() {
     return { success: false, error: error.message };
   }
 }
+
+/**
+ * Scan live Cloudflare R2 bucket for actual uploaded files and update their exact file sizes & details in DB.
+ */
+export async function syncR2BucketObjectsAction() {
+  const session = await auth();
+  if (!session?.user || (session.user as { role?: string }).role !== 'admin') {
+    return { success: false, error: 'غير مصرح بالوصول' };
+  }
+
+  await ensurePackageFilesTableExists();
+
+  try {
+    const { listR2Objects } = await import('@/lib/r2');
+    const r2Objects = await listR2Objects();
+
+    if (!r2Objects || r2Objects.length === 0) {
+      return { success: false, error: 'لم يتم العثور على أي ملفات مرفوعة حالياً في Cloudflare R2 Bucket' };
+    }
+
+    let syncedCount = 0;
+
+    for (const item of r2Objects) {
+      if (!item.Key || item.Size === undefined) continue;
+
+      const fileKey = item.Key;
+      const bytes = item.Size;
+
+      // Format size
+      let formattedSize = '0 MB';
+      if (bytes >= 1024 * 1024 * 1024) {
+        formattedSize = `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
+      } else if (bytes >= 1024 * 1024) {
+        formattedSize = `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+      } else {
+        formattedSize = `${(bytes / 1024).toFixed(0)} KB`;
+      }
+
+      // Match with tools
+      const lowerKey = fileKey.toLowerCase();
+      const matchedTool = SITE_CONFIG.tools.find(
+        (t) => lowerKey.includes(t.id.toLowerCase()) || t.id.toLowerCase().includes(lowerKey.replace('.zip', ''))
+      );
+
+      let fileName = fileKey;
+      let toolId = matchedTool ? matchedTool.id : null;
+      let category = matchedTool ? 'tool' : lowerKey.includes('data') ? 'data' : lowerKey.includes('course') ? 'course' : 'tool';
+      let packageId = matchedTool ? 'bundle-vip' : 'all';
+      let description = matchedTool ? matchedTool.shortDesc : 'ملف تسويقي محمي على R2';
+
+      if (matchedTool) {
+        fileName = `${matchedTool.name} (ZIP الحقيقي)`;
+      } else if (lowerKey.includes('data') || lowerKey.includes('egypt')) {
+        fileName = 'هدية داتا مصر التسويقية الشاملة (ZIP الحقيقي)';
+      }
+
+      // Check if file record already exists in DB
+      const existing = await db
+        .select()
+        .from(packageFiles)
+        .where(eq(packageFiles.fileKey, fileKey))
+        .limit(1);
+
+      if (existing.length > 0) {
+        // Update size & details
+        await db
+          .update(packageFiles)
+          .set({
+            fileSize: formattedSize,
+            fileName: fileName,
+            toolId: toolId || existing[0].toolId,
+            updatedAt: new Date(),
+          })
+          .where(eq(packageFiles.fileKey, fileKey));
+      } else {
+        // Insert new record
+        await db.insert(packageFiles).values({
+          packageId: packageId,
+          toolId: toolId,
+          fileName: fileName,
+          fileKey: fileKey,
+          fileSize: formattedSize,
+          fileType: 'zip',
+          category: category,
+          description: description,
+          isActive: true,
+          sortOrder: matchedTool ? matchedTool.number : 99,
+        });
+      }
+
+      syncedCount++;
+    }
+
+    revalidatePath('/admin/files');
+    revalidatePath('/my-orders');
+    return {
+      success: true,
+      message: `تم فحص Cloudflare R2 ومزامنة ${syncedCount} ملف بأحجامهم الحقيقية بنجاح!`,
+    };
+  } catch (error: any) {
+    console.error('Error syncing R2 bucket objects:', error);
+    return { success: false, error: error.message || 'حدث خطأ أثناء الاتصال بـ Cloudflare R2' };
+  }
+}
+

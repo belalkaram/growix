@@ -80,6 +80,22 @@ export const AdminFilesClient: React.FC<AdminFilesClientProps> = ({ filesList })
     }
   };
 
+  const handleSyncR2 = async () => {
+    setLoading(true);
+    setMsg(null);
+
+    const { syncR2BucketObjectsAction } = await import('@/lib/actions/files');
+    const res = await syncR2BucketObjectsAction();
+    setLoading(false);
+
+    if (res.success) {
+      setMsg({ type: 'success', text: res.message || 'تم جلب وتأكيد أحجام الملفات الحقيقية من R2!' });
+      router.refresh();
+    } else {
+      setMsg({ type: 'error', text: res.error || 'فشل الفحص' });
+    }
+  };
+
   return (
     <div className="space-y-8">
       {/* Page Header */}
@@ -92,7 +108,16 @@ export const AdminFilesClient: React.FC<AdminFilesClientProps> = ({ filesList })
           <p className="text-xs text-gray-400">ربط وإدارة ملفات الـ ZIP الخاصة بالكورس والأدوات الـ 12 والداتا المرفوعة على R2</p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            onClick={handleSyncR2}
+            disabled={loading}
+            className="py-2.5 px-4 rounded-xl bg-[#0F9D58]/20 text-[#2ECC8F] border border-[#0F9D58]/40 text-xs font-bold flex items-center gap-2 hover:bg-[#0F9D58]/30 transition-colors"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            <span>مزامنة ملفات R2 الحقيقية</span>
+          </button>
+
           {filesList.length === 0 && (
             <button
               onClick={handleSeedDefaults}
@@ -100,7 +125,7 @@ export const AdminFilesClient: React.FC<AdminFilesClientProps> = ({ filesList })
               className="py-2.5 px-4 rounded-xl bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-bold flex items-center gap-1.5 hover:bg-amber-500/30 transition-colors"
             >
               <Sparkles className="w-4 h-4" />
-              <span>إنشاء السجلات الأولية تلقائياً</span>
+              <span>إنشاء السجلات الأولية</span>
             </button>
           )}
 
