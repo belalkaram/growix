@@ -172,6 +172,50 @@ export const HeaderNavbar: React.FC<HeaderNavbarProps> = ({ onOpenPaymentModal, 
               </nav>
 
               <div className="pt-3 flex flex-col gap-3">
+                {session?.user ? (
+                  <div className="flex flex-col gap-2">
+                    {session.user.role === 'admin' && (
+                      <Link
+                        href="/admin"
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="w-full py-3 px-4 rounded-xl bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-black flex items-center justify-center gap-2"
+                      >
+                        <Shield className="w-4 h-4" />
+                        <span>لوحة الأدمن</span>
+                      </Link>
+                    )}
+
+                    <Link
+                      href="/my-orders"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="w-full py-3 px-4 rounded-xl bg-white/10 border border-white/15 text-white text-xs font-extrabold flex items-center justify-center gap-2"
+                    >
+                      <PackageCheck className="w-4 h-4 text-[#2ECC8F]" />
+                      <span>طلباتي وحسابي</span>
+                    </Link>
+
+                    <button
+                      onClick={() => {
+                        setMobileMenuOpen(false);
+                        signOut({ callbackUrl: '/' });
+                      }}
+                      className="w-full py-2.5 px-4 rounded-xl bg-red-500/10 text-red-400 border border-red-500/20 text-xs font-extrabold flex items-center justify-center gap-2"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      <span>تسجيل الخروج</span>
+                    </button>
+                  </div>
+                ) : (
+                  <Link
+                    href="/login"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="w-full py-3 px-4 rounded-xl border border-[#2ECC8F] text-[#2ECC8F] text-xs font-extrabold flex items-center justify-center gap-2 hover:bg-[#2ECC8F]/10"
+                  >
+                    <User className="w-4 h-4" />
+                    <span>تسجيل الدخول</span>
+                  </Link>
+                )}
+
                 <button
                   onClick={() => {
                     setMobileMenuOpen(false);
@@ -180,7 +224,7 @@ export const HeaderNavbar: React.FC<HeaderNavbarProps> = ({ onOpenPaymentModal, 
                   className="w-full py-3.5 px-5 rounded-2xl bg-growix-gradient text-white font-extrabold text-sm flex items-center justify-center gap-2 shadow-lg shadow-[#0F9D58]/30 active:scale-98 transition-transform"
                 >
                   <Sparkles className="w-4 h-4" />
-                  <span>اشترك في GROWIX الآن</span>
+                  <span>اشترك الآن</span>
                 </button>
                 
                 <a
@@ -190,7 +234,7 @@ export const HeaderNavbar: React.FC<HeaderNavbarProps> = ({ onOpenPaymentModal, 
                   className="w-full py-3 px-5 rounded-2xl border border-white/20 text-white font-semibold text-xs flex items-center justify-center gap-2 hover:bg-white/5"
                 >
                   <MessageSquare className="w-4 h-4 text-[#2ECC8F]" />
-                  <span>استفسار عبر الواتساب</span>
+                  <span>تواصل معنا</span>
                 </a>
               </div>
             </div>
