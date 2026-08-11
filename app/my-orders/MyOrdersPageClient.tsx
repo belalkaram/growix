@@ -1,11 +1,12 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { HeaderNavbar } from '@/components/HeaderNavbar';
 import { Footer } from '@/components/Footer';
-import { PackageCheck, Clock, CheckCircle2, XCircle, ArrowRight } from 'lucide-react';
+import { SecureVideoModal } from '@/components/SecureVideoModal';
+import { PackageCheck, Clock, CheckCircle2, XCircle, ArrowRight, Play } from 'lucide-react';
 
 interface MyOrdersPageClientProps {
   orders: any[];
@@ -14,6 +15,7 @@ interface MyOrdersPageClientProps {
 
 export const MyOrdersPageClient: React.FC<MyOrdersPageClientProps> = ({ orders, userSession }) => {
   const router = useRouter();
+  const [activeVideo, setActiveVideo] = useState<{ title: string; videoUrl: string; description?: string } | null>(null);
 
   const handleNavigateToCheckout = () => {
     router.push('/#pricing');
@@ -209,14 +211,13 @@ export const MyOrdersPageClient: React.FC<MyOrdersPageClientProps> = ({ orders, 
                                   )}
                                 </div>
 
-                                <a
-                                  href={v.videoUrl}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="py-2 px-4 rounded-xl bg-[#2ECC8F] hover:bg-[#25B57D] text-[#0B1220] text-xs font-extrabold flex items-center justify-center gap-2 shrink-0 shadow-sm transition-transform active:scale-95"
+                                <button
+                                  type="button"
+                                  onClick={() => setActiveVideo({ title: v.title, videoUrl: v.videoUrl, description: v.description })}
+                                  className="py-2 px-4 rounded-xl bg-[#2ECC8F] hover:bg-[#25B57D] text-[#0B1220] text-xs font-extrabold flex items-center justify-center gap-2 shrink-0 shadow-sm transition-transform active:scale-95 cursor-pointer"
                                 >
-                                  <span>▶️ مشاهدة الشرح</span>
-                                </a>
+                                  <span>▶️ مشاهدة الشرح المباشر</span>
+                                </button>
                               </div>
                             ))}
                           </div>
@@ -237,6 +238,17 @@ export const MyOrdersPageClient: React.FC<MyOrdersPageClientProps> = ({ orders, 
           </div>
         )}
       </main>
+
+      {/* Private Secure Video Modal */}
+      {activeVideo && (
+        <SecureVideoModal
+          isOpen={!!activeVideo}
+          onClose={() => setActiveVideo(null)}
+          title={activeVideo.title}
+          videoUrl={activeVideo.videoUrl}
+          description={activeVideo.description}
+        />
+      )}
 
       <Footer />
     </div>
