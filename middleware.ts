@@ -14,7 +14,8 @@ export function middleware(req: NextRequest) {
       req.cookies.get('__Secure-next-auth.session-token')?.value;
 
     if (!token) {
-      const loginUrl = new URL('/login', req.url);
+      const loginUrl = req.nextUrl.clone();
+      loginUrl.pathname = '/login';
       loginUrl.searchParams.set('callbackUrl', pathname);
       return NextResponse.redirect(loginUrl);
     }
