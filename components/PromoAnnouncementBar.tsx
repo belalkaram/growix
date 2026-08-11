@@ -91,7 +91,7 @@ export const PromoAnnouncementBar: React.FC = () => {
           </div>
 
           {/* Second Half (Identical duplicate for seamless 100% -> 0% loop) */}
-          <div className="flex items-center shrink-0 dir-rtl" dir="rtl" aria-hidden="true">
+          <div className="flex items-center shrink-0 dir-rtl" dir="rtl" aria-hidden={true}>
             {renderItemContent('b1', true)}
             {renderItemContent('b2', true)}
             {renderItemContent('b3', true)}
