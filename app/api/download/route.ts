@@ -38,10 +38,28 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'الطلب غير مفعّل بعد من قِبل الأدمن' }, { status: 403 });
     }
 
-    // 2. Validate file entitlement
+    // 2. Validate file entitlement via DB (NOT string matching)
     if (order.packageId === 'single-tool' && order.toolId) {
-      const isAllowedToolFile = fileKey.includes(order.toolId) || fileKey.includes('egypt-marketing-data') || fileKey.includes('data');
-      if (!isAllowedToolFile) {
+      // Look up the file record in DB to check its toolId
+      const { packageFiles: pf } = await import('@/db/schema');
+      const { eq: eqOp } = await import('drizzle-orm');
+      const fileRecord = await db
+        .select()
+        .from(pf)
+        .where(eqOp(pf.fileKey, fileKey))
+        .limit(1);
+
+      if (fileRecord.length === 0) {
+        return NextResponse.json({ error: 'الملف غير موجود' }, { status: 404 });
+      }
+
+      const isAllowed =
+        fileRecord[0].toolId === order.toolId ||
+        fileRecord[0].category === 'data' ||
+        fileRecord[0].category === 'bonus' ||
+        fileRecord[0].packageId === 'all';
+
+      if (!isAllowed) {
         return NextResponse.json({ error: 'هذا الملف غير متاح في باقة البرنامج المختار' }, { status: 403 });
       }
     }
