@@ -145,8 +145,14 @@ export const MyOrdersPageClient: React.FC<MyOrdersPageClientProps> = ({ orders, 
                                 className="p-3.5 bg-gray-50 border border-gray-200 hover:border-[#0F9D58]/40 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-colors"
                               >
                                 <div className="flex items-center gap-3">
-                                  <div className="w-10 h-10 rounded-xl bg-[#0F9D58]/10 border border-[#0F9D58]/20 flex items-center justify-center text-[#0F9D58] shrink-0 font-bold text-xs">
-                                    ZIP
+                                  <div className={`w-10 h-10 rounded-xl border flex items-center justify-center shrink-0 font-bold text-[10px] ${
+                                    f.fileType === 'apk'
+                                      ? 'bg-blue-500/10 border-blue-500/20 text-blue-600'
+                                      : f.fileType === 'doc'
+                                      ? 'bg-amber-500/10 border-amber-500/20 text-amber-600'
+                                      : 'bg-[#0F9D58]/10 border-[#0F9D58]/20 text-[#0F9D58]'
+                                  }`}>
+                                    {f.fileType === 'apk' ? 'APK' : f.fileType === 'doc' ? 'DOC' : 'ZIP'}
                                   </div>
                                   <div>
                                     <span className="font-black text-xs text-[#0B1220] block">{f.fileName}</span>
@@ -155,6 +161,8 @@ export const MyOrdersPageClient: React.FC<MyOrdersPageClientProps> = ({ orders, 
                                         ? '📊 داتا مصر التسويقية (هدية)'
                                         : f.category === 'course'
                                         ? '🎓 ملف تعليمي'
+                                        : f.fileType === 'apk'
+                                        ? '📱 تطبيق أندرويد'
                                         : '🛠️ برنامج وأداة تسويق'}
                                       {f.fileSize ? ` • الحجم: ${f.fileSize}` : ''}
                                     </span>
@@ -167,7 +175,7 @@ export const MyOrdersPageClient: React.FC<MyOrdersPageClientProps> = ({ orders, 
                                   rel="noopener noreferrer"
                                   className="py-2 px-4 rounded-xl bg-[#0F9D58] hover:bg-[#0D8B4E] text-white text-xs font-black flex items-center justify-center gap-2 shadow-sm shadow-[#0F9D58]/20 transition-transform active:scale-95 shrink-0"
                                 >
-                                  <span>⬇️ تحميل (ZIP)</span>
+                                  <span>⬇️ تحميل ({f.fileType === 'apk' ? 'APK' : f.fileType === 'doc' ? 'DOC' : 'ZIP'})</span>
                                 </a>
                               </div>
                             ))}
@@ -176,6 +184,42 @@ export const MyOrdersPageClient: React.FC<MyOrdersPageClientProps> = ({ orders, 
                       ) : (
                         <div className="p-4 bg-gray-50 rounded-2xl text-xs text-gray-600 font-bold text-center">
                           تواصل مع الدعم الفني عبر الواتساب للحصول على الروابط المباشرة.
+                        </div>
+                      )}
+
+                      {/* Tutorial Videos Section */}
+                      {ord.videos && ord.videos.length > 0 && (
+                        <div className="space-y-2 pt-3 border-t border-gray-100">
+                          <h4 className="text-xs font-black text-[#0B1220] flex items-center gap-1.5">
+                            <span>🎥 فيديوهات الشرح والتدريب المتاحة لك ({ord.videos.length} فيديو):</span>
+                          </h4>
+
+                          <div className="grid grid-cols-1 gap-2.5">
+                            {ord.videos.map((v: any) => (
+                              <div
+                                key={v.id}
+                                className="p-3.5 bg-slate-900 border border-slate-800 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-white"
+                              >
+                                <div className="space-y-1">
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-bold text-xs text-white">{v.title}</span>
+                                  </div>
+                                  {v.description && (
+                                    <p className="text-[11px] text-gray-400">{v.description}</p>
+                                  )}
+                                </div>
+
+                                <a
+                                  href={v.videoUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="py-2 px-4 rounded-xl bg-[#2ECC8F] hover:bg-[#25B57D] text-[#0B1220] text-xs font-extrabold flex items-center justify-center gap-2 shrink-0 shadow-sm transition-transform active:scale-95"
+                                >
+                                  <span>▶️ مشاهدة الشرح</span>
+                                </a>
+                              </div>
+                            ))}
+                          </div>
                         </div>
                       )}
                     </div>

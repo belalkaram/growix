@@ -57,10 +57,10 @@ export const PROMO_BAR_CONFIG = {
   enabled: true,
   discount: '75%',
   customerLimit: '100 عميل',
-  toolCount: '12 برنامجًا',
+  toolCount: '11 برنامجًا',
   price: '300 جنيه فقط',
   textPart1: '🔥 خصم 75% لأول 100 عميل فقط — الحق بسرعة!',
-  textPart2: 'احصل على 12 برنامجًا بسعر 300 جنيه فقط.',
+  textPart2: 'احصل على 11 برنامجًا بسعر 300 جنيه فقط.',
   badgeText: 'عرض لفترة محدودة',
   animationDurationSeconds: 22,
 };
@@ -101,7 +101,7 @@ export const SITE_CONFIG = {
   // Trust Statistics
   stats: [
     { value: '+5,000', label: 'طالب ومسوق ناجح' },
-    { value: '12', label: 'أداة وتسويق تلقائي' },
+    { value: '11', label: 'أداة وتسويق تلقائي' },
     { value: '100%', label: 'شرح فيديو + دعم فني' },
     { value: '< 60 دقيقة', label: 'تفعيل وتدريب فوري' },
   ],
@@ -257,21 +257,6 @@ export const SITE_CONFIG = {
         'تصدير الداتا المستخرجة إلى ملفات Excel مرتبة وجاهزة للاستخدام'
       ],
       iconName: 'database'
-    },
-    {
-      id: 'ai-video-gen',
-      number: 11,
-      name: 'أداة توليد فيديو بالذكاء الاصطناعي من الصور',
-      category: 'ai',
-      badge: 'تكنولوجيا AI',
-      shortDesc: 'تحويل الصور الثابتة إلى فيديوهات ناطقة ومتحركة مبهرة.',
-      features: [
-        'تحويل الصور الثابتة إلى فيديوهات احترافية باستخدام الذكاء الاصطناعي',
-        'تحريك الشخصيات وإضافة الأصوات والتعليق الصوتي',
-        'صناعة إعلانات مبتكرة بدون الحاجة لتصوير أو معدات معقدة',
-        'توفير آلاف الجنيهات في إنتاج المحتوى المرئي'
-      ],
-      iconName: 'wand2'
     },
     {
       id: 'duolingo-unlocked',

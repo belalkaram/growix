@@ -34,6 +34,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({ userEmail }) => {
     { label: 'اللوحة الرئيسية', href: '/admin', icon: LayoutDashboard },
     { label: 'طلبات الاشتراك والتحويلات', href: '/admin/orders', icon: PackageCheck },
     { label: 'ملفات الباقات (R2)', href: '/admin/files', icon: FolderDown },
+    { label: 'فيديوهات الشرح', href: '/admin/videos', icon: Wrench },
     { label: 'الباقات والأسعار', href: '/admin/packages', icon: Package },
     { label: 'الـ 12 أداة', href: '/admin/tools', icon: Wrench },
     { label: 'المستخدمون', href: '/admin/users', icon: Users },

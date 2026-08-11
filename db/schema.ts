@@ -152,4 +152,15 @@ export const packageFiles = pgTable('package_files', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
-
+// 11. Tool Videos Table (Tutorial Videos for My-Orders Page)
+export const toolVideos = pgTable('tool_videos', {
+  id: serial('id').primaryKey(),
+  toolId: varchar('tool_id', { length: 100 }), // null = general/course video, specific = e.g. 'facebook-bot'
+  title: varchar('title', { length: 255 }).notNull(),
+  videoUrl: text('video_url').notNull(), // YouTube, Vimeo, or direct link
+  description: text('description'),
+  isActive: boolean('is_active').default(true).notNull(),
+  sortOrder: integer('sort_order').default(0).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
