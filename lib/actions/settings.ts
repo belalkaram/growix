@@ -29,6 +29,8 @@ export async function updateSiteSettingsAction(settingsMap: Record<string, strin
     }
 
     revalidatePath('/');
+    revalidatePath('/admin/settings');
+    revalidatePath('/tools');
     return { success: true };
   } catch (error) {
     console.error('Update settings error:', error);

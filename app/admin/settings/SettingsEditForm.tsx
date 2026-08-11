@@ -1,10 +1,12 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { updateSiteSettingsAction } from '@/lib/actions/settings';
 import { Save, CheckCircle2, AlertCircle, Phone, Send, Mail, Clock, FileText, Wrench, ShieldAlert } from 'lucide-react';
 
 export const SettingsEditForm: React.FC<{ initialSettings: Record<string, string> }> = ({ initialSettings }) => {
+  const router = useRouter();
   const [maintenanceMode, setMaintenanceMode] = useState(initialSettings.maintenance_mode === 'true');
   const [maintenanceMessage, setMaintenanceMessage] = useState(
     initialSettings.maintenance_message || 'الموقع حالياً قيد الصيانة والتحديثات الدورية لتوفير أفضل تجربة لكم. سنعود للعمل قريباً جداً!'
@@ -41,6 +43,7 @@ export const SettingsEditForm: React.FC<{ initialSettings: Record<string, string
 
     if (res.success) {
       setMessage({ type: 'success', text: 'تم تحديث إعدادات الموقع وتفعيل خيارات وضع الصيانة فوراً!' });
+      router.refresh();
     } else {
       setMessage({ type: 'error', text: res.error || 'حدث خطأ أثناء الحفظ' });
     }

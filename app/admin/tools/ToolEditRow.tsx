@@ -1,10 +1,12 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { updateToolAction } from '@/lib/actions/tools';
-import { Save, CheckCircle2, AlertCircle, Edit2, ChevronDown, ChevronUp, Plus, Trash2 } from 'lucide-react';
+import { Save, CheckCircle2, AlertCircle, Edit2, ChevronDown, ChevronUp, Plus, Trash2, X } from 'lucide-react';
 
 export const ToolEditRow: React.FC<{ tool: any }> = ({ tool }) => {
+  const router = useRouter();
   const [isExpanded, setIsExpanded] = useState(false);
   const [name, setName] = useState(tool.name);
   const [badge, setBadge] = useState(tool.badge || '');
@@ -54,13 +56,16 @@ export const ToolEditRow: React.FC<{ tool: any }> = ({ tool }) => {
 
     if (res.success) {
       setMessage({ type: 'success', text: 'تم حفظ وتحديث محتوى الأداة ومميزاتها بنجاح في الموقع!' });
+      router.refresh();
     } else {
       setMessage({ type: 'error', text: res.error || 'حدث خطأ أثناء الحفظ' });
     }
   };
 
   return (
-    <div className="p-4 sm:p-5 space-y-3">
+    <div className={`p-4 sm:p-5 space-y-4 transition-all ${
+      isExpanded ? 'bg-emerald-950/20 border-l-4 border-l-[#2ECC8F]' : ''
+    }`}>
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <span className="text-xs font-mono font-bold text-gray-400 bg-white/5 px-2.5 py-1 rounded-lg">
@@ -82,11 +87,23 @@ export const ToolEditRow: React.FC<{ tool: any }> = ({ tool }) => {
           <button
             type="button"
             onClick={() => setIsExpanded(!isExpanded)}
-            className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-xs font-bold text-gray-300 flex items-center gap-1 transition-colors"
+            className={`py-2 px-3.5 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition-all shadow-md cursor-pointer ${
+              isExpanded
+                ? 'bg-[#0F9D58] text-white ring-2 ring-[#2ECC8F]/50'
+                : 'bg-white/10 text-white hover:bg-white/20'
+            }`}
           >
-            <Edit2 className="w-3.5 h-3.5" />
-            <span>تعديل المحتوى</span>
-            {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+            {isExpanded ? (
+              <>
+                <X className="w-3.5 h-3.5" />
+                <span>إغلاق التعديل</span>
+              </>
+            ) : (
+              <>
+                <Edit2 className="w-3.5 h-3.5 text-[#2ECC8F]" />
+                <span>تعديل المحتوى</span>
+              </>
+            )}
           </button>
         </div>
       </div>
