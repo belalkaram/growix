@@ -136,3 +136,20 @@ export const orders = pgTable('orders', {
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
 
+// 10. Package Files Table (Cloudflare R2 Files Mapping)
+export const packageFiles = pgTable('package_files', {
+  id: serial('id').primaryKey(),
+  packageId: varchar('package_id', { length: 100 }).notNull(), // 'bundle-vip' | 'single-tool' | 'all'
+  toolId: varchar('tool_id', { length: 100 }), // null for general files or specific tool ID e.g. 'facebook-bot'
+  fileName: varchar('file_name', { length: 255 }).notNull(),
+  fileKey: varchar('file_key', { length: 500 }).notNull().unique(), // R2 object key
+  fileSize: text('file_size'), // e.g. "45 MB"
+  fileType: varchar('file_type', { length: 50 }).default('zip').notNull(),
+  category: varchar('category', { length: 50 }).default('tool').notNull(), // 'tool' | 'course' | 'data' | 'bonus'
+  description: text('description'),
+  isActive: boolean('is_active').default(true).notNull(),
+  sortOrder: integer('sort_order').default(0).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+

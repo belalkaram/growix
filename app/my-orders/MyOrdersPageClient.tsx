@@ -120,9 +120,64 @@ export const MyOrdersPageClient: React.FC<MyOrdersPageClientProps> = ({ orders, 
                   </div>
 
                   {isApproved && (
-                    <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs leading-relaxed space-y-2">
-                      <p className="font-bold">🎉 مبروك! حسابك مفعل الآن بالكامل.</p>
-                      <p>تواصل مع فريق الدعم الفني عبر الواتساب للاستلام الفوري لرابط الكورس وماتريال الأدوات الـ 12 مع السيريال والشرح.</p>
+                    <div className="space-y-4 pt-2">
+                      <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-900 text-xs leading-relaxed space-y-1">
+                        <p className="font-extrabold text-[#0F9D58] text-sm flex items-center gap-2">
+                          <CheckCircle2 className="w-5 h-5 text-[#0F9D58]" />
+                          <span>🎉 مبروك! حسابك مفعل بالكامل. يمكنك تحميل ملفاتك المتاحة مباشرة أدناه:</span>
+                        </p>
+                        <p className="text-gray-700 font-medium">
+                          جميع الملفات مرفوعة بأمان على Cloudflare R2 وبصيغة ZIP جاهزة للتحميل الفوري.
+                        </p>
+                      </div>
+
+                      {/* Downloadable Files List */}
+                      {ord.files && ord.files.length > 0 ? (
+                        <div className="space-y-2">
+                          <h4 className="text-xs font-black text-[#0B1220] flex items-center gap-1.5 pt-1">
+                            <span>📁 ملفات التحميل الخاصة بطلبك ({ord.files.length} ملف):</span>
+                          </h4>
+
+                          <div className="grid grid-cols-1 gap-2.5">
+                            {ord.files.map((f: any) => (
+                              <div
+                                key={f.id || f.fileKey}
+                                className="p-3.5 bg-gray-50 border border-gray-200 hover:border-[#0F9D58]/40 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-colors"
+                              >
+                                <div className="flex items-center gap-3">
+                                  <div className="w-10 h-10 rounded-xl bg-[#0F9D58]/10 border border-[#0F9D58]/20 flex items-center justify-center text-[#0F9D58] shrink-0 font-bold text-xs">
+                                    ZIP
+                                  </div>
+                                  <div>
+                                    <span className="font-black text-xs text-[#0B1220] block">{f.fileName}</span>
+                                    <span className="text-[10px] text-gray-500 block mt-0.5">
+                                      {f.category === 'data'
+                                        ? '📊 داتا مصر التسويقية (هدية)'
+                                        : f.category === 'course'
+                                        ? '🎓 ملف تعليمي'
+                                        : '🛠️ برنامج وأداة تسويق'}
+                                      {f.fileSize ? ` • الحجم: ${f.fileSize}` : ''}
+                                    </span>
+                                  </div>
+                                </div>
+
+                                <a
+                                  href={`/api/download?orderId=${ord.id}&fileKey=${encodeURIComponent(f.fileKey)}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="py-2 px-4 rounded-xl bg-[#0F9D58] hover:bg-[#0D8B4E] text-white text-xs font-black flex items-center justify-center gap-2 shadow-sm shadow-[#0F9D58]/20 transition-transform active:scale-95 shrink-0"
+                                >
+                                  <span>⬇️ تحميل (ZIP)</span>
+                                </a>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="p-4 bg-gray-50 rounded-2xl text-xs text-gray-600 font-bold text-center">
+                          تواصل مع الدعم الفني عبر الواتساب للحصول على الروابط المباشرة.
+                        </div>
+                      )}
                     </div>
                   )}
 

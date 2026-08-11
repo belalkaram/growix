@@ -2,6 +2,7 @@ import React from 'react';
 import { auth } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import { getUserOrders } from '@/lib/actions/orders';
+import { getUserDownloadableFilesAction } from '@/lib/actions/files';
 import { MyOrdersPageClient } from './MyOrdersPageClient';
 
 export default async function MyOrdersPage() {
@@ -11,7 +12,20 @@ export default async function MyOrdersPage() {
     redirect('/login?callbackUrl=/my-orders');
   }
 
-  const orders = await getUserOrders();
+  const ordersList = await getUserOrders();
+
+  const ordersWithFiles = await Promise.all(
+    ordersList.map(async (ord) => {
+      if (ord.status === 'approved') {
+        const filesRes = await getUserDownloadableFilesAction(ord.id);
+        return {
+          ...ord,
+          files: filesRes.files || [],
+        };
+      }
+      return { ...ord, files: [] };
+    })
+  );
 
   const userSession = {
     user: {
@@ -22,5 +36,5 @@ export default async function MyOrdersPage() {
     },
   };
 
-  return <MyOrdersPageClient orders={orders} userSession={userSession} />;
+  return <MyOrdersPageClient orders={ordersWithFiles} userSession={userSession} />;
 }
