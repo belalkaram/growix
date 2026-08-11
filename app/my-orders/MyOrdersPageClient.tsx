@@ -6,7 +6,23 @@ import { useRouter } from 'next/navigation';
 import { HeaderNavbar } from '@/components/HeaderNavbar';
 import { Footer } from '@/components/Footer';
 import { SecureVideoModal } from '@/components/SecureVideoModal';
-import { PackageCheck, Clock, CheckCircle2, XCircle, ArrowRight, Play } from 'lucide-react';
+import { 
+  PackageCheck, 
+  Clock, 
+  CheckCircle2, 
+  XCircle, 
+  ArrowRight, 
+  Play, 
+  Crown, 
+  Wrench, 
+  Sparkles, 
+  FolderDown, 
+  Database, 
+  GraduationCap, 
+  Smartphone, 
+  Download, 
+  Video 
+} from 'lucide-react';
 
 interface MyOrdersPageClientProps {
   orders: any[];
@@ -51,7 +67,7 @@ export const MyOrdersPageClient: React.FC<MyOrdersPageClientProps> = ({ orders, 
             <PackageCheck className="w-12 h-12 text-gray-300 mx-auto" />
             <h2 className="text-lg font-bold text-gray-800">ليس لديك أي طلبات اشتراك بعد</h2>
             <p className="text-xs text-gray-500 max-w-md mx-auto">
-              تصفح الباقات المتاحة واشترك للحصول على الكورس الشامل وأدوات التسويق الـ 12.
+              تصفح الباقات المتاحة واشترك للحصول على الكورس الشامل وأدوات التسويق.
             </p>
             <Link
               href="/#pricing"
@@ -75,8 +91,18 @@ export const MyOrdersPageClient: React.FC<MyOrdersPageClientProps> = ({ orders, 
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-gray-100">
                     <div>
                       <span className="text-[10px] font-mono text-gray-400 block mb-0.5">رقم الطلب: {ord.id}</span>
-                      <h3 className="text-base font-black text-[#0B1220]">
-                        {ord.packageId === 'bundle-vip' ? '👑 الباقة الكاملة (الكورس + الـ 12 أداة + الداتا)' : '🛠️ باقة برنامج واحد'}
+                      <h3 className="text-base font-black text-[#0B1220] flex items-center gap-2">
+                        {ord.packageId === 'bundle-vip' ? (
+                          <>
+                            <Crown className="w-5 h-5 text-amber-500 shrink-0" />
+                            <span>الباقة الكاملة (الكورس + الأدوات + الداتا)</span>
+                          </>
+                        ) : (
+                          <>
+                            <Wrench className="w-5 h-5 text-[#0F9D58] shrink-0" />
+                            <span>باقة برنامج واحد</span>
+                          </>
+                        )}
                       </h3>
                     </div>
 
@@ -84,19 +110,19 @@ export const MyOrdersPageClient: React.FC<MyOrdersPageClientProps> = ({ orders, 
                       {isPending && (
                         <span className="px-3 py-1.5 rounded-full text-xs font-extrabold bg-amber-500/10 text-amber-600 border border-amber-500/30 flex items-center gap-1.5">
                           <Clock className="w-4 h-4" />
-                          <span>جاري مراجعة التحويل وتفعيل الحساب 🟡</span>
+                          <span>جاري مراجعة التحويل وتفعيل الحساب</span>
                         </span>
                       )}
                       {isApproved && (
                         <span className="px-3 py-1.5 rounded-full text-xs font-extrabold bg-emerald-500/10 text-emerald-600 border border-emerald-500/30 flex items-center gap-1.5">
                           <CheckCircle2 className="w-4 h-4" />
-                          <span>تم قبول التحويل وتفعيل الحساب بنجاح! 🟢</span>
+                          <span>تم قبول التحويل وتفعيل الحساب بنجاح!</span>
                         </span>
                       )}
                       {isRejected && (
                         <span className="px-3 py-1.5 rounded-full text-xs font-extrabold bg-red-500/10 text-red-600 border border-red-500/30 flex items-center gap-1.5">
                           <XCircle className="w-4 h-4" />
-                          <span>الطلب مرفوض 🔴</span>
+                          <span>الطلب مرفوض</span>
                         </span>
                       )}
                     </div>
@@ -125,11 +151,11 @@ export const MyOrdersPageClient: React.FC<MyOrdersPageClientProps> = ({ orders, 
                     <div className="space-y-4 pt-2">
                       <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-900 text-xs leading-relaxed space-y-1">
                         <p className="font-extrabold text-[#0F9D58] text-sm flex items-center gap-2">
-                          <CheckCircle2 className="w-5 h-5 text-[#0F9D58]" />
-                          <span>🎉 مبروك! حسابك مفعل بالكامل. يمكنك تحميل ملفاتك المتاحة مباشرة أدناه:</span>
+                          <Sparkles className="w-5 h-5 text-[#0F9D58] shrink-0" />
+                          <span>تهانينا! حسابك مفعل بالكامل. يمكنك تحميل ملفاتك المتاحة مباشرة أدناه:</span>
                         </p>
                         <p className="text-gray-700 font-medium">
-                          جميع الملفات مرفوعة بأمان على Cloudflare R2 وبصيغة ZIP جاهزة للتحميل الفوري.
+                          جميع الملفات مرفوعة بأمان على Cloudflare R2 وبصيغة جاهزة للتحميل الفوري.
                         </p>
                       </div>
 
@@ -137,7 +163,8 @@ export const MyOrdersPageClient: React.FC<MyOrdersPageClientProps> = ({ orders, 
                       {ord.files && ord.files.length > 0 ? (
                         <div className="space-y-2">
                           <h4 className="text-xs font-black text-[#0B1220] flex items-center gap-1.5 pt-1">
-                            <span>📁 ملفات التحميل الخاصة بطلبك ({ord.files.length} ملف):</span>
+                            <FolderDown className="w-4 h-4 text-[#0F9D58]" />
+                            <span>ملفات التحميل الخاصة بطلبك ({ord.files.length} ملف):</span>
                           </h4>
 
                           <div className="grid grid-cols-1 gap-2.5">
@@ -158,14 +185,28 @@ export const MyOrdersPageClient: React.FC<MyOrdersPageClientProps> = ({ orders, 
                                   </div>
                                   <div>
                                     <span className="font-black text-xs text-[#0B1220] block">{f.fileName}</span>
-                                    <span className="text-[10px] text-gray-500 block mt-0.5">
-                                      {f.category === 'data'
-                                        ? '📊 داتا مصر التسويقية (هدية)'
-                                        : f.category === 'course'
-                                        ? '🎓 ملف تعليمي'
-                                        : f.fileType === 'apk'
-                                        ? '📱 تطبيق أندرويد'
-                                        : '🛠️ برنامج وأداة تسويق'}
+                                    <span className="text-[10px] text-gray-500 block mt-0.5 flex items-center gap-1">
+                                      {f.category === 'data' ? (
+                                        <>
+                                          <Database className="w-3 h-3 text-amber-500 shrink-0" />
+                                          <span>داتا مصر التسويقية (هدية)</span>
+                                        </>
+                                      ) : f.category === 'course' ? (
+                                        <>
+                                          <GraduationCap className="w-3 h-3 text-blue-500 shrink-0" />
+                                          <span>ملف تعليمي</span>
+                                        </>
+                                      ) : f.fileType === 'apk' ? (
+                                        <>
+                                          <Smartphone className="w-3 h-3 text-emerald-500 shrink-0" />
+                                          <span>تطبيق أندرويد</span>
+                                        </>
+                                      ) : (
+                                        <>
+                                          <Wrench className="w-3 h-3 text-[#0F9D58] shrink-0" />
+                                          <span>برنامج وأداة تسويق</span>
+                                        </>
+                                      )}
                                       {f.fileSize ? ` • الحجم: ${f.fileSize}` : ''}
                                     </span>
                                   </div>
@@ -177,7 +218,8 @@ export const MyOrdersPageClient: React.FC<MyOrdersPageClientProps> = ({ orders, 
                                   rel="noopener noreferrer"
                                   className="py-2 px-4 rounded-xl bg-[#0F9D58] hover:bg-[#0D8B4E] text-white text-xs font-black flex items-center justify-center gap-2 shadow-sm shadow-[#0F9D58]/20 transition-transform active:scale-95 shrink-0"
                                 >
-                                  <span>⬇️ تحميل ({f.fileType === 'apk' ? 'APK' : f.fileType === 'doc' ? 'DOC' : 'ZIP'})</span>
+                                  <Download className="w-4 h-4" />
+                                  <span>تحميل ({f.fileType === 'apk' ? 'APK' : f.fileType === 'doc' ? 'DOC' : 'ZIP'})</span>
                                 </a>
                               </div>
                             ))}
@@ -193,7 +235,8 @@ export const MyOrdersPageClient: React.FC<MyOrdersPageClientProps> = ({ orders, 
                       {ord.videos && ord.videos.length > 0 && (
                         <div className="space-y-2 pt-3 border-t border-gray-100">
                           <h4 className="text-xs font-black text-[#0B1220] flex items-center gap-1.5">
-                            <span>🎥 فيديوهات الشرح والتدريب المتاحة لك ({ord.videos.length} فيديو):</span>
+                            <Video className="w-4 h-4 text-[#2ECC8F]" />
+                            <span>فيديوهات الشرح والتدريب المتاحة لك ({ord.videos.length} فيديو):</span>
                           </h4>
 
                           <div className="grid grid-cols-1 gap-2.5">
@@ -216,7 +259,8 @@ export const MyOrdersPageClient: React.FC<MyOrdersPageClientProps> = ({ orders, 
                                   onClick={() => setActiveVideo({ title: v.title, videoUrl: v.videoUrl, description: v.description })}
                                   className="py-2 px-4 rounded-xl bg-[#2ECC8F] hover:bg-[#25B57D] text-[#0B1220] text-xs font-extrabold flex items-center justify-center gap-2 shrink-0 shadow-sm transition-transform active:scale-95 cursor-pointer"
                                 >
-                                  <span>▶️ مشاهدة الشرح المباشر</span>
+                                  <Play className="w-4 h-4 fill-current" />
+                                  <span>مشاهدة الشرح المباشر</span>
                                 </button>
                               </div>
                             ))}
