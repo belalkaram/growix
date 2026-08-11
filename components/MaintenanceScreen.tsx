@@ -87,17 +87,9 @@ export const MaintenanceScreen: React.FC<MaintenanceScreenProps> = ({
         </div>
       </main>
 
-      {/* Footer & Admin Pass Code */}
-      <footer className="w-full max-w-5xl flex items-center justify-between text-xs text-gray-400 z-10 pt-4 border-t border-white/10">
+      {/* Footer */}
+      <footer className="w-full max-w-5xl flex items-center justify-center text-xs text-gray-400 z-10 pt-4 border-t border-white/10 text-center">
         <span>© {new Date().getFullYear()} GROWIX. جميع الحقوق محفوظة.</span>
-
-        <Link
-          href="/login"
-          className="text-gray-400 hover:text-amber-400 flex items-center gap-1.5 transition-colors text-[11px] font-bold"
-        >
-          <Lock className="w-3.5 h-3.5" />
-          <span>تسجيل دخول الأدمن</span>
-        </Link>
       </footer>
     </div>
   );
