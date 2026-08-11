@@ -6,14 +6,14 @@ export function middleware(req: NextRequest) {
 
   // Protect /admin routes
   if (pathname.startsWith('/admin')) {
-    // Check NextAuth session token cookie
-    const token = 
-      req.cookies.get('authjs.session-token')?.value || 
-      req.cookies.get('__Secure-authjs.session-token')?.value ||
-      req.cookies.get('next-auth.session-token')?.value ||
-      req.cookies.get('__Secure-next-auth.session-token')?.value;
+    // Check NextAuth / Auth.js session token cookie dynamically across all environments
+    const hasToken = req.cookies.getAll().some((cookie) =>
+      cookie.name.includes('session-token') ||
+      cookie.name.includes('authjs') ||
+      cookie.name.includes('next-auth')
+    );
 
-    if (!token) {
+    if (!hasToken) {
       const loginUrl = req.nextUrl.clone();
       loginUrl.pathname = '/login';
       loginUrl.searchParams.set('callbackUrl', pathname);

@@ -32,12 +32,11 @@ function LoginContent() {
       if (res?.error) {
         setError('البريد الإلكتروني أو كلمة المرور غير صحيحة');
       } else {
-        router.push(callbackUrl);
-        router.refresh();
+        window.location.href = callbackUrl;
       }
     } catch (err: any) {
       if (err?.message?.includes('NEXT_REDIRECT') || err?.type === 'Navigation') {
-        router.push(callbackUrl);
+        window.location.href = callbackUrl;
         return;
       }
       setError('البريد الإلكتروني أو كلمة المرور غير صحيحة');
