@@ -43,14 +43,22 @@ export interface Testimonial {
 }
 
 export const SITE_PRICING = {
+  // Baket VIP (الجديدة - كورسات + أدوات + داتا)
+  vipPackagePrice: '500',
+  vipPackageOriginalPrice: '2000',
+  vipPackageCtaText: 'احصل على الباقة VIP بـ 500 ج',
+
+  // Baket Premium (كانت VIP - أدوات + داتا فقط)
   fullPackagePrice: '300',
   fullPackageOriginalPrice: '1200',
+  fullPackageCtaText: 'احصل على باقة Premium بـ 300 ج',
+
+  // Baket Single Tool
   singleToolPrice: '200',
   singleToolOriginalPrice: '700',
-  currency: 'جنية',
-
-  fullPackageCtaText: 'احصل على الباقة الكاملة بـ 300 ج',
   singleToolCtaText: 'اختر برنامجك واشترك بـ 200 ج',
+
+  currency: 'جنية',
 };
 
 export const PROMO_BAR_CONFIG = {
@@ -349,20 +357,39 @@ export const SITE_CONFIG = {
   packages: [
     {
       id: 'bundle-vip',
-      name: 'الباقة الكاملة (الكورس + الـ 12 أداة + الداتا)',
-      badge: 'الأكثر طلباً - التوفير الأكبر',
+      name: 'باقة VIP الشاملة (كورسات + الـ 12 أداة + الداتا)',
+      badge: '💎 الأقوى - الكل في واحد',
       isPopular: true,
-      originalPrice: SITE_PRICING.fullPackageOriginalPrice,
-      discountedPrice: SITE_PRICING.fullPackagePrice,
+      originalPrice: SITE_PRICING.vipPackageOriginalPrice,
+      discountedPrice: SITE_PRICING.vipPackagePrice,
       currency: SITE_PRICING.currency,
       period: 'تفعيل مدى الحياة بدون اشتراكات',
-      description: 'باقة النجاح المتكاملة: احصل على الكورس الشامل من الصفر للاحتراف + جميع الأدوات الـ 12 بالكامل + هدية داتا مصر.',
+      description: 'الباقة الذهبية الشاملة: كورسات التسويق الكاملة (أكثر من 1 تيرابايت) + جميع الأدوات الـ 12 + هدية داتا مصر. كل ما تحتاجه في مكان واحد.',
       features: [
-        { text: 'كورس التسويق الإلكتروني الكامل من الصفر للاحتراف', included: true, highlight: true },
+        { text: 'أكثر من 1 تيرابايت كورسات تسويق إلكتروني متكاملة على MEGA', included: true, highlight: true },
         { text: 'جميع الأدوات التسويقية الـ 12 كاملة بجميع مميزاتها', included: true, highlight: true },
         { text: 'شرح فيديو بصوت وصورة عملي لكل أداة وطريقة ربطها بالحملات', included: true },
         { text: 'هدية مجانية: داتا مصر التسويقية (مقسمة بالمحافظات والأنشطة)', included: true, highlight: true },
         { text: 'دعم فني مباشر 24/7 عبر الواتساب وتحديثات مجانية مستمرة', included: true }
+      ],
+      ctaText: SITE_PRICING.vipPackageCtaText
+    },
+    {
+      id: 'bundle-premium',
+      name: 'باقة Premium (الـ 12 أداة + الداتا)',
+      badge: '⭐ الأكثر طلباً - وفّر أكثر',
+      isPopular: false,
+      originalPrice: SITE_PRICING.fullPackageOriginalPrice,
+      discountedPrice: SITE_PRICING.fullPackagePrice,
+      currency: SITE_PRICING.currency,
+      period: 'تفعيل مدى الحياة بدون اشتراكات',
+      description: 'احصل على جميع الأدوات الـ 12 بالكامل + هدية داتا مصر التسويقية. بدون الكورسات.',
+      features: [
+        { text: 'جميع الأدوات التسويقية الـ 12 كاملة بجميع مميزاتها', included: true, highlight: true },
+        { text: 'شرح فيديو بصوت وصورة عملي لكل أداة وطريقة ربطها بالحملات', included: true },
+        { text: 'هدية مجانية: داتا مصر التسويقية (مقسمة بالمحافظات والأنشطة)', included: true, highlight: true },
+        { text: 'دعم فني مباشر 24/7 عبر الواتساب وتحديثات مجانية مستمرة', included: true },
+        { text: 'كورسات التسويق الإلكتروني الشاملة (+1 TB)', included: false }
       ],
       ctaText: SITE_PRICING.fullPackageCtaText
     },
@@ -375,13 +402,13 @@ export const SITE_CONFIG = {
       discountedPrice: SITE_PRICING.singleToolPrice,
       currency: SITE_PRICING.currency,
       period: 'تفعيل دائم للبرنامج المختار',
-      description: 'اختر أي أداة واحدة محددة من ترسانة أداوتنا الـ 12 المتاحة واحصل على تفعيلها وشرحها فوراً.',
+      description: 'اختر أي أداة واحدة محددة من ترسانة أدواتنا الـ 12 المتاحة واحصل على تفعيلها وشرحها فوراً.',
       features: [
         { text: 'برنامج واحد فقط من اختيارك (من بين الـ 12 أداة)', included: true, highlight: true },
         { text: 'فيديو شرح كامل للبرنامج المختار خطوة بخطوة', included: true },
         { text: 'دعم فني وتفعيل سريع للبرنامج المختار', included: true },
         { text: 'هدية مجانية: داتا مصر التسويقية', included: true, highlight: true },
-        { text: 'باقي البرامج الـ 11 والكورس الكامل', included: false }
+        { text: 'باقي البرامج الـ 11 والكورسات الشاملة', included: false }
       ],
       ctaText: SITE_PRICING.singleToolCtaText
     }

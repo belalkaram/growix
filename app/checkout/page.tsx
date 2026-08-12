@@ -48,7 +48,11 @@ function CheckoutContent() {
   const [userPkgId, setUserPkgId] = useState<string | null>(null);
   const [userToolId, setUserToolId] = useState<string | null>(null);
 
-  const activePkgId = userPkgId ?? (initialPkgParam === 'single-tool' ? 'single-tool' : 'bundle-vip');
+  const activePkgId = userPkgId ?? (
+    initialPkgParam === 'single-tool' ? 'single-tool' :
+    initialPkgParam === 'bundle-premium' ? 'bundle-premium' :
+    'bundle-vip'
+  );
   const selectedToolId = userToolId ?? (initialToolParam && SITE_CONFIG.tools.some((t) => t.id === initialToolParam) ? initialToolParam : SITE_CONFIG.tools[0].id);
 
   const setActivePkgId = (id: string) => setUserPkgId(id);
@@ -199,8 +203,8 @@ function CheckoutContent() {
             <span>1. اختر الباقة المناسبة لك:</span>
           </label>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-            {/* VIP Bundle Card */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+            {/* VIP Bundle Card - NEW */}
             <button
               type="button"
               onClick={() => setActivePkgId('bundle-vip')}
@@ -211,17 +215,43 @@ function CheckoutContent() {
               }`}
             >
               <div className="flex items-start justify-between gap-2 mb-2">
-                <span className="text-xs font-black px-2.5 py-1 rounded-md bg-[#2ECC8F] text-[#0B1220]">
-                  الأكثر طلباً ({SITE_PRICING.fullPackagePrice} ج)
+                <span className="text-xs font-black px-2.5 py-1 rounded-md bg-amber-400 text-[#0B1220]">
+                  💎 VIP ({SITE_PRICING.vipPackagePrice} ج)
                 </span>
                 {activePkgId === 'bundle-vip' && (
                   <CheckCircle2 className="w-5 h-5 text-[#2ECC8F] shrink-0" />
                 )}
               </div>
               <div>
-                <h3 className="font-extrabold text-sm sm:text-base mb-1">الباقة الكاملة (الكورس + 12 أداة + الداتا)</h3>
+                <h3 className="font-extrabold text-sm sm:text-base mb-1">باقة VIP (كورسات + 12 أداة + الداتا)</h3>
                 <p className={`text-xs leading-relaxed ${activePkgId === 'bundle-vip' ? 'text-gray-300' : 'text-gray-500'}`}>
-                  الكورس الكامل + الـ 12 أداة تسويق بالكامل + هدية داتا مصر + الدعم الفني المباشر.
+                  أكثر من 1 تيرابايت كورسات + الـ 12 أداة كاملة + هدية داتا مصر.
+                </p>
+              </div>
+            </button>
+
+            {/* Premium Bundle Card - was old VIP */}
+            <button
+              type="button"
+              onClick={() => setActivePkgId('bundle-premium')}
+              className={`p-4 rounded-2xl border text-right transition-all relative flex flex-col justify-between ${
+                activePkgId === 'bundle-premium'
+                  ? 'bg-[#0B1220] text-white border-[#2ECC8F] ring-2 ring-[#2ECC8F]/30 shadow-md'
+                  : 'bg-white text-[#0B1220] border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+              }`}
+            >
+              <div className="flex items-start justify-between gap-2 mb-2">
+                <span className="text-xs font-black px-2.5 py-1 rounded-md bg-[#2ECC8F] text-[#0B1220]">
+                  ⭐ Premium ({SITE_PRICING.fullPackagePrice} ج)
+                </span>
+                {activePkgId === 'bundle-premium' && (
+                  <CheckCircle2 className="w-5 h-5 text-[#2ECC8F] shrink-0" />
+                )}
+              </div>
+              <div>
+                <h3 className="font-extrabold text-sm sm:text-base mb-1">باقة Premium (12 أداة + الداتا)</h3>
+                <p className={`text-xs leading-relaxed ${activePkgId === 'bundle-premium' ? 'text-gray-300' : 'text-gray-500'}`}>
+                  جميع الـ 12 أداة التسويقية + هدية داتا مصر + الدعم الفني المباشر.
                 </p>
               </div>
             </button>
@@ -238,7 +268,7 @@ function CheckoutContent() {
             >
               <div className="flex items-start justify-between gap-2 mb-2">
                 <span className="text-xs font-black px-2.5 py-1 rounded-md bg-emerald-100 text-emerald-900 border border-emerald-300">
-                  برنامج واحد فقط ({SITE_PRICING.singleToolPrice} ج)
+                  برنامج واحد ({SITE_PRICING.singleToolPrice} ج)
                 </span>
                 {activePkgId === 'single-tool' && (
                   <CheckCircle2 className="w-5 h-5 text-[#2ECC8F] shrink-0" />
