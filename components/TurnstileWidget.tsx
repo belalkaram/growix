@@ -16,7 +16,7 @@ export const TurnstileWidget: React.FC<TurnstileWidgetProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const widgetIdRef = useRef<string | null>(null);
 
-  const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || '0x4AAAAAAENfM9K47R2hmT8Y';
+  const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || '';
 
   useEffect(() => {
     let script: HTMLScriptElement | null = null;

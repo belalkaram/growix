@@ -4,7 +4,7 @@
  */
 
 export async function verifyTurnstileToken(token: string, remoteIp?: string): Promise<{ success: boolean; error?: string }> {
-  const secretKey = process.env.TURNSTILE_SECRET_KEY || '0x4AAAAAAENfM57UAsCOBNfKpip82XeRg8Y';
+  const secretKey = process.env.TURNSTILE_SECRET_KEY || '';
 
   if (!token) {
     return { success: false, error: 'يرجى إكمال التحقق الأمني (أنا لست روبوت)' };
