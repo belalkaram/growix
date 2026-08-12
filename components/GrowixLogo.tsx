@@ -42,13 +42,13 @@ export const GrowixLogo: React.FC<GrowixLogoProps> = ({
       {variant !== 'icon' && (
         <div className="flex flex-col text-right leading-none">
           <div className="flex items-center text-xl sm:text-2xl font-black tracking-wider font-sans" dir="ltr">
-            <span className={isDark ? 'text-white' : 'text-[#0B1220]'}>
+            <span className={theme === 'light' ? 'text-[#0B1220]' : 'text-white'}>
               GROW
             </span>
-            <span className={isDark ? 'text-white' : 'text-[#0B1220]'}>
+            <span className={theme === 'light' ? 'text-[#0B1220]' : 'text-white'}>
               I
             </span>
-            <span className="text-[#0F9D58] font-black">
+            <span className="text-[#00FF87] font-black">
               X
             </span>
           </div>
