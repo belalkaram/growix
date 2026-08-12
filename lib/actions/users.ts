@@ -7,6 +7,8 @@ import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 import { auth } from '@/lib/auth';
 
+import { verifyTurnstileToken } from '@/lib/turnstile';
+
 const registerSchema = z.object({
   name: z.string().min(2, 'الاسم يجب أن يكون حرفين على الأقل'),
   email: z.string().email('البريد الإلكتروني غير صحيح'),
@@ -19,8 +21,17 @@ export async function registerUser(formData: {
   email: string;
   password: string;
   phone?: string;
+  turnstileToken?: string;
 }) {
   try {
+    // 1. Verify Cloudflare Turnstile CAPTCHA
+    if (formData.turnstileToken) {
+      const turnstileRes = await verifyTurnstileToken(formData.turnstileToken);
+      if (!turnstileRes.success) {
+        return { success: false, error: turnstileRes.error };
+      }
+    }
+
     const validated = registerSchema.parse(formData);
     const normalizedEmail = validated.email.toLowerCase().trim();
 

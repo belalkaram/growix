@@ -37,3 +37,16 @@ export async function updateSiteSettingsAction(settingsMap: Record<string, strin
     return { success: false, error: 'حدث خطأ أثناء حفظ الإعدادات' };
   }
 }
+
+export async function getSiteSettingsAction(): Promise<Record<string, string>> {
+  try {
+    const rows = await db.select().from(siteSettings);
+    const map: Record<string, string> = {};
+    rows.forEach((r) => {
+      map[r.key] = r.value;
+    });
+    return map;
+  } catch (err) {
+    return {};
+  }
+}

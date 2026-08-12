@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { signIn } from 'next-auth/react';
 import { GrowixLogo } from '@/components/GrowixLogo';
+import { TurnstileWidget } from '@/components/TurnstileWidget';
 import { Lock, Mail, ArrowLeft, LogIn, AlertCircle } from 'lucide-react';
 
 function LoginContent() {
@@ -14,12 +15,21 @@ function LoginContent() {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+
+    // Cloudflare Turnstile token validation
+    if (!turnstileToken) {
+      setError('يرجى إكمال التحقق الأمني (أنا لست روبوت)');
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -54,7 +64,7 @@ function LoginContent() {
             <GrowixLogo />
           </div>
           <h1 className="text-2xl font-black text-white">تسجيل الدخول</h1>
-          <p className="text-xs text-gray-400">أدخل بيانات حسابك للوصول إلى GROWIX</p>
+          <p className="text-xs text-gray-400">أدخل بيانات حسابك والتحقق الأمني للوصول إلى GROWIX</p>
         </div>
 
         {error && (
@@ -95,10 +105,19 @@ function LoginContent() {
             />
           </div>
 
+          {/* Cloudflare Turnstile "I am human" Widget */}
+          <div className="pt-1">
+            <TurnstileWidget
+              onVerify={(token) => setTurnstileToken(token)}
+              onExpire={() => setTurnstileToken(null)}
+              onError={() => setTurnstileToken(null)}
+            />
+          </div>
+
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3.5 rounded-xl bg-gradient-to-l from-[#0F9D58] to-[#2ECC8F] text-white font-extrabold text-sm flex items-center justify-center gap-2 shadow-lg shadow-[#0F9D58]/30 hover:scale-[1.01] active:scale-95 transition-all disabled:opacity-50"
+            className="w-full py-3.5 rounded-xl bg-gradient-to-l from-[#0F9D58] to-[#2ECC8F] text-white font-extrabold text-sm flex items-center justify-center gap-2 shadow-lg shadow-[#0F9D58]/30 hover:scale-[1.01] active:scale-95 transition-all disabled:opacity-50 cursor-pointer"
           >
             {loading ? (
               <span>جاري التحقق...</span>

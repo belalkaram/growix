@@ -99,45 +99,45 @@ export const HeaderNavbar: React.FC<HeaderNavbarProps> = ({ onOpenPaymentModal, 
 
               <Link
                 href="/my-orders"
-                className={`py-2 px-3 rounded-xl border text-xs font-bold flex items-center gap-1.5 transition-colors ${
-                  isScrolled
-                    ? 'border-gray-300 text-gray-800 hover:bg-gray-100'
-                    : 'border-white/20 text-gray-100 hover:bg-white/10'
-                }`}
+                className="py-2.5 px-4 rounded-xl bg-gradient-to-l from-[#0F9D58] to-[#2ECC8F] text-white text-xs font-extrabold flex items-center gap-2 shadow-md shadow-[#0F9D58]/20 hover:opacity-95 transition-opacity"
               >
-                <PackageCheck className="w-4 h-4 text-[#2ECC8F]" />
+                <PackageCheck className="w-4 h-4 text-white" />
                 <span>طلباتي وحسابي</span>
               </Link>
 
               <button
                 onClick={() => signOut({ callbackUrl: '/' })}
                 title="تسجيل الخروج"
-                className="p-2 rounded-xl text-red-400 hover:bg-red-500/10 transition-colors"
+                className={`p-2 rounded-xl text-red-400 hover:bg-red-500/10 transition-colors ${
+                  isScrolled ? 'hover:bg-red-50' : 'hover:bg-white/10'
+                }`}
               >
                 <LogOut className="w-4 h-4" />
               </button>
             </div>
           ) : (
-            <Link
-              href="/login"
-              className={`py-2 px-4 rounded-xl border text-xs font-extrabold flex items-center gap-1.5 transition-colors ${
-                isScrolled
-                  ? 'border-[#0F9D58] text-[#0F9D58] hover:bg-[#0F9D58]/10'
-                  : 'border-[#2ECC8F] text-[#2ECC8F] hover:bg-[#2ECC8F]/10'
-              }`}
-            >
-              <User className="w-4 h-4" />
-              <span>تسجيل الدخول</span>
-            </Link>
-          )}
+            <>
+              <Link
+                href="/login"
+                className={`py-2.5 px-4 rounded-xl border text-xs font-extrabold flex items-center gap-1.5 transition-colors ${
+                  isScrolled
+                    ? 'border-[#0F9D58] text-[#0F9D58] hover:bg-[#0F9D58]/10'
+                    : 'border-[#2ECC8F] text-[#2ECC8F] hover:bg-[#2ECC8F]/10'
+                }`}
+              >
+                <User className="w-4 h-4" />
+                <span>تسجيل الدخول</span>
+              </Link>
 
-          <button
-            onClick={() => onOpenPaymentModal()}
-            className="py-2.5 px-5 rounded-2xl bg-growix-gradient hover:bg-growix-gradient-hover text-white font-extrabold text-xs sm:text-sm flex items-center gap-2 shadow-md shadow-[#0F9D58]/20 transition-all hover:scale-105 active:scale-95"
-          >
-            <Sparkles className="w-4 h-4" />
-            <span>اشترك الآن</span>
-          </button>
+              <button
+                onClick={() => onOpenPaymentModal()}
+                className="py-2.5 px-5 rounded-2xl bg-growix-gradient hover:bg-growix-gradient-hover text-white font-extrabold text-xs sm:text-sm flex items-center gap-2 shadow-md shadow-[#0F9D58]/20 transition-all hover:scale-105 active:scale-95"
+              >
+                <Sparkles className="w-4 h-4" />
+                <span>اشترك الآن</span>
+              </button>
+            </>
+          )}
         </div>
 
         {/* Brand Logo: On mobile (RTL) it sits on the LEFT (last child). On desktop (lg+) it stays on the RIGHT (order-first) */}
@@ -206,26 +206,28 @@ export const HeaderNavbar: React.FC<HeaderNavbarProps> = ({ onOpenPaymentModal, 
                     </button>
                   </div>
                 ) : (
-                  <Link
-                    href="/login"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="w-full py-3 px-4 rounded-xl border border-[#2ECC8F] text-[#2ECC8F] text-xs font-extrabold flex items-center justify-center gap-2 hover:bg-[#2ECC8F]/10"
-                  >
-                    <User className="w-4 h-4" />
-                    <span>تسجيل الدخول</span>
-                  </Link>
-                )}
+                  <>
+                    <Link
+                      href="/login"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="w-full py-3 px-4 rounded-xl border border-[#2ECC8F] text-[#2ECC8F] text-xs font-extrabold flex items-center justify-center gap-2 hover:bg-[#2ECC8F]/10"
+                    >
+                      <User className="w-4 h-4" />
+                      <span>تسجيل الدخول</span>
+                    </Link>
 
-                <button
-                  onClick={() => {
-                    setMobileMenuOpen(false);
-                    onOpenPaymentModal();
-                  }}
-                  className="w-full py-3.5 px-5 rounded-2xl bg-growix-gradient text-white font-extrabold text-sm flex items-center justify-center gap-2 shadow-lg shadow-[#0F9D58]/30 active:scale-98 transition-transform"
-                >
-                  <Sparkles className="w-4 h-4" />
-                  <span>اشترك الآن</span>
-                </button>
+                    <button
+                      onClick={() => {
+                        setMobileMenuOpen(false);
+                        onOpenPaymentModal();
+                      }}
+                      className="w-full py-3.5 px-5 rounded-2xl bg-growix-gradient text-white font-extrabold text-sm flex items-center justify-center gap-2 shadow-lg shadow-[#0F9D58]/30 active:scale-98 transition-transform"
+                    >
+                      <Sparkles className="w-4 h-4" />
+                      <span>اشترك الآن</span>
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           </motion.div>

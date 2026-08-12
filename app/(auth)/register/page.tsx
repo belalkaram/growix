@@ -5,14 +5,17 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { registerUser } from '@/lib/actions/users';
 import { GrowixLogo } from '@/components/GrowixLogo';
-import { User, Mail, Lock, Phone, ArrowLeft, UserPlus, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { TurnstileWidget } from '@/components/TurnstileWidget';
+import { User, Mail, Lock, ArrowLeft, UserPlus, AlertCircle, CheckCircle2, ShieldCheck } from 'lucide-react';
 
 export default function RegisterPage() {
   const router = useRouter();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [phone, setPhone] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -20,10 +23,28 @@ export default function RegisterPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+
+    // 1. Password confirmation check
+    if (password !== confirmPassword) {
+      setError('كلمتا المرور غير متطابقتين. يرجى إعادة التأكد.');
+      return;
+    }
+
+    // 2. Cloudflare Turnstile token validation
+    if (!turnstileToken) {
+      setError('يرجى إكمال التحقق الأمني (أنا لست روبوت)');
+      return;
+    }
+
     setLoading(true);
 
     try {
-      const res = await registerUser({ name, email, password, phone });
+      const res = await registerUser({ 
+        name, 
+        email, 
+        password, 
+        turnstileToken 
+      });
 
       if (!res.success) {
         setError(res.error || 'حدث خطأ أثناء الإنشاء');
@@ -49,7 +70,7 @@ export default function RegisterPage() {
             <GrowixLogo />
           </div>
           <h1 className="text-2xl font-black text-white">إنشاء حساب جديد</h1>
-          <p className="text-xs text-gray-400">انضم إلى GROWIX وابدأ في استخدام أدواتك التسويقية</p>
+          <p className="text-xs text-gray-400">أنشئ حسابك للوصول المباشر إلى أدوات GROWIX</p>
         </div>
 
         {error && (
@@ -67,10 +88,11 @@ export default function RegisterPage() {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* 1. الاسم */}
           <div>
             <label className="block text-xs font-bold text-gray-300 mb-1.5 flex items-center gap-1.5">
               <User className="w-3.5 h-3.5 text-[#2ECC8F]" />
-              <span>الاسم الكامل</span>
+              <span>الاسم</span>
             </label>
             <input
               type="text"
@@ -82,6 +104,7 @@ export default function RegisterPage() {
             />
           </div>
 
+          {/* 2. البريد الإلكتروني */}
           <div>
             <label className="block text-xs font-bold text-gray-300 mb-1.5 flex items-center gap-1.5">
               <Mail className="w-3.5 h-3.5 text-[#2ECC8F]" />
@@ -97,6 +120,7 @@ export default function RegisterPage() {
             />
           </div>
 
+          {/* 3. كلمة المرور */}
           <div>
             <label className="block text-xs font-bold text-gray-300 mb-1.5 flex items-center gap-1.5">
               <Lock className="w-3.5 h-3.5 text-[#2ECC8F]" />
@@ -112,24 +136,35 @@ export default function RegisterPage() {
             />
           </div>
 
+          {/* 4. تأكيد كلمة المرور */}
           <div>
             <label className="block text-xs font-bold text-gray-300 mb-1.5 flex items-center gap-1.5">
-              <Phone className="w-3.5 h-3.5 text-[#2ECC8F]" />
-              <span>رقم الموبايل (اختياري)</span>
+              <ShieldCheck className="w-3.5 h-3.5 text-[#2ECC8F]" />
+              <span>تأكيد كلمة المرور</span>
             </label>
             <input
-              type="tel"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="010XXXXXXXX"
+              type="password"
+              required
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="أعد كتابة كلمة المرور"
               className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-sm font-medium text-white focus:outline-none focus:border-[#2ECC8F] transition-colors"
+            />
+          </div>
+
+          {/* Cloudflare Turnstile "I am human" Widget */}
+          <div className="pt-1">
+            <TurnstileWidget
+              onVerify={(token) => setTurnstileToken(token)}
+              onExpire={() => setTurnstileToken(null)}
+              onError={() => setTurnstileToken(null)}
             />
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3.5 rounded-xl bg-gradient-to-l from-[#0F9D58] to-[#2ECC8F] text-white font-extrabold text-sm flex items-center justify-center gap-2 shadow-lg shadow-[#0F9D58]/30 hover:scale-[1.01] active:scale-95 transition-all disabled:opacity-50"
+            className="w-full py-3.5 rounded-xl bg-gradient-to-l from-[#0F9D58] to-[#2ECC8F] text-white font-extrabold text-sm flex items-center justify-center gap-2 shadow-lg shadow-[#0F9D58]/30 hover:scale-[1.01] active:scale-95 transition-all disabled:opacity-50 cursor-pointer"
           >
             {loading ? (
               <span>جاري الإنشاء...</span>

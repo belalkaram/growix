@@ -42,6 +42,16 @@ export const GlobalNavigationLoader: React.FC = () => {
       const href = anchor.getAttribute('href');
       if (!href) return;
 
+      // Ignore download links, target="_blank", and API download endpoints
+      if (
+        anchor.getAttribute('target') === '_blank' ||
+        anchor.hasAttribute('download') ||
+        href.includes('/api/download') ||
+        href.includes('/api/')
+      ) {
+        return;
+      }
+
       // Ignore anchor links starting with # directly
       if (href.startsWith('#')) return;
 
