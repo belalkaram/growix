@@ -14,7 +14,7 @@ export const SettingsEditForm: React.FC<{ initialSettings: Record<string, string
   const [whatsappNumber, setWhatsappNumber] = useState(initialSettings.whatsapp_number || '201019033661');
   const [whatsappDisplayNumber, setWhatsappDisplayNumber] = useState(initialSettings.whatsapp_display_number || '01019033661');
   const [telegramUsername, setTelegramUsername] = useState(initialSettings.telegram_username || 'growix_official');
-  const [supportEmail, setSupportEmail] = useState(initialSettings.support_email || 'support@growix.com');
+  const [supportEmail, setSupportEmail] = useState(initialSettings.support_email || 'growix@belalkaram.dev');
   const [workingHours, setWorkingHours] = useState(initialSettings.working_hours || 'تفعيل فوري خلال أقل من ساعة | دعم فني على مدار 24/7');
   const [heroTitle, setHeroTitle] = useState(initialSettings.hero_title || '');
   const [heroSubtitle, setHeroSubtitle] = useState(initialSettings.hero_subtitle || '');
@@ -52,20 +52,18 @@ export const SettingsEditForm: React.FC<{ initialSettings: Record<string, string
   return (
     <form onSubmit={handleSubmit} className="p-6 sm:p-8 rounded-3xl bg-[#0F172A] border border-white/10 space-y-8">
       {message && (
-        <div className={`p-4 rounded-xl text-xs font-bold flex items-center gap-2 ${
-          message.type === 'success' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30' : 'bg-red-500/10 text-red-400 border border-red-500/30'
-        }`}>
+        <div className={`p-4 rounded-xl text-xs font-bold flex items-center gap-2 ${message.type === 'success' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30' : 'bg-red-500/10 text-red-400 border border-red-500/30'
+          }`}>
           {message.type === 'success' ? <CheckCircle2 className="w-4 h-4 shrink-0" /> : <AlertCircle className="w-4 h-4 shrink-0" />}
           <span>{message.text}</span>
         </div>
       )}
 
       {/* 🛑 Maintenance Mode Control Card */}
-      <div className={`p-6 rounded-2xl border transition-colors space-y-4 ${
-        maintenanceMode
-          ? 'bg-amber-500/10 border-amber-500/40 text-amber-200'
-          : 'bg-white/5 border-white/10 text-gray-200'
-      }`}>
+      <div className={`p-6 rounded-2xl border transition-colors space-y-4 ${maintenanceMode
+        ? 'bg-amber-500/10 border-amber-500/40 text-amber-200'
+        : 'bg-white/5 border-white/10 text-gray-200'
+        }`}>
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className={`p-2.5 rounded-xl ${maintenanceMode ? 'bg-amber-500/20 text-amber-400' : 'bg-white/10 text-gray-300'}`}>
@@ -167,7 +165,7 @@ export const SettingsEditForm: React.FC<{ initialSettings: Record<string, string
               type="email"
               value={supportEmail}
               onChange={(e) => setSupportEmail(e.target.value)}
-              placeholder="support@growix.com"
+              placeholder="growix@belalkaram.dev"
               className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-xs font-medium text-white focus:outline-none focus:border-[#2ECC8F]"
             />
           </div>

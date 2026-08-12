@@ -75,7 +75,7 @@ export const SITE_CONFIG = {
   whatsappNumber: '201019033661', // غيّر الرقم هنا بسهولة
   whatsappDisplayNumber: '01019033661',
   telegramUsername: 'growix_official',
-  supportEmail: 'support@growix.com',
+  supportEmail: 'growix@belalkaram.dev',
   workingHours: 'تفعيل فوري خلال أقل من ساعة | دعم فني على مدار 24/7',
 
   // Payment Numbers (محفظة إلكترونية / إنستاباي)
