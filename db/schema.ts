@@ -164,3 +164,19 @@ export const toolVideos = pgTable('tool_videos', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
+
+// 12. MEGA Links Table (Courses & Content MEGA Folder Links per Package)
+export const megaLinks = pgTable('mega_links', {
+  id: serial('id').primaryKey(),
+  packageId: varchar('package_id', { length: 100 }).notNull(), // 'bundle-vip' | 'bundle-premium' | 'all'
+  title: varchar('title', { length: 255 }).notNull(), // e.g. "كورس التسويق الشامل على فيسبوك"
+  description: text('description'), // e.g. "أكثر من 1 تيرابايت محتوى تعليمي حصري"
+  megaUrl: text('mega_url').notNull(), // The MEGA folder/file link
+  sizeLabel: varchar('size_label', { length: 50 }), // e.g. "1 TB" | "500 GB"
+  contentCount: varchar('content_count', { length: 100 }), // e.g. "200+ فيديو"
+  isActive: boolean('is_active').default(true).notNull(),
+  sortOrder: integer('sort_order').default(0).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+

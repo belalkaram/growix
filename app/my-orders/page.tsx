@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import { getUserOrders } from '@/lib/actions/orders';
 import { getUserDownloadableFilesAction } from '@/lib/actions/files';
 import { getVideosForOrderAction } from '@/lib/actions/videos';
+import { getMegaLinksForOrderAction } from '@/lib/actions/mega';
 import { getSiteSettingsAction } from '@/lib/actions/settings';
 import { MaintenanceScreen } from '@/components/MaintenanceScreen';
 import { MyOrdersPageClient } from './MyOrdersPageClient';
@@ -35,18 +36,20 @@ export default async function MyOrdersPage() {
   const ordersWithFiles = await Promise.all(
     ordersList.map(async (ord) => {
       if (ord.status === 'approved') {
-        const [filesRes, videosRes] = await Promise.all([
+        const [filesRes, videosRes, megaRes] = await Promise.all([
           getUserDownloadableFilesAction(ord.id),
           getVideosForOrderAction(ord.packageId, ord.toolId),
+          getMegaLinksForOrderAction(ord.packageId),
         ]);
 
         return {
           ...ord,
           files: filesRes.files || [],
           videos: videosRes.videos || [],
+          megaLinks: megaRes.megaLinks || [],
         };
       }
-      return { ...ord, files: [], videos: [] };
+      return { ...ord, files: [], videos: [], megaLinks: [] };
     })
   );
 

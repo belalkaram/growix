@@ -19,7 +19,8 @@ import {
   Menu,
   X,
   Shield,
-  FolderDown
+  FolderDown,
+  FolderOpen
 } from 'lucide-react';
 
 interface AdminSidebarProps {
@@ -35,6 +36,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({ userEmail }) => {
     { label: 'طلبات الاشتراك والتحويلات', href: '/admin/orders', icon: PackageCheck },
     { label: 'ملفات الباقات (R2)', href: '/admin/files', icon: FolderDown },
     { label: 'فيديوهات الشرح', href: '/admin/videos', icon: Wrench },
+    { label: 'كورسات MEGA', href: '/admin/mega', icon: FolderOpen },
     { label: 'الباقات والأسعار', href: '/admin/packages', icon: Package },
     { label: 'الـ 12 أداة', href: '/admin/tools', icon: Wrench },
     { label: 'المستخدمون', href: '/admin/users', icon: Users },

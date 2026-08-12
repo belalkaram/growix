@@ -24,7 +24,10 @@ import {
   Video,
   Gift,
   ShieldCheck,
-  Sparkle
+  Sparkle,
+  FolderOpen,
+  ExternalLink,
+  HardDrive
 } from 'lucide-react';
 
 interface MyOrdersPageClientProps {
@@ -233,14 +236,78 @@ export const MyOrdersPageClient: React.FC<MyOrdersPageClientProps> = ({ orders, 
                       </div>
 
                       {/* ============================================================ */}
-                      {/* SECTION 2: 🛠️ الأدوات والبرامج المتاحة (Tools Second) */}
+                      {/* SECTION 2: 📂 كورسات MEGA (Courses Second) */}
+                      {/* ============================================================ */}
+                      {ord.megaLinks && ord.megaLinks.length > 0 && (
+                        <div className="space-y-3 pt-2">
+                          <div className="flex items-center justify-between">
+                            <h4 className="text-sm font-black text-[#0B1220] flex items-center gap-2">
+                              <div className="w-7 h-7 rounded-lg bg-blue-500/15 border border-blue-500/30 flex items-center justify-center text-blue-600">
+                                <FolderOpen className="w-4 h-4" />
+                              </div>
+                              <span>2. كورسات التسويق الشاملة ({ord.megaLinks.length} مجلد)</span>
+                            </h4>
+                            <span className="text-[10px] font-bold bg-blue-500/10 text-blue-600 px-2.5 py-1 rounded-full border border-blue-500/20">
+                              MEGA محمي
+                            </span>
+                          </div>
+
+                          <div className="grid grid-cols-1 gap-3">
+                            {ord.megaLinks.map((ml: any) => (
+                              <div
+                                key={ml.id}
+                                className="p-5 bg-gradient-to-l from-blue-50/80 via-indigo-50/40 to-white border border-blue-200/80 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm hover:border-blue-300/80 transition-colors"
+                              >
+                                <div className="flex items-start sm:items-center gap-3.5">
+                                  <div className="w-12 h-12 rounded-2xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-md shadow-blue-500/30 font-black">
+                                    <FolderOpen className="w-6 h-6" />
+                                  </div>
+                                  <div className="space-y-1">
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                      <span className="font-black text-sm text-gray-900">{ml.title}</span>
+                                      {ml.sizeLabel && (
+                                        <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-blue-600 text-white shadow-xs flex items-center gap-1">
+                                          <HardDrive className="w-2.5 h-2.5" />
+                                          {ml.sizeLabel}
+                                        </span>
+                                      )}
+                                    </div>
+                                    {ml.description && (
+                                      <p className="text-xs text-gray-600 font-medium">{ml.description}</p>
+                                    )}
+                                    {ml.contentCount && (
+                                      <span className="text-[11px] font-bold text-blue-700 block flex items-center gap-1">
+                                        <Video className="w-3 h-3" />
+                                        {ml.contentCount}
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+
+                                <a
+                                  href={ml.megaUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="py-3 px-5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-black flex items-center justify-center gap-2 shadow-md shadow-blue-600/20 transition-all active:scale-95 shrink-0"
+                                >
+                                  <ExternalLink className="w-4 h-4" />
+                                  <span>فتح في MEGA</span>
+                                </a>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* ============================================================ */}
+                      {/* SECTION 3: 🛠️ الأدوات والبرامج المتاحة (Tools Third) */}
                       {/* ============================================================ */}
                       <div className="space-y-3 pt-2">
                         <h4 className="text-sm font-black text-[#0B1220] flex items-center gap-2">
                           <div className="w-7 h-7 rounded-lg bg-[#0F9D58]/15 border border-[#0F9D58]/30 flex items-center justify-center text-[#0F9D58]">
                             <Wrench className="w-4 h-4" />
                           </div>
-                          <span>2. البرامج والأدوات التسويقية المتاحة ({toolFiles.length} برنامج)</span>
+                          <span>3. البرامج والأدوات التسويقية المتاحة ({toolFiles.length} برنامج)</span>
                         </h4>
 
                         {toolFiles.length > 0 ? (
@@ -304,7 +371,7 @@ export const MyOrdersPageClient: React.FC<MyOrdersPageClientProps> = ({ orders, 
                           <div className="w-7 h-7 rounded-lg bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-600">
                             <Gift className="w-4 h-4" />
                           </div>
-                          <span>3. الهدية الحصرية المرفقة</span>
+                          <span>4. الهدية الحصرية المرفقة</span>
                         </h4>
 
                         {giftFiles.length > 0 ? (
