@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { signIn } from 'next-auth/react';
 import { GrowixLogo } from '@/components/GrowixLogo';
-import { TurnstileWidget } from '@/components/TurnstileWidget';
 import { Lock, Mail, ArrowLeft, LogIn, AlertCircle, Eye, EyeOff, Check } from 'lucide-react';
 
 function LoginContent() {
@@ -17,7 +16,6 @@ function LoginContent() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
-  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
 
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -25,13 +23,6 @@ function LoginContent() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-
-    // Cloudflare Turnstile token validation
-    if (!turnstileToken) {
-      setError('يرجى إكمال التحقق الأمني (أنا لست روبوت)');
-      return;
-    }
-
     setLoading(true);
 
     try {
@@ -70,7 +61,7 @@ function LoginContent() {
             <GrowixLogo theme="dark" />
           </div>
           <h1 className="text-2xl font-black text-white tracking-wide">تسجيل الدخول</h1>
-          <p className="text-xs text-gray-300 font-medium">أدخل بيانات حسابك والتحقق الأمني للوصول إلى GROWIX</p>
+          <p className="text-xs text-gray-300 font-medium">أدخل بيانات حسابك للوصول المباشر إلى GROWIX</p>
         </div>
 
         {error && (
@@ -135,15 +126,6 @@ function LoginContent() {
               />
               <span className="group-hover:text-white transition-colors">تذكر الحساب على هذا الجهاز</span>
             </label>
-          </div>
-
-          {/* Cloudflare Turnstile "I am human" Widget (Dark Mode) */}
-          <div className="pt-1">
-            <TurnstileWidget
-              onVerify={(token) => setTurnstileToken(token)}
-              onExpire={() => setTurnstileToken(null)}
-              onError={() => setTurnstileToken(null)}
-            />
           </div>
 
           {/* Cyber Neon Action Button */}
