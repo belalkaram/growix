@@ -21,10 +21,10 @@ import {
 } from 'lucide-react';
 
 const PACKAGE_OPTIONS = [
-  { value: 'all', label: '🌐 جميع الباقات (للكل)' },
-  { value: 'bundle-vip', label: '💎 باقة VIP (الشاملة)' },
-  { value: 'bundle-premium', label: '🥇 باقة Premium' },
-  { value: 'single-tool', label: '🔧 باقة أداة واحدة' },
+  { value: 'all', label: 'جميع الباقات (للكل)' },
+  { value: 'bundle-vip', label: 'باقة VIP (الشاملة)' },
+  { value: 'bundle-premium', label: 'باقة Premium' },
+  { value: 'single-tool', label: 'باقة أداة واحدة' },
 ];
 
 export default function AdminMegaPage() {

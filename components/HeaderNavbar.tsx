@@ -8,14 +8,18 @@ import { PromoAnnouncementBar } from '@/components/PromoAnnouncementBar';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import { signOut } from 'next-auth/react';
 import Link from 'next/link';
-import { Menu, X, Sparkles, MessageSquare, User, LogOut, PackageCheck, Shield } from 'lucide-react';
+import { usePathname } from 'next/navigation';
+import { Menu, X, Sparkles, MessageSquare, User, LogOut, PackageCheck, Shield, Video, Wrench, FolderOpen, Headphones } from 'lucide-react';
 
 interface HeaderNavbarProps {
   onOpenPaymentModal: () => void;
   session?: any;
+  isSubscriberPage?: boolean;
 }
 
-export const HeaderNavbar: React.FC<HeaderNavbarProps> = ({ onOpenPaymentModal, session }) => {
+export const HeaderNavbar: React.FC<HeaderNavbarProps> = ({ onOpenPaymentModal, session, isSubscriberPage }) => {
+  const pathname = usePathname();
+  const isMyOrders = isSubscriberPage || pathname === '/my-orders';
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -33,14 +37,25 @@ export const HeaderNavbar: React.FC<HeaderNavbarProps> = ({ onOpenPaymentModal, 
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const navLinks = [
-    { name: 'الرئيسية', href: '#hero' },
-    { name: 'الـ 12 أداة', href: '#tools' },
-    { name: 'محتوى الكورس', href: '#course' },
-    { name: 'هدية الداتا', href: '#data-bonus' },
-    { name: 'الأسعار والباقات', href: '#pricing' },
-    { name: 'الأسئلة الشائعة', href: '#faq' },
+  const defaultNavLinks = [
+    { name: 'الرئيسية', href: '/#hero' },
+    { name: 'الـ 12 أداة', href: '/#tools' },
+    { name: 'محتوى الكورس', href: '/#course' },
+    { name: 'هدية الداتا', href: '/#data-bonus' },
+    { name: 'الأسعار والباقات', href: '/#pricing' },
+    { name: 'الأسئلة الشائعة', href: '/#faq' },
   ];
+
+  const subscriberNavLinks = [
+    { name: 'الرئيسية', href: '/' },
+    { name: 'فيديوهات الشرح', href: '#my-videos' },
+    { name: 'كورسات MEGA', href: '#my-courses' },
+    { name: 'البرامج والأدوات', href: '#my-tools' },
+    { name: 'هدية الداتا', href: '#my-bonus' },
+    { name: 'الدعم الفني', href: '#my-support' },
+  ];
+
+  const navLinks = isMyOrders ? subscriberNavLinks : defaultNavLinks;
 
   return (
     <header
@@ -50,8 +65,8 @@ export const HeaderNavbar: React.FC<HeaderNavbarProps> = ({ onOpenPaymentModal, 
           : 'bg-[#0B1220] text-white border-b border-white/10'
       }`}
     >
-      {/* Promo Announcement Ticker Bar */}
-      <PromoAnnouncementBar />
+      {/* Promo Announcement Ticker Bar (Hidden for subscribers) */}
+      {!isMyOrders && <PromoAnnouncementBar />}
 
       <div className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between dir-rtl transition-all duration-300 ${
         isScrolled ? 'py-2.5' : 'py-3.5'
@@ -141,9 +156,9 @@ export const HeaderNavbar: React.FC<HeaderNavbarProps> = ({ onOpenPaymentModal, 
         </div>
 
         {/* Brand Logo: On mobile (RTL) it sits on the LEFT (last child). On desktop (lg+) it stays on the RIGHT (order-first) */}
-        <a href="#hero" className="flex items-center gap-3 group lg:order-first">
+        <Link href="/" className="flex items-center gap-3 group lg:order-first">
           <GrowixLogo theme={isScrolled ? 'light' : 'dark'} iconSize={38} showSubtitle />
-        </a>
+        </Link>
       </div>
 
       {/* Smooth Animated Mobile Navigation Drawer */}

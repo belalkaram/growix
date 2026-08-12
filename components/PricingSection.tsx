@@ -36,12 +36,12 @@ export const PricingSection: React.FC<PricingSectionProps> = ({ packages, tools,
           </h2>
 
           <p className="text-gray-600 text-base sm:text-lg">
-            اختر الباقة الكاملة الشاملة لتوفير أقصى قدر من المال، أو اختر أداة واحدة فقط تناسب احتياجك الحالي.
+            اختر من بين 3 باقات مصممة لكل الاحتياجات: باقة VIP الشاملة بالكورسات، أو Premium بالأدوات، أو باقة برنامج واحد.
           </p>
         </div>
 
-        {/* 2 Pricing Cards Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-5xl mx-auto items-stretch">
+        {/* 3 Pricing Cards Grid (Side by side on medium and large screens) */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 xl:gap-8 max-w-7xl mx-auto items-stretch">
           {packageList.map((pkg) => {
             const isPopular = pkg.isPopular;
 
@@ -54,13 +54,21 @@ export const PricingSection: React.FC<PricingSectionProps> = ({ packages, tools,
                 transition={{ duration: 0.4 }}
                 className={`rounded-3xl p-6 sm:p-8 flex flex-col justify-between transition-all duration-300 relative ${
                   isPopular
-                    ? 'bg-[#0B1220] text-white border-2 border-[#2ECC8F] shadow-2xl scale-102 lg:scale-105 z-10 glow-navy'
+                    ? 'bg-[#0B1220] text-white border-2 border-[#2ECC8F] shadow-2xl z-10 glow-navy'
+                    : pkg.id === 'bundle-premium'
+                    ? 'bg-gradient-to-b from-[#F0FDF6] to-white text-[#0B1220] border border-[#0F9D58]/40 hover:border-[#0F9D58] hover:shadow-xl'
                     : 'bg-[#F7F9FA] text-[#0B1220] border border-gray-200 hover:border-[#0F9D58] hover:shadow-xl'
                 }`}
               >
                 {/* Popular Badge Floating Top */}
                 {pkg.badge && (
-                  <div className="absolute -top-4 right-1/2 translate-x-1/2 bg-growix-gradient text-white text-xs font-black px-4 py-1.5 rounded-full shadow-lg border border-white/20 whitespace-nowrap flex items-center gap-1.5">
+                  <div className={`absolute -top-4 right-1/2 translate-x-1/2 text-xs font-black px-4 py-1.5 rounded-full shadow-lg border whitespace-nowrap flex items-center gap-1.5 ${
+                    pkg.id === 'bundle-vip'
+                      ? 'bg-gradient-to-l from-amber-500 to-yellow-400 text-[#0B1220] border-amber-300/30'
+                      : pkg.id === 'bundle-premium'
+                      ? 'bg-growix-gradient text-white border-white/20'
+                      : 'bg-gray-700 text-white border-white/10'
+                  }`}>
                     <Sparkles className="w-3.5 h-3.5" />
                     <span>{pkg.badge}</span>
                   </div>

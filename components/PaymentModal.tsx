@@ -69,9 +69,9 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
     const senderInfoText = senderNumber.trim() ? senderNumber.trim() : 'لم يتم إدخاله';
 
     if (currentPkg.id === 'single-tool') {
-      message = `مرحباً فريق GROWIX!\nلقد قمت بتحويل مبلغ ${currentPkg.discountedPrice} ${currentPkg.currency} لشراء برنامج: [${currentTool.name}].\n\n📌 البيانات والتحويل:\n- طريقة التحويل: ${currentMethod.name}\n- رقم/حساب المحوِّل منه: ${senderInfoText}\n\nيرجى الاطلاع على صورة إيصال التحويل المرفقة وتفعيل حسابي وشرح الأداة. شكراً لكم!`;
+      message = `مرحباً فريق GROWIX!\nلقد قمت بتحويل مبلغ ${currentPkg.discountedPrice} ${currentPkg.currency} لشراء برنامج: [${currentTool.name}].\n\nالبيانات والتحويل:\n- طريقة التحويل: ${currentMethod.name}\n- رقم/حساب المحوِّل منه: ${senderInfoText}\n\nيرجى الاطلاع على صورة إيصال التحويل المرفقة وتفعيل حسابي وشرح الأداة. شكراً لكم!`;
     } else {
-      message = `مرحباً فريق GROWIX!\nلقد قمت بتحويل مبلغ ${currentPkg.discountedPrice} ${currentPkg.currency} لشراء [${currentPkg.name}].\n\n📌 البيانات والتحويل:\n- طريقة التحويل: ${currentMethod.name}\n- رقم/حساب المحوِّل منه: ${senderInfoText}\n\nيرجى الاطلاع على صورة إيصال التحويل المرفقة وتفعيل حسابي وشرح الأدوات والكورس. شكراً لكم!`;
+      message = `مرحباً فريق GROWIX!\nلقد قمت بتحويل مبلغ ${currentPkg.discountedPrice} ${currentPkg.currency} لشراء [${currentPkg.name}].\n\nالبيانات والتحويل:\n- طريقة التحويل: ${currentMethod.name}\n- رقم/حساب المحوِّل منه: ${senderInfoText}\n\nيرجى الاطلاع على صورة إيصال التحويل المرفقة وتفعيل حسابي وشرح الأدوات والكورس. شكراً لكم!`;
     }
     const text = encodeURIComponent(message);
     return `https://wa.me/${SITE_CONFIG.whatsappNumber}?text=${text}`;

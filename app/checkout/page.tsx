@@ -216,7 +216,7 @@ function CheckoutContent() {
             >
               <div className="flex items-start justify-between gap-2 mb-2">
                 <span className="text-xs font-black px-2.5 py-1 rounded-md bg-amber-400 text-[#0B1220]">
-                  💎 VIP ({SITE_PRICING.vipPackagePrice} ج)
+                  VIP ({SITE_PRICING.vipPackagePrice} ج)
                 </span>
                 {activePkgId === 'bundle-vip' && (
                   <CheckCircle2 className="w-5 h-5 text-[#2ECC8F] shrink-0" />
@@ -242,7 +242,7 @@ function CheckoutContent() {
             >
               <div className="flex items-start justify-between gap-2 mb-2">
                 <span className="text-xs font-black px-2.5 py-1 rounded-md bg-[#2ECC8F] text-[#0B1220]">
-                  ⭐ Premium ({SITE_PRICING.fullPackagePrice} ج)
+                  Premium ({SITE_PRICING.fullPackagePrice} ج)
                 </span>
                 {activePkgId === 'bundle-premium' && (
                   <CheckCircle2 className="w-5 h-5 text-[#2ECC8F] shrink-0" />
@@ -414,7 +414,7 @@ function CheckoutContent() {
             </div>
 
             <p className="text-xs text-gray-600 leading-relaxed font-medium">
-              💡 {currentPayment.instructions}
+              {currentPayment.instructions}
             </p>
           </div>
         </div>

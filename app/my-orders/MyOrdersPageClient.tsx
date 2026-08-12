@@ -1,8 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { HeaderNavbar } from '@/components/HeaderNavbar';
 import { Footer } from '@/components/Footer';
 import { SecureVideoModal } from '@/components/SecureVideoModal';
@@ -11,24 +10,33 @@ import {
   Clock, 
   CheckCircle2, 
   XCircle, 
-  ArrowRight, 
   Play, 
   Crown, 
   Wrench, 
   Sparkles, 
   FolderDown, 
   Database, 
-  GraduationCap, 
   Smartphone, 
   Download, 
   Video,
   Gift,
   ShieldCheck,
-  Sparkle,
   FolderOpen,
   ExternalLink,
-  HardDrive
+  HardDrive,
+  Copy,
+  Check,
+  Search,
+  Filter,
+  Monitor,
+  HelpCircle,
+  MessageSquare,
+  AlertTriangle,
+  Compass,
+  CheckSquare,
+  Sparkle
 } from 'lucide-react';
+import { SITE_CONFIG } from '@/config/site';
 
 interface MyOrdersPageClientProps {
   orders: any[];
@@ -36,39 +44,118 @@ interface MyOrdersPageClientProps {
 }
 
 export const MyOrdersPageClient: React.FC<MyOrdersPageClientProps> = ({ orders, userSession }) => {
-  const router = useRouter();
   const [activeVideo, setActiveVideo] = useState<{ title: string; videoUrl: string; description?: string } | null>(null);
+  const [copiedOrderId, setCopiedOrderId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [watchedVideos, setWatchedVideos] = useState<Set<number>>(new Set());
+  const [downloadedFiles, setDownloadedFiles] = useState<Set<string>>(new Set());
 
-  const handleNavigateToCheckout = () => {
-    router.push('/#pricing');
+  const handleCopyOrderId = (orderId: string) => {
+    navigator.clipboard.writeText(orderId);
+    setCopiedOrderId(orderId);
+    setTimeout(() => setCopiedOrderId(null), 2500);
+  };
+
+  const handleVideoClick = (v: any) => {
+    setWatchedVideos((prev) => new Set(prev).add(v.id));
+    setActiveVideo({ title: v.title, videoUrl: v.videoUrl, description: v.description });
+  };
+
+  const handleFileDownload = (fileKey: string) => {
+    setDownloadedFiles((prev) => new Set(prev).add(fileKey));
   };
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] text-[#0B1220] flex flex-col font-sans" dir="rtl">
-      <HeaderNavbar onOpenPaymentModal={handleNavigateToCheckout} session={userSession} />
+      <HeaderNavbar onOpenPaymentModal={() => {}} session={userSession} isSubscriberPage={true} />
 
-      <main className="flex-1 max-w-4xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-28 pb-20 space-y-8">
-        {/* Page Title Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white border border-gray-200/80 p-6 rounded-3xl shadow-sm">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-black text-[#0B1220] flex items-center gap-2.5">
-              <div className="w-10 h-10 rounded-2xl bg-[#0F9D58]/10 border border-[#0F9D58]/20 flex items-center justify-center text-[#0F9D58]">
-                <PackageCheck className="w-6 h-6" />
+      <main className="flex-1 max-w-5xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-24 pb-20 space-y-8">
+        
+        {/* Page Welcome Header */}
+        <div className="bg-gradient-to-l from-[#0B1220] via-[#0F172A] to-[#1E293B] text-white p-6 sm:p-8 rounded-3xl shadow-xl relative overflow-hidden border border-white/10">
+          <div className="absolute -top-12 -left-12 w-48 h-48 bg-[#0F9D58]/20 rounded-full blur-3xl pointer-events-none" />
+          
+          <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div className="space-y-2">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#0F9D58]/20 border border-[#0F9D58]/40 text-[#2ECC8F] text-xs font-black">
+                <ShieldCheck className="w-4 h-4" />
+                <span>منطقة المشتركين المعتمدة</span>
               </div>
-              <span>طلباتي واشتراكاتي</span>
-            </h1>
-            <p className="text-xs sm:text-sm text-gray-500 mt-1">
-              مرحباً <strong className="text-[#0F9D58] font-extrabold">{userSession?.user?.name}</strong>، متابعة حالة اشتراكك وتحميل أدواتك وفيديوهات الشرح.
-            </p>
+              
+              <h1 className="text-2xl sm:text-3xl font-black text-white flex items-center gap-3">
+                <span>أهلاً بك، {userSession?.user?.name}</span>
+              </h1>
+              
+              <p className="text-xs sm:text-sm text-gray-300 max-w-xl leading-relaxed">
+                جميع أدواتك، كورساتك، وفيديوهات الشرح متاحة لك فوراً أدناه بدون أي قيود.
+              </p>
+            </div>
+
+            {/* Account Status Badge */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 bg-white/5 border border-white/10 p-3.5 rounded-2xl backdrop-blur-md">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center font-bold">
+                  <CheckCircle2 className="w-5 h-5" />
+                </div>
+                <div>
+                  <span className="text-[11px] text-gray-400 block">حالة الحساب</span>
+                  <span className="text-xs font-black text-emerald-400">مُفعّل بالكامل</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Onboarding Wizard ("ابدأ من هنا") */}
+        <div className="bg-gradient-to-l from-emerald-50 via-teal-50/40 to-white border border-emerald-200/80 rounded-3xl p-6 sm:p-7 shadow-sm space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-xl bg-[#0F9D58] text-white flex items-center justify-center shadow-md shadow-[#0F9D58]/20">
+                <Compass className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-sm font-black text-gray-900">دليل البداية السريعة (ابدأ من هنا)</h3>
+                <p className="text-xs text-gray-600">خطوات بسيطة للاستفادة القصوى من اشتراكك فوراً</p>
+              </div>
+            </div>
+            
+            <span className="text-[11px] font-bold bg-[#0F9D58]/10 text-[#0F9D58] px-3 py-1 rounded-full border border-[#0F9D58]/20 hidden sm:inline-block">
+              نصائح التفعيل
+            </span>
           </div>
 
-          <Link
-            href="/"
-            className="text-xs font-extrabold text-gray-600 hover:text-[#0F9D58] flex items-center gap-1.5 self-start sm:self-center px-4 py-2 rounded-xl bg-gray-50 hover:bg-emerald-50 transition-colors border border-gray-200/60"
-          >
-            <span>العودة للموقع</span>
-            <ArrowRight className="w-4 h-4" />
-          </Link>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+            <div className="p-4 bg-white border border-emerald-100 rounded-2xl space-y-1.5 shadow-2xs">
+              <div className="flex items-center gap-2 text-xs font-black text-[#0F9D58]">
+                <span className="w-5 h-5 rounded-full bg-[#0F9D58]/10 text-[#0F9D58] flex items-center justify-center text-[11px] font-black">1</span>
+                <span>شاهد فيديو الشرح الأساسي</span>
+              </div>
+              <p className="text-[11px] text-gray-500 leading-relaxed">
+                ابدأ بمشاهدة مقطع الشرح المباشر لتعلم كيفية ربط الأداة بحساباتك وسحب الداتا.
+              </p>
+            </div>
+
+            <div className="p-4 bg-white border border-emerald-100 rounded-2xl space-y-1.5 shadow-2xs">
+              <div className="flex items-center gap-2 text-xs font-black text-[#0F9D58]">
+                <span className="w-5 h-5 rounded-full bg-[#0F9D58]/10 text-[#0F9D58] flex items-center justify-center text-[11px] font-black">2</span>
+                <span>حمل الأدوات والبرامج</span>
+              </div>
+              <p className="text-[11px] text-gray-500 leading-relaxed">
+                قم بتحميل ملفات الأدوات المتاحة لويندوز أو أندرويد وفك الضغط للبدء فوراً.
+              </p>
+            </div>
+
+            <div className="p-4 bg-white border border-emerald-100 rounded-2xl space-y-1.5 shadow-2xs">
+              <div className="flex items-center gap-2 text-xs font-black text-[#0F9D58]">
+                <span className="w-5 h-5 rounded-full bg-[#0F9D58]/10 text-[#0F9D58] flex items-center justify-center text-[11px] font-black">3</span>
+                <span>تواصل مع الدعم الفني</span>
+              </div>
+              <p className="text-[11px] text-gray-500 leading-relaxed">
+                إذا واجهتك أي مشكلة في التثبيت، فريق الدعم الفني متواجد 24/7 لمساعدتك.
+              </p>
+            </div>
+          </div>
         </div>
 
         {orders.length === 0 ? (
@@ -78,23 +165,25 @@ export const MyOrdersPageClient: React.FC<MyOrdersPageClientProps> = ({ orders, 
             </div>
             <h2 className="text-lg font-bold text-gray-800">ليس لديك أي طلبات اشتراك بعد</h2>
             <p className="text-xs text-gray-500 max-w-md mx-auto">
-              تصفح الباقات المتاحة واشترك للحصول على الكورس الشامل وأدوات التسويق.
+              تواصل مع الدعم الفني لطلب تفعيل حسابك مباشرة.
             </p>
-            <Link
-              href="/#pricing"
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-growix-gradient text-white font-extrabold text-xs shadow-md shadow-[#0F9D58]/20 hover:opacity-95 transition-opacity"
+            <a
+              href={`https://wa.me/${SITE_CONFIG.whatsappNumber}?text=مرحباً، أريد تفعيل اشتراكي`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-[#0F9D58] text-white font-extrabold text-xs shadow-md shadow-[#0F9D58]/20"
             >
-              استعرض الباقات والأسعار
-            </Link>
+              <MessageSquare className="w-4 h-4" />
+              <span>تواصل مع الدعم عبر الواتساب</span>
+            </a>
           </div>
         ) : (
-          <div className="space-y-6">
+          <div className="space-y-8">
             {orders.map((ord) => {
               const isPending = ord.status === 'pending';
               const isApproved = ord.status === 'approved';
               const isRejected = ord.status === 'rejected';
 
-              // Separate regular tools from bonus gift files
               const toolFiles = (ord.files || []).filter(
                 (f: any) => f.category !== 'data' && f.category !== 'bonus'
               );
@@ -102,22 +191,72 @@ export const MyOrdersPageClient: React.FC<MyOrdersPageClientProps> = ({ orders, 
                 (f: any) => f.category === 'data' || f.category === 'bonus'
               );
 
+              // Filtering files by search and category
+              const filteredTools = toolFiles.filter((f: any) => {
+                const matchesSearch = !searchQuery.trim() || 
+                  f.fileName.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                  (f.description && f.description.toLowerCase().includes(searchQuery.toLowerCase()));
+                
+                if (!matchesSearch) return false;
+                if (selectedCategory === 'all') return true;
+                if (selectedCategory === 'whatsapp' && (f.fileName.includes('واتساب') || f.fileName.includes('WhatsApp'))) return true;
+                if (selectedCategory === 'telegram' && (f.fileName.includes('تليجرام') || f.fileName.includes('Telegram'))) return true;
+                if (selectedCategory === 'facebook' && (f.fileName.includes('فيسبوك') || f.fileName.includes('Facebook'))) return true;
+                if (selectedCategory === 'design' && (f.fileName.includes('كانفا') || f.fileName.includes('مونتاج') || f.fileName.includes('Canva'))) return true;
+                if (selectedCategory === 'apk' && f.fileType === 'apk') return true;
+                return selectedCategory === 'other';
+              });
+
+              const totalItemsCount = (ord.videos?.length || 0) + toolFiles.length + giftFiles.length;
+              const completedCount = watchedVideos.size + downloadedFiles.size;
+              const progressPercentage = totalItemsCount > 0 ? Math.min(100, Math.round((completedCount / totalItemsCount) * 100)) : 0;
+
               return (
                 <div
                   key={ord.id}
-                  className="bg-white border border-gray-200/80 rounded-3xl p-6 sm:p-7 shadow-sm space-y-6 hover:border-[#0F9D58]/30 transition-all"
+                  className="bg-white border border-gray-200/90 rounded-3xl p-6 sm:p-8 shadow-sm space-y-7 transition-all"
                 >
-                  {/* Order Header Info */}
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-gray-100">
-                    <div>
-                      <span className="text-[11px] font-mono text-gray-400 block mb-1">رقم الطلب: {ord.id}</span>
-                      <h3 className="text-lg font-black text-[#0B1220] flex items-center gap-2">
+                  {/* Order Header Info & One-Click Copy */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-gray-100">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-mono text-gray-500 bg-gray-100 px-2.5 py-0.5 rounded-lg border border-gray-200">
+                          ID: {ord.id}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleCopyOrderId(ord.id)}
+                          className="p-1.5 text-xs text-gray-500 hover:text-[#0F9D58] hover:bg-emerald-50 rounded-lg transition-colors flex items-center gap-1 cursor-pointer"
+                          title="نسخ رقم الطلب"
+                        >
+                          {copiedOrderId === ord.id ? (
+                            <>
+                              <Check className="w-3.5 h-3.5 text-[#0F9D58]" />
+                              <span className="text-[10px] text-[#0F9D58] font-bold">تم النسخ!</span>
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="w-3.5 h-3.5" />
+                              <span className="text-[10px]">نسخ</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+
+                      <h3 className="text-lg font-black text-[#0B1220] flex items-center gap-2 pt-1">
                         {ord.packageId === 'bundle-vip' ? (
                           <>
                             <div className="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-500 shrink-0">
                               <Crown className="w-4 h-4" />
                             </div>
-                            <span>الباقة الكاملة VIP (الكورس + الأدوات + الداتا)</span>
+                            <span>باقة VIP الشاملة (كورسات + الـ 12 أداة + الداتا)</span>
+                          </>
+                        ) : ord.packageId === 'bundle-premium' ? (
+                          <>
+                            <div className="w-8 h-8 rounded-xl bg-[#0F9D58]/10 border border-[#0F9D58]/30 flex items-center justify-center text-[#0F9D58] shrink-0">
+                              <Sparkles className="w-4 h-4" />
+                            </div>
+                            <span>باقة Premium (الـ 12 أداة + الداتا)</span>
                           </>
                         ) : (
                           <>
@@ -140,7 +279,7 @@ export const MyOrdersPageClient: React.FC<MyOrdersPageClientProps> = ({ orders, 
                       {isApproved && (
                         <span className="px-3.5 py-1.5 rounded-full text-xs font-extrabold bg-emerald-500/10 text-emerald-600 border border-emerald-500/30 flex items-center gap-1.5">
                           <CheckCircle2 className="w-4 h-4" />
-                          <span>تم التفعيل بنجاح</span>
+                          <span>مفعل ونشط</span>
                         </span>
                       )}
                       {isRejected && (
@@ -152,49 +291,39 @@ export const MyOrdersPageClient: React.FC<MyOrdersPageClientProps> = ({ orders, 
                     </div>
                   </div>
 
-                  {/* Payment Details Bar */}
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-                    <div className="p-3.5 bg-gray-50/80 border border-gray-100 rounded-2xl">
-                      <span className="text-gray-400 block mb-1">طريقة الدفع:</span>
-                      <span className="font-extrabold text-gray-800">
-                        {ord.paymentMethod === 'instapay' ? 'إنستاباي (InstaPay)' : 'محفظة إلكترونية'}
-                      </span>
-                    </div>
-
-                    <div className="p-3.5 bg-gray-50/80 border border-gray-100 rounded-2xl">
-                      <span className="text-gray-400 block mb-1">الرقم المحوّل منه:</span>
-                      <span className="font-extrabold text-gray-800 font-mono dir-ltr inline-block">{ord.senderNumber}</span>
-                    </div>
-
-                    <div className="p-3.5 bg-gray-50/80 border border-gray-100 rounded-2xl">
-                      <span className="text-gray-400 block mb-1">المبلغ المحوّل:</span>
-                      <span className="font-extrabold text-[#0F9D58] text-sm">{ord.amount} جنية</span>
-                    </div>
-                  </div>
-
+                  {/* Progress Tracker Bar */}
                   {isApproved && (
-                    <div className="space-y-6 pt-2">
-                      {/* Activation Success Banner */}
-                      <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-900 text-xs leading-relaxed space-y-1">
-                        <p className="font-black text-[#0F9D58] text-sm flex items-center gap-2">
-                          <ShieldCheck className="w-5 h-5 text-[#0F9D58] shrink-0" />
-                          <span>تهانينا! حسابك مفعل بالكامل. يمكنك مشاهدة الشروحات وتحميل الأدوات أدناه:</span>
-                        </p>
-                        <p className="text-gray-600 font-medium">
-                          الفيديوهات والأدوات والهدايا مرتبة ومتاحة لك فوراً.
-                        </p>
+                    <div className="p-4 bg-gray-50 border border-gray-100 rounded-2xl space-y-2">
+                      <div className="flex items-center justify-between text-xs font-bold text-gray-700">
+                        <span className="flex items-center gap-1.5">
+                          <CheckSquare className="w-4 h-4 text-[#0F9D58]" />
+                          <span>مستوى الاستفادة من المحتوى:</span>
+                        </span>
+                        <span className="text-[#0F9D58]">{completedCount} من {totalItemsCount} عنصر ({progressPercentage}%)</span>
                       </div>
 
+                      <div className="w-full h-2 rounded-full bg-gray-200 overflow-hidden">
+                        <div 
+                          className="h-full bg-gradient-to-l from-[#0F9D58] to-[#2ECC8F] transition-all duration-500 rounded-full"
+                          style={{ width: `${Math.max(10, progressPercentage)}%` }}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {isApproved && (
+                    <div className="space-y-8 pt-2">
+
                       {/* ============================================================ */}
-                      {/* SECTION 1: 🎥 فيديوهات الشرح والتدريب (Videos First) */}
+                      {/* SECTION 1: فيديوهات الشرح والتدريب (Videos First) */}
                       {/* ============================================================ */}
-                      <div className="space-y-3">
+                      <div id="my-videos" className="space-y-4">
                         <div className="flex items-center justify-between">
                           <h4 className="text-sm font-black text-[#0B1220] flex items-center gap-2">
                             <div className="w-7 h-7 rounded-lg bg-[#2ECC8F]/15 border border-[#2ECC8F]/30 flex items-center justify-center text-[#0F9D58]">
                               <Video className="w-4 h-4" />
                             </div>
-                            <span>1. فيديوهات الشرح والتدريب ({ord.videos?.length || 0} فيديو)</span>
+                            <span>1. فيديوهات الشرح والتدريب المباشر ({ord.videos?.length || 0} فيديو)</span>
                           </h4>
                           {ord.videos && ord.videos.length > 0 && (
                             <span className="text-[10px] font-bold bg-[#2ECC8F]/10 text-[#0F9D58] px-2.5 py-1 rounded-full border border-[#2ECC8F]/20">
@@ -204,27 +333,50 @@ export const MyOrdersPageClient: React.FC<MyOrdersPageClientProps> = ({ orders, 
                         </div>
 
                         {ord.videos && ord.videos.length > 0 ? (
-                          <div className="grid grid-cols-1 gap-3">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             {ord.videos.map((v: any) => (
                               <div
                                 key={v.id}
-                                className="p-4 bg-[#0B1220] border border-white/10 hover:border-[#2ECC8F]/40 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-white shadow-md transition-all"
+                                className="bg-[#0B1220] border border-white/10 hover:border-[#2ECC8F]/40 rounded-2xl overflow-hidden shadow-md transition-all flex flex-col justify-between"
                               >
-                                <div className="space-y-1 max-w-lg">
-                                  <span className="font-extrabold text-xs text-white block">{v.title}</span>
-                                  {v.description && (
-                                    <p className="text-[11px] text-gray-400 line-clamp-2">{v.description}</p>
+                                {/* Video Thumbnail Card */}
+                                <div className="relative aspect-video bg-gradient-to-tr from-slate-900 via-slate-800 to-emerald-950 flex items-center justify-center p-4 group cursor-pointer"
+                                  onClick={() => handleVideoClick(v)}
+                                >
+                                  <div className="w-12 h-12 rounded-full bg-[#0F9D58] text-white flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                                    <Play className="w-5 h-5 fill-current text-white translate-x-0.5" />
+                                  </div>
+
+                                  <span className="absolute top-2 right-2 px-2.5 py-1 rounded-lg text-[10px] font-bold bg-black/60 text-white backdrop-blur-md border border-white/10 flex items-center gap-1">
+                                    <Clock className="w-3 h-3 text-[#2ECC8F]" />
+                                    <span>شرح تفصيلي</span>
+                                  </span>
+
+                                  {watchedVideos.has(v.id) && (
+                                    <span className="absolute top-2 left-2 px-2 py-0.5 rounded-lg text-[10px] font-bold bg-emerald-500 text-white flex items-center gap-1">
+                                      <Check className="w-3 h-3" />
+                                      <span>تمت المشاهدة</span>
+                                    </span>
                                   )}
                                 </div>
 
-                                <button
-                                  type="button"
-                                  onClick={() => setActiveVideo({ title: v.title, videoUrl: v.videoUrl, description: v.description })}
-                                  className="py-2.5 px-5 rounded-xl bg-gradient-to-l from-[#0F9D58] to-[#2ECC8F] hover:opacity-90 text-white text-xs font-black flex items-center justify-center gap-2 shrink-0 shadow-md shadow-[#0F9D58]/20 transition-transform active:scale-95 cursor-pointer"
-                                >
-                                  <Play className="w-4 h-4 fill-current text-white" />
-                                  <span>مشاهدة الشرح المباشر</span>
-                                </button>
+                                <div className="p-4 space-y-3 flex-1 flex flex-col justify-between">
+                                  <div className="space-y-1">
+                                    <span className="font-extrabold text-xs text-white block leading-snug">{v.title}</span>
+                                    {v.description && (
+                                      <p className="text-[11px] text-gray-400 line-clamp-2 leading-relaxed">{v.description}</p>
+                                    )}
+                                  </div>
+
+                                  <button
+                                    type="button"
+                                    onClick={() => handleVideoClick(v)}
+                                    className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-l from-[#0F9D58] to-[#2ECC8F] hover:opacity-90 text-white text-xs font-black flex items-center justify-center gap-2 shadow-md shadow-[#0F9D58]/20 transition-transform active:scale-95 cursor-pointer"
+                                  >
+                                    <Play className="w-3.5 h-3.5 fill-current text-white" />
+                                    <span>مشاهدة الشرح الآن</span>
+                                  </button>
+                                </div>
                               </div>
                             ))}
                           </div>
@@ -236,16 +388,16 @@ export const MyOrdersPageClient: React.FC<MyOrdersPageClientProps> = ({ orders, 
                       </div>
 
                       {/* ============================================================ */}
-                      {/* SECTION 2: 📂 كورسات MEGA (Courses Second) */}
+                      {/* SECTION 2: كورسات MEGA (Courses Second) */}
                       {/* ============================================================ */}
                       {ord.megaLinks && ord.megaLinks.length > 0 && (
-                        <div className="space-y-3 pt-2">
+                        <div id="my-courses" className="space-y-4 pt-2">
                           <div className="flex items-center justify-between">
                             <h4 className="text-sm font-black text-[#0B1220] flex items-center gap-2">
                               <div className="w-7 h-7 rounded-lg bg-blue-500/15 border border-blue-500/30 flex items-center justify-center text-blue-600">
                                 <FolderOpen className="w-4 h-4" />
                               </div>
-                              <span>2. كورسات التسويق الشاملة ({ord.megaLinks.length} مجلد)</span>
+                              <span>2. كورسات التسويق الشاملة (+1 TB على MEGA)</span>
                             </h4>
                             <span className="text-[10px] font-bold bg-blue-500/10 text-blue-600 px-2.5 py-1 rounded-full border border-blue-500/20">
                               MEGA محمي
@@ -300,47 +452,103 @@ export const MyOrdersPageClient: React.FC<MyOrdersPageClientProps> = ({ orders, 
                       )}
 
                       {/* ============================================================ */}
-                      {/* SECTION 3: 🛠️ الأدوات والبرامج المتاحة (Tools Third) */}
+                      {/* SECTION 3: البرامج والأدوات المتاحة (Tools Third with Search & Filters) */}
                       {/* ============================================================ */}
-                      <div className="space-y-3 pt-2">
-                        <h4 className="text-sm font-black text-[#0B1220] flex items-center gap-2">
-                          <div className="w-7 h-7 rounded-lg bg-[#0F9D58]/15 border border-[#0F9D58]/30 flex items-center justify-center text-[#0F9D58]">
-                            <Wrench className="w-4 h-4" />
-                          </div>
-                          <span>3. البرامج والأدوات التسويقية المتاحة ({toolFiles.length} برنامج)</span>
-                        </h4>
+                      <div id="my-tools" className="space-y-4 pt-2">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                          <h4 className="text-sm font-black text-[#0B1220] flex items-center gap-2">
+                            <div className="w-7 h-7 rounded-lg bg-[#0F9D58]/15 border border-[#0F9D58]/30 flex items-center justify-center text-[#0F9D58]">
+                              <Wrench className="w-4 h-4" />
+                            </div>
+                            <span>3. البرامج والأدوات التسويقية المتاحة ({toolFiles.length} برنامج)</span>
+                          </h4>
 
-                        {toolFiles.length > 0 ? (
-                          <div className="grid grid-cols-1 gap-2.5">
-                            {toolFiles.map((f: any) => (
+                          {/* Smart Search Bar */}
+                          <div className="relative w-full sm:w-64">
+                            <Search className="w-4 h-4 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2" />
+                            <input
+                              type="text"
+                              value={searchQuery}
+                              onChange={(e) => setSearchQuery(e.target.value)}
+                              placeholder="ابحث باسم البرنامج..."
+                              className="w-full pl-3 pr-9 py-2 rounded-xl bg-gray-50 border border-gray-200 text-xs font-medium focus:outline-none focus:border-[#0F9D58] transition-colors"
+                            />
+                          </div>
+                        </div>
+
+                        {/* Category Filter Tabs */}
+                        <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs no-scrollbar">
+                          {[
+                            { id: 'all', label: 'الكل' },
+                            { id: 'whatsapp', label: 'واتساب' },
+                            { id: 'telegram', label: 'تليجرام' },
+                            { id: 'facebook', label: 'فيسبوك' },
+                            { id: 'design', label: 'تصميم ومونتاج' },
+                            { id: 'apk', label: 'تطبيقات أندرويد' },
+                          ].map((cat) => (
+                            <button
+                              key={cat.id}
+                              type="button"
+                              onClick={() => setSelectedCategory(cat.id)}
+                              className={`px-3.5 py-1.5 rounded-xl font-bold whitespace-nowrap transition-colors cursor-pointer ${
+                                selectedCategory === cat.id
+                                  ? 'bg-[#0B1220] text-white'
+                                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                              }`}
+                            >
+                              {cat.label}
+                            </button>
+                          ))}
+                        </div>
+
+                        {filteredTools.length > 0 ? (
+                          <div className="grid grid-cols-1 gap-3">
+                            {filteredTools.map((f: any) => (
                               <div
                                 key={f.id || f.fileKey}
                                 className="p-4 bg-gray-50/90 border border-gray-200/80 hover:border-[#0F9D58]/40 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-colors shadow-2xs"
                               >
                                 <div className="flex items-center gap-3">
-                                  <div className={`w-10 h-10 rounded-xl border flex items-center justify-center shrink-0 font-extrabold text-[10px] ${
+                                  <div className={`w-11 h-11 rounded-xl border flex items-center justify-center shrink-0 font-extrabold text-[11px] ${
                                     f.fileType === 'apk'
                                       ? 'bg-blue-500/10 border-blue-500/20 text-blue-600'
                                       : 'bg-[#0F9D58]/10 border-[#0F9D58]/20 text-[#0F9D58]'
                                   }`}>
                                     {f.fileType === 'apk' ? 'APK' : 'ZIP'}
                                   </div>
-                                  <div>
-                                    <span className="font-extrabold text-xs text-[#0B1220] block">{f.fileName}</span>
-                                    <span className="text-[10px] text-gray-500 block mt-0.5 flex items-center gap-1">
-                                      {f.fileType === 'apk' ? (
-                                        <>
-                                          <Smartphone className="w-3 h-3 text-blue-500 shrink-0" />
-                                          <span>تطبيق أندرويد</span>
-                                        </>
-                                      ) : (
-                                        <>
-                                          <Wrench className="w-3 h-3 text-[#0F9D58] shrink-0" />
-                                          <span>برنامج وأداة تسويق</span>
-                                        </>
+
+                                  <div className="space-y-1">
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                      <span className="font-extrabold text-xs text-[#0B1220] block">{f.fileName}</span>
+                                      
+                                      {/* Compatibility Badges */}
+                                      <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-gray-200 text-gray-700 flex items-center gap-1">
+                                        {f.fileType === 'apk' ? (
+                                          <>
+                                            <Smartphone className="w-3 h-3 text-blue-600" />
+                                            <span>Android APK</span>
+                                          </>
+                                        ) : (
+                                          <>
+                                            <Monitor className="w-3 h-3 text-gray-600" />
+                                            <span>Windows 10/11</span>
+                                          </>
+                                        )}
+                                      </span>
+
+                                      {downloadedFiles.has(f.fileKey) && (
+                                        <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-100 text-emerald-800 flex items-center gap-1">
+                                          <Check className="w-3 h-3" />
+                                          <span>تم التحميل</span>
+                                        </span>
                                       )}
-                                      {f.fileSize ? ` • الحجم: ${f.fileSize}` : ''}
-                                    </span>
+                                    </div>
+
+                                    {f.fileSize && (
+                                      <span className="text-[10px] text-gray-500 block">
+                                        الحجم: {f.fileSize}
+                                      </span>
+                                    )}
                                   </div>
                                 </div>
 
@@ -348,30 +556,31 @@ export const MyOrdersPageClient: React.FC<MyOrdersPageClientProps> = ({ orders, 
                                   href={`/api/download?orderId=${ord.id}&fileKey=${encodeURIComponent(f.fileKey)}`}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="py-2.5 px-4 rounded-xl bg-[#0F9D58] hover:bg-[#0D8B4E] text-white text-xs font-black flex items-center justify-center gap-2 shadow-sm shadow-[#0F9D58]/20 transition-transform active:scale-95 shrink-0"
+                                  onClick={() => handleFileDownload(f.fileKey)}
+                                  className="py-2.5 px-4 rounded-xl bg-[#0F9D58] hover:bg-[#0D8B4E] text-white text-xs font-black flex items-center justify-center gap-2 shadow-sm shadow-[#0F9D58]/20 transition-transform active:scale-95 shrink-0 cursor-pointer"
                                 >
                                   <Download className="w-4 h-4" />
-                                  <span>تحميل ({f.fileType === 'apk' ? 'APK' : 'ZIP'})</span>
+                                  <span>تحميل البرامج ({f.fileType === 'apk' ? 'APK' : 'ZIP'})</span>
                                 </a>
                               </div>
                             ))}
                           </div>
                         ) : (
-                          <div className="p-4 bg-gray-50 border border-gray-100 rounded-2xl text-xs text-gray-500 font-bold text-center">
-                            تواصل مع الدعم الفني عبر الواتساب للحصول على الروابط المباشرة.
+                          <div className="p-6 bg-gray-50 border border-gray-100 rounded-2xl text-xs text-gray-500 font-bold text-center">
+                            لا توجد نتائج مطابقة للبحث حالياً.
                           </div>
                         )}
                       </div>
 
                       {/* ============================================================ */}
-                      {/* SECTION 3: 🎁 الهدية الإضافية: داتا مصر التسويقية (Bonus Third) */}
+                      {/* SECTION 4: الهدية الإضافية: داتا مصر التسويقية (Bonus Fourth) */}
                       {/* ============================================================ */}
-                      <div className="space-y-3 pt-2">
+                      <div id="my-bonus" className="space-y-4 pt-2">
                         <h4 className="text-sm font-black text-[#0B1220] flex items-center gap-2">
                           <div className="w-7 h-7 rounded-lg bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-600">
                             <Gift className="w-4 h-4" />
                           </div>
-                          <span>4. الهدية الحصرية المرفقة</span>
+                          <span>4. الهدية الحصرية المرفقة (داتا مصر التسويقية)</span>
                         </h4>
 
                         {giftFiles.length > 0 ? (
@@ -389,7 +598,7 @@ export const MyOrdersPageClient: React.FC<MyOrdersPageClientProps> = ({ orders, 
                                     <div className="flex items-center gap-2">
                                       <span className="font-black text-sm text-gray-900">{f.fileName}</span>
                                       <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-500 text-white shadow-xs">
-                                        هدية VIP 🔥
+                                        هدية VIP
                                       </span>
                                     </div>
                                     <p className="text-xs text-gray-600 font-medium">
@@ -407,7 +616,8 @@ export const MyOrdersPageClient: React.FC<MyOrdersPageClientProps> = ({ orders, 
                                   href={`/api/download?orderId=${ord.id}&fileKey=${encodeURIComponent(f.fileKey)}`}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="py-3 px-5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-black flex items-center justify-center gap-2 shadow-md shadow-amber-500/20 transition-transform active:scale-95 shrink-0"
+                                  onClick={() => handleFileDownload(f.fileKey)}
+                                  className="py-3 px-5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-black flex items-center justify-center gap-2 shadow-md shadow-amber-500/20 transition-transform active:scale-95 shrink-0 cursor-pointer"
                                 >
                                   <Download className="w-4 h-4" />
                                   <span>تحميل الهدية الآن</span>
@@ -417,10 +627,11 @@ export const MyOrdersPageClient: React.FC<MyOrdersPageClientProps> = ({ orders, 
                           </div>
                         ) : (
                           <div className="p-4 bg-amber-50/50 border border-amber-200/60 rounded-2xl text-xs text-amber-800 font-bold text-center">
-                            🎁 هدية داتا مصر التسويقية الشاملة مجمّعة مع الباقة الفاخرة VIP.
+                            هدية داتا مصر التسويقية الشاملة مجمّعة مع الباقة الفاخرة VIP.
                           </div>
                         )}
                       </div>
+
                     </div>
                   )}
 
@@ -435,6 +646,54 @@ export const MyOrdersPageClient: React.FC<MyOrdersPageClientProps> = ({ orders, 
             })}
           </div>
         )}
+
+        {/* Direct Subscriber Support Hub at Bottom (No Sales CTAs!) */}
+        <div id="my-support" className="bg-white border border-gray-200 rounded-3xl p-6 sm:p-8 space-y-6 shadow-sm">
+          <div className="flex items-center justify-between border-b border-gray-100 pb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-[#0F9D58]/10 text-[#0F9D58] border border-[#0F9D58]/20 flex items-center justify-center">
+                <HelpCircle className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-black text-gray-900">مركز دعم ومساعدة المشتركين</h3>
+                <p className="text-xs text-gray-500">نحن هنا لمساعدتك في أي استفسار أو مشكلة في التثبيت</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <a
+              href={`https://wa.me/${SITE_CONFIG.whatsappNumber}?text=مرحباً، أنا مشترك بالفعل وأحتاج مساعدة في التثبيت`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-5 rounded-2xl bg-emerald-50/60 hover:bg-emerald-50 border border-emerald-200 text-emerald-950 transition-colors flex items-center gap-4 group"
+            >
+              <div className="w-12 h-12 rounded-2xl bg-[#0F9D58] text-white flex items-center justify-center shrink-0 shadow-md shadow-[#0F9D58]/20">
+                <MessageSquare className="w-6 h-6" />
+              </div>
+              <div className="space-y-0.5">
+                <span className="font-black text-sm block group-hover:text-[#0F9D58] transition-colors">الدعم الفني المباشر (واتساب)</span>
+                <span className="text-xs text-emerald-700 block">تواصل فوري مع مهندسي الدعم والتفعيل</span>
+              </div>
+            </a>
+
+            <a
+              href={`https://wa.me/${SITE_CONFIG.whatsappNumber}?text=إبلاغ عن مشكلة في أداة أو رابط لا يعمل`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-5 rounded-2xl bg-amber-50/60 hover:bg-amber-50 border border-amber-200 text-amber-950 transition-colors flex items-center gap-4 group"
+            >
+              <div className="w-12 h-12 rounded-2xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-md shadow-amber-500/20">
+                <AlertTriangle className="w-6 h-6" />
+              </div>
+              <div className="space-y-0.5">
+                <span className="font-black text-sm block group-hover:text-amber-700 transition-colors">الإبلاغ عن رابط أو أداة</span>
+                <span className="text-xs text-amber-700 block">تحديث فوري لروابط التحميل والسيريال</span>
+              </div>
+            </a>
+          </div>
+        </div>
+
       </main>
 
       {/* Private Secure Video Modal */}
@@ -448,7 +707,7 @@ export const MyOrdersPageClient: React.FC<MyOrdersPageClientProps> = ({ orders, 
         />
       )}
 
-      <Footer />
+      <Footer hideSalesBanner={true} />
     </div>
   );
 };

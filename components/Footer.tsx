@@ -8,9 +8,10 @@ import { MessageSquare, Send, Mail, ShieldCheck, Sparkles, ArrowUp } from 'lucid
 interface FooterProps {
   onOpenPaymentModal?: () => void;
   settings?: Record<string, string>;
+  hideSalesBanner?: boolean;
 }
 
-export const Footer: React.FC<FooterProps> = ({ onOpenPaymentModal, settings }) => {
+export const Footer: React.FC<FooterProps> = ({ onOpenPaymentModal, settings, hideSalesBanner }) => {
   const whatsappNum = settings?.whatsapp_number || SITE_CONFIG.whatsappNumber;
   const telegramUser = settings?.telegram_username || SITE_CONFIG.telegramUsername;
   const scrollToTop = () => {
@@ -21,23 +22,25 @@ export const Footer: React.FC<FooterProps> = ({ onOpenPaymentModal, settings }) 
     <footer className="bg-[#0B1220] text-white pt-16 pb-20 sm:pb-12 border-t border-white/10 relative overflow-hidden dir-rtl text-right">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         
-        {/* Top Banner inside Footer */}
-        <div className="p-8 sm:p-10 rounded-3xl bg-gradient-to-r from-white/10 to-white/5 border border-white/15 backdrop-blur-xl mb-16 flex flex-col md:flex-row items-center justify-between gap-6 shadow-2xl">
-          <div className="space-y-2 text-center md:text-right">
-            <h3 className="text-2xl sm:text-3xl font-black text-white">جاهز لامتلاك ترسانتك التسويقية وتكبير عملك؟</h3>
-            <p className="text-gray-300 text-xs sm:text-sm">
-              احصل على الكورس الشامل والـ 12 أداة مع داتا مصر والتفعيل الفوري خلال ساعة.
-            </p>
-          </div>
+        {/* Top Banner inside Footer (Hidden for subscribers) */}
+        {!hideSalesBanner && (
+          <div className="p-8 sm:p-10 rounded-3xl bg-gradient-to-r from-white/10 to-white/5 border border-white/15 backdrop-blur-xl mb-16 flex flex-col md:flex-row items-center justify-between gap-6 shadow-2xl">
+            <div className="space-y-2 text-center md:text-right">
+              <h3 className="text-2xl sm:text-3xl font-black text-white">جاهز لامتلاك ترسانتك التسويقية وتكبير عملك؟</h3>
+              <p className="text-gray-300 text-xs sm:text-sm">
+                احصل على الكورس الشامل والـ 12 أداة مع داتا مصر والتفعيل الفوري خلال ساعة.
+              </p>
+            </div>
 
-          <button
-            onClick={() => onOpenPaymentModal?.()}
-            className="py-4 px-8 rounded-2xl bg-growix-gradient hover:bg-growix-gradient-hover text-white font-extrabold text-sm sm:text-base flex items-center gap-3 shadow-xl shadow-[#0F9D58]/30 transition-all hover:scale-105 shrink-0"
-          >
-            <Sparkles className="w-5 h-5" />
-            <span>اشترك الآن واستلم فوراً</span>
-          </button>
-        </div>
+            <button
+              onClick={() => onOpenPaymentModal?.()}
+              className="py-4 px-8 rounded-2xl bg-growix-gradient hover:bg-growix-gradient-hover text-white font-extrabold text-sm sm:text-base flex items-center gap-3 shadow-xl shadow-[#0F9D58]/30 transition-all hover:scale-105 shrink-0"
+            >
+              <Sparkles className="w-5 h-5" />
+              <span>اشترك الآن واستلم فوراً</span>
+            </button>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-12 gap-10 pb-12 border-b border-white/10">
           

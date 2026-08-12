@@ -60,7 +60,11 @@ export default async function AdminOrdersPage() {
                       {/* Package / Tool */}
                       <td className="p-4 text-gray-200">
                         <span className="font-bold block text-white">
-                          {ord.packageId === 'bundle-vip' ? '👑 الباقة الكاملة VIP (12 أداة + كورس)' : '🛠️ باقة برنامج واحد'}
+                          {ord.packageId === 'bundle-vip'
+                            ? 'باقة VIP الشاملة (12 أداة + كورس)'
+                            : ord.packageId === 'bundle-premium'
+                            ? 'باقة Premium (12 أداة + داتا)'
+                            : 'باقة برنامج واحد'}
                         </span>
                         {ord.toolId && (
                           <span className="text-[11px] text-[#2ECC8F] block font-mono">
@@ -98,19 +102,19 @@ export default async function AdminOrdersPage() {
                         {isPending && (
                           <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center gap-1 w-fit">
                             <Clock className="w-3 h-3" />
-                            <span>قيد المراجعة 🟡</span>
+                            <span>قيد المراجعة</span>
                           </span>
                         )}
                         {isApproved && (
                           <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-1 w-fit">
                             <CheckCircle2 className="w-3 h-3" />
-                            <span>مقبول ومُفعل 🟢</span>
+                            <span>مقبول ومُفعل</span>
                           </span>
                         )}
                         {isRejected && (
                           <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-red-500/20 text-red-400 border border-red-500/30 flex items-center gap-1 w-fit">
                             <XCircle className="w-3 h-3" />
-                            <span>مرفوض 🔴</span>
+                            <span>مرفوض</span>
                           </span>
                         )}
                       </td>

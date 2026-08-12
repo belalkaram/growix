@@ -47,7 +47,7 @@ export const MaintenanceScreen: React.FC<MaintenanceScreenProps> = ({
 
         <div className="space-y-4">
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-black leading-tight text-white">
-            الموقع حالياً قيد <span className="text-amber-400">الصيانة والتطوير</span> 🛠️
+            الموقع حالياً قيد <span className="text-amber-400">الصيانة والتطوير</span>
           </h1>
 
           <div className="p-6 rounded-3xl bg-[#0F172A] border border-white/10 text-sm sm:text-base text-gray-200 leading-relaxed font-medium shadow-xl">
