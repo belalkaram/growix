@@ -2,14 +2,24 @@
 
 import React from 'react';
 import { motion } from 'motion/react';
+import { useRouter } from 'next/navigation';
 import { SITE_CONFIG } from '@/config/site';
 import { CheckCircle2, ArrowLeft, Clock, ShieldCheck, Sparkles } from 'lucide-react';
 
 interface HowItWorksSectionProps {
-  onOpenPaymentModal: () => void;
+  onOpenPaymentModal?: () => void;
 }
 
 export const HowItWorksSection: React.FC<HowItWorksSectionProps> = ({ onOpenPaymentModal }) => {
+  const router = useRouter();
+
+  const handleSubscribe = () => {
+    if (onOpenPaymentModal) {
+      onOpenPaymentModal();
+    } else {
+      router.push('/checkout');
+    }
+  };
   return (
     <section id="how-it-works" className="py-24 bg-[#F7F9FA] relative overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
@@ -71,13 +81,23 @@ export const HowItWorksSection: React.FC<HowItWorksSectionProps> = ({ onOpenPaym
             فريق الدعم الفني جاهز لمساعدتك وإرشادك فور استلام إيصال التحويل
           </h3>
 
-          <button
-            onClick={() => onOpenPaymentModal()}
-            className="py-3.5 px-8 rounded-2xl bg-growix-gradient hover:bg-growix-gradient-hover text-white font-extrabold text-sm inline-flex items-center gap-2 shadow-lg shadow-[#0F9D58]/20 transition-all hover:scale-105"
-          >
-            <Sparkles className="w-4 h-4" />
-            <span>ابدأ الآن واختر باقتك</span>
-          </button>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+            <button
+              onClick={handleSubscribe}
+              className="w-full sm:w-auto py-3.5 px-8 rounded-2xl bg-growix-gradient hover:bg-growix-gradient-hover text-white font-extrabold text-sm inline-flex items-center justify-center gap-2 shadow-lg shadow-[#0F9D58]/20 transition-all hover:scale-105"
+            >
+              <Sparkles className="w-4 h-4" />
+              <span>ابدأ الآن واختر باقتك</span>
+            </button>
+
+            <a
+              href="/how-it-works"
+              className="w-full sm:w-auto py-3.5 px-6 rounded-2xl bg-gray-100 hover:bg-gray-200 text-[#0B1220] font-bold text-xs sm:text-sm inline-flex items-center justify-center gap-2 transition-colors border border-gray-200"
+            >
+              <span>تفاصيل طريقة الاشتراك والدفع</span>
+              <ArrowLeft className="w-4 h-4 text-[#0F9D58]" />
+            </a>
+          </div>
         </div>
 
       </div>

@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { SITE_CONFIG } from '@/config/site';
+import { useRouter } from 'next/navigation';
 import { 
   GraduationCap, 
   CheckCircle2, 
@@ -19,11 +20,20 @@ import {
 } from 'lucide-react';
 
 interface CourseDetailsSectionProps {
-  onOpenPaymentModal: () => void;
+  onOpenPaymentModal?: () => void;
 }
 
 export const CourseDetailsSection: React.FC<CourseDetailsSectionProps> = ({ onOpenPaymentModal }) => {
+  const router = useRouter();
   const [activeAudienceTab, setActiveAudienceTab] = useState<number>(0);
+
+  const handleSubscribe = () => {
+    if (onOpenPaymentModal) {
+      onOpenPaymentModal();
+    } else {
+      router.push('/checkout?package=bundle-vip');
+    }
+  };
 
   return (
     <section id="course" className="py-24 bg-white relative overflow-hidden">
@@ -118,13 +128,23 @@ export const CourseDetailsSection: React.FC<CourseDetailsSectionProps> = ({ onOp
                 </div>
               </div>
 
-              <button
-                onClick={() => onOpenPaymentModal()}
-                className="w-full py-4 px-6 rounded-2xl bg-growix-gradient hover:bg-growix-gradient-hover text-white font-extrabold text-sm flex items-center justify-center gap-2 shadow-lg shadow-[#0F9D58]/30 transition-all hover:scale-[1.02]"
-              >
-                <Sparkles className="w-4 h-4" />
-                <span>اشترك في الكورس المباشر الآن</span>
-              </button>
+              <div className="space-y-2">
+                <button
+                  onClick={handleSubscribe}
+                  className="w-full py-4 px-6 rounded-2xl bg-growix-gradient hover:bg-growix-gradient-hover text-white font-extrabold text-sm flex items-center justify-center gap-2 shadow-lg shadow-[#0F9D58]/30 transition-all hover:scale-[1.02]"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  <span>اشترك في الباقة كاملة (الكورس + الأدوات)</span>
+                </button>
+
+                <a
+                  href="/course"
+                  className="w-full py-3 px-6 rounded-2xl bg-white/10 hover:bg-white/15 text-white font-bold text-xs flex items-center justify-center gap-2 transition-colors border border-white/15"
+                >
+                  <span>شاهد منهج الكورس بالتفصيل</span>
+                  <ArrowLeft className="w-4 h-4 text-[#2ECC8F]" />
+                </a>
+              </div>
             </div>
           </div>
 

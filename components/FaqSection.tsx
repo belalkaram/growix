@@ -37,9 +37,9 @@ export const FaqSection: React.FC<FaqSectionProps> = ({ faqs }) => {
           </p>
         </div>
 
-        {/* Accordion List */}
+        {/* Accordion List - Top 4 Questions */}
         <div className="space-y-4">
-          {faqList.map((faq, idx) => {
+          {faqList.slice(0, 4).map((faq, idx) => {
             const isOpen = openIndex === idx;
 
             return (
@@ -85,20 +85,20 @@ export const FaqSection: React.FC<FaqSectionProps> = ({ faqs }) => {
           })}
         </div>
 
-        {/* Direct WhatsApp Question Helper */}
-        <div className="mt-12 text-center">
-          <p className="text-xs text-gray-500 mb-3">
-            لم تجد إجابة لسؤالك؟ نحن هنا لمساعدتك على مدار الساعة:
+        {/* CTA to Full FAQ Page & Direct WhatsApp */}
+        <div className="mt-12 text-center space-y-4">
+          <div>
+            <a
+              href="/faq"
+              className="inline-flex items-center gap-2 py-3.5 px-8 rounded-2xl bg-white border border-[#0F9D58] text-[#0F9D58] hover:bg-[#0F9D58] hover:text-white font-extrabold text-xs sm:text-sm shadow-sm transition-all hover:scale-105"
+            >
+              <span>شاهد جميع الأسئلة الشائعة والإجابات</span>
+            </a>
+          </div>
+
+          <p className="text-xs text-gray-500">
+            لم تجد إجابة لسؤالك؟ نحن هنا لمساعدتك على مدار الساعة عبر الواتساب.
           </p>
-          <a
-            href={`https://wa.me/${SITE_CONFIG.whatsappNumber}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 py-2.5 px-5 rounded-xl bg-white border border-gray-300 text-xs font-bold text-[#0B1220] hover:bg-gray-50 shadow-sm transition-colors"
-          >
-            <MessageSquare className="w-4 h-4 text-[#0F9D58]" />
-            <span>اسأل فريق الدعم مباشرة على الواتساب</span>
-          </a>
         </div>
 
       </div>

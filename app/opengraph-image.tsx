@@ -108,7 +108,7 @@ export default async function Image() {
               1,000 ج
             </span>
             <span style={{ fontSize: '36px', color: '#FBBF24', fontWeight: '900' }}>
-              300 ج فقط
+              500 ج فقط
             </span>
           </div>
         </div>

@@ -8,20 +8,29 @@ import { PromoAnnouncementBar } from '@/components/PromoAnnouncementBar';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import { signOut } from 'next-auth/react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { Menu, X, Sparkles, MessageSquare, User, LogOut, PackageCheck, Shield, Video, Wrench, FolderOpen, Headphones } from 'lucide-react';
 
 interface HeaderNavbarProps {
-  onOpenPaymentModal: () => void;
+  onOpenPaymentModal?: () => void;
   session?: any;
   isSubscriberPage?: boolean;
 }
 
 export const HeaderNavbar: React.FC<HeaderNavbarProps> = ({ onOpenPaymentModal, session, isSubscriberPage }) => {
   const pathname = usePathname();
+  const router = useRouter();
   const isMyOrders = isSubscriberPage || pathname === '/my-orders';
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const handleOpenPaymentModal = () => {
+    if (onOpenPaymentModal) {
+      onOpenPaymentModal();
+    } else {
+      router.push('/checkout');
+    }
+  };
 
   useBodyScrollLock(mobileMenuOpen);
 
@@ -38,12 +47,12 @@ export const HeaderNavbar: React.FC<HeaderNavbarProps> = ({ onOpenPaymentModal, 
   }, []);
 
   const defaultNavLinks = [
-    { name: 'الرئيسية', href: '/#hero' },
-    { name: 'الـ 12 أداة', href: '/#tools' },
-    { name: 'محتوى الكورس', href: '/#course' },
-    { name: 'هدية الداتا', href: '/#data-bonus' },
-    { name: 'الأسعار والباقات', href: '/#pricing' },
-    { name: 'الأسئلة الشائعة', href: '/#faq' },
+    { name: 'الرئيسية', href: '/' },
+    { name: 'الأدوات', href: '/tools' },
+    { name: 'الكورس', href: '/course' },
+    { name: 'الأسعار', href: '/pricing' },
+    { name: 'كيف تبدأ؟', href: '/how-it-works' },
+    { name: 'الأسئلة الشائعة', href: '/faq' },
   ];
 
   const subscriberNavLinks = [
@@ -145,7 +154,7 @@ export const HeaderNavbar: React.FC<HeaderNavbarProps> = ({ onOpenPaymentModal, 
               </Link>
 
               <button
-                onClick={() => onOpenPaymentModal()}
+                onClick={handleOpenPaymentModal}
                 className="py-2.5 px-5 rounded-2xl bg-growix-gradient hover:bg-growix-gradient-hover text-white font-extrabold text-xs sm:text-sm flex items-center gap-2 shadow-md shadow-[#0F9D58]/20 transition-all hover:scale-105 active:scale-95"
               >
                 <Sparkles className="w-4 h-4" />
@@ -234,7 +243,7 @@ export const HeaderNavbar: React.FC<HeaderNavbarProps> = ({ onOpenPaymentModal, 
                     <button
                       onClick={() => {
                         setMobileMenuOpen(false);
-                        onOpenPaymentModal();
+                        handleOpenPaymentModal();
                       }}
                       className="w-full py-3.5 px-5 rounded-2xl bg-growix-gradient text-white font-extrabold text-sm flex items-center justify-center gap-2 shadow-lg shadow-[#0F9D58]/30 active:scale-98 transition-transform"
                     >

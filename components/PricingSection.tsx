@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { motion } from 'motion/react';
+import { useRouter } from 'next/navigation';
 import { SITE_CONFIG, PricingPackage, MarketingTool } from '@/config/site';
 import { CustomToolSelector } from '@/components/CustomToolSelector';
 import { Check, X as XIcon, Sparkles, ArrowLeft, ShieldCheck, Clock, Zap } from 'lucide-react';
@@ -9,13 +10,28 @@ import { Check, X as XIcon, Sparkles, ArrowLeft, ShieldCheck, Clock, Zap } from 
 interface PricingSectionProps {
   packages?: PricingPackage[];
   tools?: MarketingTool[];
-  onSelectPackage: (pkg: PricingPackage, toolId?: string) => void;
+  onSelectPackage?: (pkg: PricingPackage, toolId?: string) => void;
 }
 
 export const PricingSection: React.FC<PricingSectionProps> = ({ packages, tools, onSelectPackage }) => {
+  const router = useRouter();
   const packageList = packages && packages.length > 0 ? packages : SITE_CONFIG.packages;
   const initialToolId = tools && tools.length > 0 ? tools[0].id : SITE_CONFIG.tools[0].id;
   const [selectedToolId, setSelectedToolId] = React.useState<string>(initialToolId);
+
+  const handleSelectPackage = (pkg: PricingPackage, toolId?: string) => {
+    if (onSelectPackage) {
+      onSelectPackage(pkg, toolId);
+    } else {
+      let url = '/checkout';
+      const params = new URLSearchParams();
+      if (pkg && pkg.id) params.set('package', pkg.id);
+      if (toolId) params.set('tool', toolId);
+      const query = params.toString();
+      if (query) url += `?${query}`;
+      router.push(url);
+    }
+  };
 
   return (
     <section id="pricing" className="py-24 bg-white relative overflow-hidden">
@@ -144,7 +160,7 @@ export const PricingSection: React.FC<PricingSectionProps> = ({ packages, tools,
                 {/* CTA Button */}
                 <div>
                   <button
-                    onClick={() => onSelectPackage(pkg, pkg.id === 'single-tool' ? selectedToolId : undefined)}
+                    onClick={() => handleSelectPackage(pkg, pkg.id === 'single-tool' ? selectedToolId : undefined)}
                     className={`w-full py-4 px-6 rounded-2xl font-extrabold text-sm sm:text-base flex items-center justify-center gap-2 transition-all shadow-lg hover:scale-[1.02] ${
                       isPopular
                         ? 'bg-growix-gradient hover:bg-growix-gradient-hover text-white shadow-[#0F9D58]/30'

@@ -48,10 +48,10 @@ export const SITE_PRICING = {
   vipPackageOriginalPrice: '2000',
   vipPackageCtaText: 'احصل على الباقة VIP بـ 500 ج',
 
-  // Baket Premium (كانت VIP - أدوات + داتا فقط)
-  fullPackagePrice: '300',
-  fullPackageOriginalPrice: '1200',
-  fullPackageCtaText: 'احصل على باقة Premium بـ 300 ج',
+  // Baket Premium (الـ 12 أداة + الداتا)
+  fullPackagePrice: '500',
+  fullPackageOriginalPrice: '2000',
+  fullPackageCtaText: 'احصل على الباقة الكاملة بـ 500 ج',
 
   // Baket Single Tool
   singleToolPrice: '200',
@@ -65,10 +65,10 @@ export const PROMO_BAR_CONFIG = {
   enabled: true,
   discount: '75%',
   customerLimit: '100 عميل',
-  toolCount: '11 برنامجًا',
-  price: '300 جنيه فقط',
+  toolCount: '12 أداة تسويقية',
+  price: '500 جنيه فقط',
   textPart1: '🔥 خصم 75% لأول 100 عميل فقط — الحق بسرعة!',
-  textPart2: 'احصل على 11 برنامجًا بسعر 300 جنيه فقط.',
+  textPart2: 'احصل على الكورس الشامل و 12 أداة بسعر 500 جنيه فقط.',
   badgeText: 'عرض لفترة محدودة',
   animationDurationSeconds: 22,
 };

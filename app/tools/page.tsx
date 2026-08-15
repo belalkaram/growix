@@ -1,5 +1,8 @@
 import { Metadata } from 'next';
-import { getTools, getAllToolsSeo } from '@/lib/queries';
+import { getTools, getAllToolsSeo, getSiteSettings } from '@/lib/queries';
+import { auth } from '@/lib/auth';
+import { HeaderNavbar } from '@/components/HeaderNavbar';
+import { Footer } from '@/components/Footer';
 
 export const metadata: Metadata = {
   title: 'جميع أدوات التسويق الإلكتروني | 12 برنامج تسويق احترافي | GROWIX',
@@ -23,17 +26,21 @@ export const metadata: Metadata = {
 };
 
 export default async function ToolsIndexPage() {
-  const toolsList = await getTools();
-  const allSeo = await getAllToolsSeo();
+  const [toolsList, allSeo, siteSettings, session] = await Promise.all([
+    getTools(),
+    getAllToolsSeo(),
+    getSiteSettings(),
+    auth(),
+  ]);
 
-  // JSON-LD ItemList schema for all tools
+  // JSON-LD ItemList schema for all 12 tools
   const itemListSchema = {
     '@context': 'https://schema.org',
     '@type': 'ItemList',
     name: 'أدوات التسويق الإلكتروني من GROWIX',
     description: '12 أداة تسويقية احترافية لأتمتة التسويق وزيادة المبيعات',
-    numberOfItems: allSeo.filter((t) => t.toolId !== 'course' && t.toolId !== 'data-egypt').length,
-    itemListElement: allSeo.filter((t) => t.toolId !== 'course' && t.toolId !== 'data-egypt').map((tool, i) => ({
+    numberOfItems: allSeo.length,
+    itemListElement: allSeo.map((tool, i) => ({
       '@type': 'ListItem',
       position: i + 1,
       name: tool.schemaName,
@@ -77,8 +84,10 @@ export default async function ToolsIndexPage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
 
       <main className="min-h-screen bg-[#F7F9FA] text-[#0B1220] font-sans" dir="rtl">
+        <HeaderNavbar session={session} />
+
         {/* Hero */}
-        <section className="bg-[#0B1220] text-white pt-28 pb-16 text-center">
+        <section className="bg-[#0B1220] text-white pt-32 pb-16 text-center">
           <div className="max-w-4xl mx-auto px-4">
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#0B1220] border border-[#2ECC8F]/30 text-[#2ECC8F] text-xs font-black mb-5">
               <span>حزمة GROWIX الشاملة</span>
@@ -94,7 +103,7 @@ export default async function ToolsIndexPage() {
               href="/checkout?package=bundle-vip"
               className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl bg-gradient-to-l from-[#0F9D58] to-[#2ECC8F] text-white font-extrabold text-sm shadow-xl shadow-[#0F9D58]/30 hover:scale-105 transition-transform"
             >
-              احصل على الباقة الكاملة — 300 جنيه فقط
+              احصل على الباقة الكاملة — 500 جنيه فقط
             </a>
           </div>
         </section>
@@ -144,7 +153,7 @@ export default async function ToolsIndexPage() {
         <section className="py-16 bg-[#0B1220] text-white text-center">
           <div className="max-w-2xl mx-auto px-4">
             <h2 className="text-2xl sm:text-3xl font-black mb-4">
-              احصل على الـ <span className="text-[#2ECC8F]">12 أداة كاملة</span> بـ 300 جنيه فقط
+              احصل على الـ <span className="text-[#2ECC8F]">12 أداة كاملة</span> بـ 500 جنيه فقط
             </h2>
             <p className="text-gray-300 mb-8">تفعيل فوري خلال أقل من 60 دقيقة مع دعم فني 24/7 وتحديثات مجانية مدى الحياة.</p>
             <a
@@ -155,6 +164,8 @@ export default async function ToolsIndexPage() {
             </a>
           </div>
         </section>
+
+        <Footer settings={siteSettings} />
       </main>
     </>
   );

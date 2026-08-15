@@ -68,7 +68,7 @@ export const MyOrdersPageClient: React.FC<MyOrdersPageClientProps> = ({ orders, 
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] text-[#0B1220] flex flex-col font-sans" dir="rtl">
-      <HeaderNavbar onOpenPaymentModal={() => {}} session={userSession} isSubscriberPage={true} />
+      <HeaderNavbar session={userSession} isSubscriberPage={true} />
 
       <main className="flex-1 max-w-5xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-24 pb-20 space-y-8">
         

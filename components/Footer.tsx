@@ -3,6 +3,7 @@
 import React from 'react';
 import { SITE_CONFIG } from '@/config/site';
 import { GrowixLogo } from '@/components/GrowixLogo';
+import { useRouter } from 'next/navigation';
 import { MessageSquare, Send, Mail, ShieldCheck, Sparkles, ArrowUp } from 'lucide-react';
 
 interface FooterProps {
@@ -12,10 +13,20 @@ interface FooterProps {
 }
 
 export const Footer: React.FC<FooterProps> = ({ onOpenPaymentModal, settings, hideSalesBanner }) => {
+  const router = useRouter();
   const whatsappNum = settings?.whatsapp_number || SITE_CONFIG.whatsappNumber;
   const telegramUser = settings?.telegram_username || SITE_CONFIG.telegramUsername;
+  
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleOpenPayment = () => {
+    if (onOpenPaymentModal) {
+      onOpenPaymentModal();
+    } else {
+      router.push('/checkout');
+    }
   };
 
   return (
@@ -33,7 +44,7 @@ export const Footer: React.FC<FooterProps> = ({ onOpenPaymentModal, settings, hi
             </div>
 
             <button
-              onClick={() => onOpenPaymentModal?.()}
+              onClick={handleOpenPayment}
               className="py-4 px-8 rounded-2xl bg-growix-gradient hover:bg-growix-gradient-hover text-white font-extrabold text-sm sm:text-base flex items-center gap-3 shadow-xl shadow-[#0F9D58]/30 transition-all hover:scale-105 shrink-0"
             >
               <Sparkles className="w-5 h-5" />
@@ -67,41 +78,53 @@ export const Footer: React.FC<FooterProps> = ({ onOpenPaymentModal, settings, hi
               {/* Right Column Links */}
               <div className="space-y-2.5">
                 <a 
-                  href="#hero" 
+                  href="/" 
                   className="block text-gray-300 hover:text-[#2ECC8F] underline underline-offset-4 decoration-emerald-500/40 hover:decoration-emerald-400 transition-colors"
                 >
                   الرئيسية
                 </a>
                 <a 
-                  href="#tools" 
+                  href="/tools" 
                   className="block text-gray-300 hover:text-[#2ECC8F] underline underline-offset-4 decoration-emerald-500/40 hover:decoration-emerald-400 transition-colors"
                 >
                   الـ 12 أداة تسويق
                 </a>
                 <a 
-                  href="#course" 
+                  href="/course" 
                   className="block text-gray-300 hover:text-[#2ECC8F] underline underline-offset-4 decoration-emerald-500/40 hover:decoration-emerald-400 transition-colors"
                 >
                   كورس التسويق الكامل
+                </a>
+                <a 
+                  href="/about" 
+                  className="block text-gray-300 hover:text-[#2ECC8F] underline underline-offset-4 decoration-emerald-500/40 hover:decoration-emerald-400 transition-colors"
+                >
+                  عن منصة GROWIX
                 </a>
               </div>
 
               {/* Left Column Links */}
               <div className="space-y-2.5">
                 <a 
-                  href="#data-bonus" 
+                  href="/data-bonus" 
                   className="block text-gray-300 hover:text-[#2ECC8F] underline underline-offset-4 decoration-emerald-500/40 hover:decoration-emerald-400 transition-colors"
                 >
                   هدية داتا مصر
                 </a>
                 <a 
-                  href="#pricing" 
+                  href="/pricing" 
                   className="block text-gray-300 hover:text-[#2ECC8F] underline underline-offset-4 decoration-emerald-500/40 hover:decoration-emerald-400 transition-colors"
                 >
                   الباقات والأسعار
                 </a>
                 <a 
-                  href="#faq" 
+                  href="/how-it-works" 
+                  className="block text-gray-300 hover:text-[#2ECC8F] underline underline-offset-4 decoration-emerald-500/40 hover:decoration-emerald-400 transition-colors"
+                >
+                  طريقة الاشتراك
+                </a>
+                <a 
+                  href="/faq" 
                   className="block text-gray-300 hover:text-[#2ECC8F] underline underline-offset-4 decoration-emerald-500/40 hover:decoration-emerald-400 transition-colors"
                 >
                   الأسئلة الشائعة

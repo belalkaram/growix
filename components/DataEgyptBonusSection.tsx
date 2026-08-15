@@ -2,14 +2,24 @@
 
 import React from 'react';
 import { motion } from 'motion/react';
+import { useRouter } from 'next/navigation';
 import { SITE_CONFIG } from '@/config/site';
 import { Database, Gift, Check, Sparkles, MapPin, Briefcase, ArrowLeft } from 'lucide-react';
 
 interface DataEgyptBonusSectionProps {
-  onOpenPaymentModal: () => void;
+  onOpenPaymentModal?: () => void;
 }
 
 export const DataEgyptBonusSection: React.FC<DataEgyptBonusSectionProps> = ({ onOpenPaymentModal }) => {
+  const router = useRouter();
+
+  const handleSubscribe = () => {
+    if (onOpenPaymentModal) {
+      onOpenPaymentModal();
+    } else {
+      router.push('/checkout?package=bundle-vip');
+    }
+  };
   const governorates = [
     'القاهرة والجيزة',
     'الإسكندرية والساحل',
@@ -66,15 +76,22 @@ export const DataEgyptBonusSection: React.FC<DataEgyptBonusSectionProps> = ({ on
                 ))}
               </div>
 
-              <div className="pt-4">
+              <div className="pt-4 flex flex-col sm:flex-row items-center gap-3">
                 <button
-                  onClick={() => onOpenPaymentModal()}
-                  className="py-4 px-8 rounded-2xl bg-growix-gradient hover:bg-growix-gradient-hover text-white font-extrabold text-sm sm:text-base flex items-center gap-3 shadow-xl shadow-[#0F9D58]/30 transition-all hover:scale-105"
+                  onClick={handleSubscribe}
+                  className="w-full sm:w-auto py-4 px-8 rounded-2xl bg-growix-gradient hover:bg-growix-gradient-hover text-white font-extrabold text-sm sm:text-base flex items-center justify-center gap-3 shadow-xl shadow-[#0F9D58]/30 transition-all hover:scale-105"
                 >
                   <Sparkles className="w-5 h-5" />
-                  <span>احصل على الباقة ومعه هدية الداتا مجاناً</span>
-                  <ArrowLeft className="w-5 h-5" />
+                  <span>احصل على الباقة وم معها هدية الداتا مجاناً</span>
                 </button>
+
+                <a
+                  href="/data-bonus"
+                  className="w-full sm:w-auto py-4 px-6 rounded-2xl bg-white/10 hover:bg-white/15 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-colors border border-white/20"
+                >
+                  <span>عرض تفاصيل الداتا والمحافظات</span>
+                  <ArrowLeft className="w-4 h-4 text-[#2ECC8F]" />
+                </a>
               </div>
 
             </div>

@@ -3,6 +3,9 @@ import { notFound } from 'next/navigation';
 import { getToolSeoBySlug, getAllToolsSeo, getTools, getSiteSettings } from '@/lib/queries';
 import { auth } from '@/lib/auth';
 import { MaintenanceScreen } from '@/components/MaintenanceScreen';
+import { HeaderNavbar } from '@/components/HeaderNavbar';
+import { Footer } from '@/components/Footer';
+import { Sparkles } from 'lucide-react';
 
 interface ToolPageProps {
   params: Promise<{ slug: string }>;
@@ -66,20 +69,25 @@ export default async function ToolPage({ params }: ToolPageProps) {
   const allTools = await getTools();
   const toolData = allTools.find((t) => t.id === toolSeo.toolId);
 
+  const toolImageUrl = `https://growix.belalkaram.dev/images/tools/${slug}.webp`;
+
   // JSON-LD structured data for this tool page
   const productSchema = {
     '@context': 'https://schema.org',
     '@type': 'Product',
     name: toolSeo.schemaName,
     description: toolSeo.schemaDescription,
+    image: [toolImageUrl],
     brand: { '@type': 'Brand', name: 'GROWIX' },
+    sku: `growix-${slug}`,
     url: `https://growix.belalkaram.dev/tools/${slug}`,
     offers: {
       '@type': 'Offer',
-      price: '200',
+      price: toolSeo.toolId === 'course' || toolSeo.toolId === 'data-egypt' ? '500' : '200',
       priceCurrency: 'EGP',
       availability: 'https://schema.org/InStock',
       url: `https://growix.belalkaram.dev/checkout?package=single-tool&tool=${toolSeo.toolId}`,
+      itemCondition: 'https://schema.org/NewCondition',
     },
   };
 
@@ -114,8 +122,10 @@ export default async function ToolPage({ params }: ToolPageProps) {
         className="min-h-screen bg-[#F7F9FA] text-[#0B1220] font-sans"
         dir="rtl"
       >
+        <HeaderNavbar session={session} />
+
         {/* ─── Hero Banner ─── */}
-        <section className="bg-[#0B1220] text-white pt-28 pb-20 relative overflow-hidden">
+        <section className="bg-[#0B1220] text-white pt-32 pb-20 relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-[#0F9D58]/10 to-transparent pointer-events-none" />
           <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
             {/* Breadcrumb */}
@@ -165,6 +175,15 @@ export default async function ToolPage({ params }: ToolPageProps) {
               >
                 <span>أو احصل على الباقة الكاملة (12 أداة + كورس)</span>
               </a>
+            </div>
+
+            {/* Tool Preview Image Card */}
+            <div className="mt-12 rounded-3xl overflow-hidden border-2 border-white/20 shadow-2xl bg-[#0B1220] max-w-3xl mx-auto">
+              <img 
+                src={toolImageUrl} 
+                alt={toolSeo.schemaName} 
+                className="w-full h-auto object-cover"
+              />
             </div>
           </div>
         </section>
@@ -226,16 +245,18 @@ export default async function ToolPage({ params }: ToolPageProps) {
               وفّر أكثر مع <span className="text-[#2ECC8F]">الباقة الكاملة</span>
             </h2>
             <p className="text-gray-300 mb-8 text-sm sm:text-base">
-              احصل على جميع الأدوات الـ 12 + كورس التسويق الإلكتروني + داتا مصر التسويقية — كل ده بـ 300 جنيه فقط بدل 2,400 جنيه.
+              احصل على جميع الأدوات الـ 12 + كورس التسويق الإلكتروني + داتا مصر التسويقية — كل ده بـ 500 جنيه فقط بدل 2,400 جنيه.
             </p>
             <a
               href="/checkout?package=bundle-vip"
               className="inline-flex items-center gap-2 px-10 py-4 rounded-2xl bg-gradient-to-l from-[#0F9D58] to-[#2ECC8F] text-white font-extrabold text-base shadow-xl shadow-[#0F9D58]/30 hover:scale-105 transition-transform"
             >
-              احصل على الباقة الكاملة — 300 ج فقط
+              احصل على الباقة الكاملة — 500 ج فقط
             </a>
           </div>
         </section>
+
+        <Footer settings={siteSettings} />
       </main>
     </>
   );

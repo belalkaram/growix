@@ -1,3 +1,4 @@
+import React from 'react';
 import { SITE_CONFIG, SITE_PRICING } from '@/config/site';
 import { TOOLS_SEO, ToolSeoData } from '@/config/seo';
 
@@ -51,55 +52,79 @@ export const JsonLd: React.FC<JsonLdProps> = ({ toolsSeo }) => {
       name: 'GROWIX',
       sameAs: baseUrl,
     },
-    educationalCredentialAwarded: 'شهادة إتمام كورس التسويق الإلكتروني من GROWIX',
     inLanguage: 'ar-EG',
     offers: {
       '@type': 'Offer',
       price: SITE_PRICING.fullPackagePrice,
       priceCurrency: 'EGP',
       availability: 'https://schema.org/InStock',
-      url: `${baseUrl}/checkout`,
+      url: `${baseUrl}/checkout?package=bundle-vip`,
     },
   };
 
-  // 4. Product Schema (Full VIP Package + 12 Tools)
+  // 4. Product Schema (Full VIP Package)
   const productSchema = {
     '@context': 'https://schema.org',
     '@type': 'Product',
-    name: 'GROWIX VIP Package - كورس التسويق الإلكتروني وحزمة الـ 12 أداة',
-    image: [`${baseUrl}/logo.png`],
-    description: 'باقة النجاح المتكاملة: كورس تسويق من الصفر للاحتراف + 12 برنامج تسويق آلي وتسويق بالواتساب وفيس بوك وتليجرام + داتا مصر التسويقية.',
+    name: 'GROWIX VIP Package - كورس التسويق الإلكتروني وحزمة الأدوات',
+    description: 'باقة رقمية تشمل كورس التسويق الإلكتروني والأدوات التسويقية والدعم الفني.',
+    image: [`${baseUrl}/images/packages/growix-vip-package.webp`],
     brand: {
       '@type': 'Brand',
       name: 'GROWIX',
     },
+    sku: 'growix-vip-package',
+    url: `${baseUrl}/`,
     offers: {
       '@type': 'Offer',
       price: SITE_PRICING.fullPackagePrice,
       priceCurrency: 'EGP',
-      priceValidUntil: '2026-12-31',
       availability: 'https://schema.org/InStock',
-      url: `${baseUrl}/checkout`,
+      url: `${baseUrl}/checkout?package=bundle-vip`,
       itemCondition: 'https://schema.org/NewCondition',
     },
-    aggregateRating: {
-      '@type': 'AggregateRating',
-      ratingValue: '4.9',
-      reviewCount: '128',
-    },
+    review: SITE_CONFIG.testimonials.map((t) => ({
+      '@type': 'Review',
+      author: {
+        '@type': 'Person',
+        name: t.name,
+      },
+      reviewRating: {
+        '@type': 'Rating',
+        ratingValue: t.rating.toString(),
+        bestRating: '5',
+        worstRating: '1',
+      },
+      reviewBody: t.content,
+    })),
   };
 
-  // 5. FAQ Page Schema (Rich Snippets in Google Search)
+  // 5. FAQ Page Schema
   const faqSchema = {
     '@context': 'https://schema.org',
     '@type': 'FAQPage',
-    mainEntity: SITE_CONFIG.faqs.map((faq) => ({
+    mainEntity: SITE_CONFIG.faqs.slice(0, 4).map((faq) => ({
       '@type': 'Question',
       name: faq.question,
       acceptedAnswer: {
         '@type': 'Answer',
         text: faq.answer,
       },
+    })),
+  };
+
+  // 6. ItemList Schema (Exact 12 Tools)
+  const itemListSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: 'أدوات التسويق الإلكتروني من GROWIX',
+    description: '12 أداة تسويقية احترافية لأتمتة التسويق وتكبير الأعمال',
+    numberOfItems: seoList.length,
+    itemListElement: seoList.map((tool, i) => ({
+      '@type': 'ListItem',
+      position: i + 1,
+      name: tool.schemaName,
+      url: `${baseUrl}/tools/${tool.slug}`,
     })),
   };
 
@@ -127,23 +152,7 @@ export const JsonLd: React.FC<JsonLdProps> = ({ toolsSeo }) => {
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            '@context': 'https://schema.org',
-            '@type': 'ItemList',
-            name: 'أدوات التسويق الإلكتروني من GROWIX',
-            description: '12 أداة تسويقية احترافية لأتمتة التسويق وتكبير الأعمال',
-            numberOfItems: seoList.filter((t) => t.toolId !== 'course' && t.toolId !== 'data-egypt').length,
-            itemListElement: seoList
-              .filter((t) => t.toolId !== 'course' && t.toolId !== 'data-egypt')
-              .map((tool, i) => ({
-                '@type': 'ListItem',
-                position: i + 1,
-                name: tool.schemaName,
-                url: `https://growix.belalkaram.dev/tools/${tool.slug}`,
-              })),
-          }),
-        }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListSchema) }}
       />
     </>
   );

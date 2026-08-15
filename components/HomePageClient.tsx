@@ -98,10 +98,11 @@ export const HomePageClient: React.FC<HomePageClientProps> = ({
       {/* Trust & About Section */}
       <TrustAboutSection onOpenPaymentModal={() => handleNavigateToCheckout()} />
 
-      {/* 12 Tools Grid Section */}
+      {/* Tools Section Summary */}
       <ToolsGridSection 
         tools={tools} 
         onOpenPaymentModal={(pkg, toolId) => handleNavigateToCheckout(pkg, toolId)} 
+        isHomepage={true}
       />
 
       {/* Digital Marketing Course Details */}

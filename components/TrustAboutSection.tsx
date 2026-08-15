@@ -3,6 +3,7 @@
 import React from 'react';
 import { motion } from 'motion/react';
 import { SITE_CONFIG } from '@/config/site';
+import { useRouter } from 'next/navigation';
 import { 
   Users, 
   Clock, 
@@ -15,10 +16,19 @@ import {
 } from 'lucide-react';
 
 interface TrustAboutSectionProps {
-  onOpenPaymentModal: () => void;
+  onOpenPaymentModal?: () => void;
 }
 
 export const TrustAboutSection: React.FC<TrustAboutSectionProps> = ({ onOpenPaymentModal }) => {
+  const router = useRouter();
+
+  const handleSubscribe = () => {
+    if (onOpenPaymentModal) {
+      onOpenPaymentModal();
+    } else {
+      router.push('/checkout?package=bundle-vip');
+    }
+  };
   const trustCards = [
     {
       icon: Users,
@@ -104,15 +114,22 @@ export const TrustAboutSection: React.FC<TrustAboutSectionProps> = ({ onOpenPaym
             </p>
           </div>
 
-          <div className="shrink-0 w-full md:w-auto">
+          <div className="shrink-0 w-full md:w-auto flex flex-col sm:flex-row md:flex-col gap-3">
             <button
-              onClick={() => onOpenPaymentModal()}
-              className="w-full md:w-auto py-4 px-8 rounded-2xl bg-growix-gradient hover:bg-growix-gradient-hover text-white font-extrabold text-sm sm:text-base flex items-center justify-center gap-3 shadow-xl shadow-[#0F9D58]/30 transition-all hover:scale-105 active:scale-95"
+              onClick={handleSubscribe}
+              className="w-full py-4 px-8 rounded-2xl bg-growix-gradient hover:bg-growix-gradient-hover text-white font-extrabold text-sm sm:text-base flex items-center justify-center gap-3 shadow-xl shadow-[#0F9D58]/30 transition-all hover:scale-105 active:scale-95"
             >
               <Sparkles className="w-5 h-5" />
               <span>احصل على الباقة الكاملة الآن</span>
-              <ArrowLeft className="w-5 h-5" />
             </button>
+
+            <a
+              href="/about"
+              className="w-full py-3 px-6 rounded-2xl bg-white/10 hover:bg-white/15 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-colors border border-white/20"
+            >
+              <span>تعرف على قصة GROWIX ورؤيتنا</span>
+              <ArrowLeft className="w-4 h-4 text-[#2ECC8F]" />
+            </a>
           </div>
         </div>
 
