@@ -104,9 +104,9 @@ export const ToolsGridSection: React.FC<ToolsGridSectionProps> = ({
     return toolSlugMap[toolId] || 'whatsapp-marketing';
   };
 
-  // On homepage, display 4 featured tools
+  // On homepage, display 5 featured tools
   const displayedTools = isHomepage 
-    ? toolsList.slice(0, 4) 
+    ? toolsList.slice(0, 5) 
     : toolsList.filter((tool) => {
         const matchesCategory = selectedCategory === 'all' || tool.category === selectedCategory;
         const matchesSearch = tool.name.toLowerCase().includes(searchQuery.toLowerCase()) ||

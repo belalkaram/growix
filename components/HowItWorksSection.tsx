@@ -52,12 +52,14 @@ export const HowItWorksSection: React.FC<HowItWorksSectionProps> = ({ onOpenPaym
               className="bg-white rounded-3xl p-6 border border-gray-200/80 shadow-sm hover:shadow-md hover:border-[#0F9D58] transition-all relative flex flex-col justify-between"
             >
               <div>
-                {/* Step Number Circle */}
-                <div className="w-12 h-12 rounded-2xl bg-[#0B1220] text-[#2ECC8F] font-black text-lg flex items-center justify-center mb-5 shadow-md">
-                  {step.number}
+                {/* Step Number Badge & Bold Title inline */}
+                <div className="flex items-center gap-3.5 mb-4">
+                  <div className="w-11 h-11 rounded-2xl bg-[#0B1220] text-[#2ECC8F] font-black text-lg flex items-center justify-center shadow-md shrink-0">
+                    {step.number}
+                  </div>
+                  <h3 className="text-base sm:text-lg font-extrabold text-[#0B1220] leading-snug">{step.title}</h3>
                 </div>
 
-                <h3 className="text-lg font-bold text-[#0B1220] mb-2">{step.title}</h3>
                 <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">{step.desc}</p>
               </div>
 

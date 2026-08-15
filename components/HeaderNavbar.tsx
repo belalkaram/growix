@@ -98,8 +98,8 @@ export const HeaderNavbar: React.FC<HeaderNavbarProps> = ({ onOpenPaymentModal, 
             <a
               key={link.href}
               href={link.href}
-              className={`text-xs font-bold transition-colors hover:text-[#2ECC8F] ${
-                isScrolled ? 'text-gray-700 hover:text-[#0F9D58]' : 'text-gray-200'
+              className={`text-sm sm:text-base font-extrabold transition-colors hover:text-[#2ECC8F] ${
+                isScrolled ? 'text-gray-800 hover:text-[#0F9D58]' : 'text-white hover:text-[#2ECC8F]'
               }`}
             >
               {link.name}
@@ -155,7 +155,7 @@ export const HeaderNavbar: React.FC<HeaderNavbarProps> = ({ onOpenPaymentModal, 
 
               <button
                 onClick={handleOpenPaymentModal}
-                className="py-2.5 px-5 rounded-2xl bg-growix-gradient hover:bg-growix-gradient-hover text-white font-extrabold text-xs sm:text-sm flex items-center gap-2 shadow-md shadow-[#0F9D58]/20 transition-all hover:scale-105 active:scale-95"
+                className="py-2.5 px-6 rounded-2xl bg-growix-gradient hover:bg-growix-gradient-hover text-white font-black text-sm sm:text-base flex items-center gap-2 shadow-md shadow-[#0F9D58]/20 transition-all hover:scale-105 active:scale-95"
               >
                 <Sparkles className="w-4 h-4" />
                 <span>اشترك الآن</span>

@@ -86,13 +86,15 @@ export const TrustAboutSection: React.FC<TrustAboutSectionProps> = ({ onOpenPaym
                 className="p-3.5 sm:p-6 rounded-2xl sm:rounded-3xl bg-[#F7F9FA] border border-gray-200/80 hover:border-[#0F9D58]/40 hover:shadow-lg transition-all group relative flex flex-col justify-between"
               >
                 <div>
-                  <div className="w-9 h-9 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-growix-gradient text-white flex items-center justify-center mb-3 sm:mb-5 shadow-md shadow-[#0F9D58]/20 group-hover:scale-110 transition-transform">
-                    <Icon className="w-5 h-5 sm:w-6 sm:h-6" />
+                  <div className="flex items-center gap-2.5 sm:gap-3.5 mb-2.5 sm:mb-4">
+                    <div className="w-8 h-8 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl bg-growix-gradient text-white flex items-center justify-center shadow-md shadow-[#0F9D58]/20 group-hover:scale-110 transition-transform shrink-0">
+                      <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
+                    </div>
+                    <h3 className="text-xs sm:text-base font-black text-[#0B1220] leading-snug">
+                      {card.title}
+                    </h3>
                   </div>
-                  
-                  <h3 className="text-xs sm:text-lg font-extrabold text-[#0B1220] mb-1 sm:mb-2 leading-tight">
-                    {card.title}
-                  </h3>
+
                   <p className="text-[11px] sm:text-sm text-gray-600 leading-normal sm:leading-relaxed font-medium">
                     {card.desc}
                   </p>
