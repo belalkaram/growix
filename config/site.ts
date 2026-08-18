@@ -49,9 +49,9 @@ export const SITE_PRICING = {
   vipPackageCtaText: 'احصل على الباقة VIP بـ 500 ج',
 
   // Baket Premium (الـ 12 أداة + الداتا)
-  fullPackagePrice: '500',
-  fullPackageOriginalPrice: '2000',
-  fullPackageCtaText: 'احصل على الباقة الكاملة بـ 500 ج',
+  fullPackagePrice: '300',
+  fullPackageOriginalPrice: '1200',
+  fullPackageCtaText: 'احصل على باقة Premium بـ 300 ج',
 
   // Baket Single Tool
   singleToolPrice: '200',
