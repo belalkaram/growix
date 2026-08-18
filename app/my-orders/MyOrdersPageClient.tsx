@@ -388,7 +388,7 @@ export const MyOrdersPageClient: React.FC<MyOrdersPageClientProps> = ({ orders, 
                       </div>
 
                       {/* ============================================================ */}
-                      {/* SECTION 2: كورسات MEGA (Courses Second) */}
+                      {/* SECTION 2: كورسات التسويق السحابية (Courses Second) */}
                       {/* ============================================================ */}
                       {ord.megaLinks && ord.megaLinks.length > 0 && (
                         <div id="my-courses" className="space-y-4 pt-2">
@@ -397,10 +397,10 @@ export const MyOrdersPageClient: React.FC<MyOrdersPageClientProps> = ({ orders, 
                               <div className="w-7 h-7 rounded-lg bg-blue-500/15 border border-blue-500/30 flex items-center justify-center text-blue-600">
                                 <FolderOpen className="w-4 h-4" />
                               </div>
-                              <span>2. كورسات التسويق الشاملة (+1 TB على MEGA)</span>
+                              <span>2. كورسات التسويق الشاملة (+1 TB سحابي)</span>
                             </h4>
                             <span className="text-[10px] font-bold bg-blue-500/10 text-blue-600 px-2.5 py-1 rounded-full border border-blue-500/20">
-                              MEGA محمي
+                              سيرفر محمي
                             </span>
                           </div>
 
@@ -443,7 +443,7 @@ export const MyOrdersPageClient: React.FC<MyOrdersPageClientProps> = ({ orders, 
                                   className="py-3 px-5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-black flex items-center justify-center gap-2 shadow-md shadow-blue-600/20 transition-all active:scale-95 shrink-0"
                                 >
                                   <ExternalLink className="w-4 h-4" />
-                                  <span>فتح في MEGA</span>
+                                  <span>فتح السيرفر السحابي</span>
                                 </a>
                               </div>
                             ))}

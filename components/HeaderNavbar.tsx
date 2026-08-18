@@ -58,7 +58,7 @@ export const HeaderNavbar: React.FC<HeaderNavbarProps> = ({ onOpenPaymentModal, 
   const subscriberNavLinks = [
     { name: 'الرئيسية', href: '/' },
     { name: 'فيديوهات الشرح', href: '#my-videos' },
-    { name: 'كورسات MEGA', href: '#my-courses' },
+    { name: 'الكورسات السحابية', href: '#my-courses' },
     { name: 'البرامج والأدوات', href: '#my-tools' },
     { name: 'هدية الداتا', href: '#my-bonus' },
     { name: 'الدعم الفني', href: '#my-support' },

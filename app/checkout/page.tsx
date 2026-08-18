@@ -217,7 +217,7 @@ function CheckoutContent() {
                   باقة VIP (كورسات + 12 أداة)
                 </h3>
                 <p className={`text-[11px] leading-relaxed ${activePkgId === 'bundle-vip' ? 'text-gray-300' : 'text-gray-600'}`}>
-                  أكثر من 1 تيرابايت كورسات على MEGA + الـ 12 أداة + داتا مصر.
+                  أكثر من 1 تيرابايت كورسات سحابية + الـ 12 أداة + داتا مصر.
                 </p>
               </div>
             </button>
