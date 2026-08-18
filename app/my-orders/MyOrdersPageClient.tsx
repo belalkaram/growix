@@ -5,19 +5,19 @@ import Link from 'next/link';
 import { HeaderNavbar } from '@/components/HeaderNavbar';
 import { Footer } from '@/components/Footer';
 import { SecureVideoModal } from '@/components/SecureVideoModal';
-import { 
-  PackageCheck, 
-  Clock, 
-  CheckCircle2, 
-  XCircle, 
-  Play, 
-  Crown, 
-  Wrench, 
-  Sparkles, 
-  FolderDown, 
-  Database, 
-  Smartphone, 
-  Download, 
+import {
+  PackageCheck,
+  Clock,
+  CheckCircle2,
+  XCircle,
+  Play,
+  Crown,
+  Wrench,
+  Sparkles,
+  FolderDown,
+  Database,
+  Smartphone,
+  Download,
   Video,
   Gift,
   ShieldCheck,
@@ -71,22 +71,22 @@ export const MyOrdersPageClient: React.FC<MyOrdersPageClientProps> = ({ orders, 
       <HeaderNavbar session={userSession} isSubscriberPage={true} />
 
       <main className="flex-1 max-w-5xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-24 pb-20 space-y-8">
-        
+
         {/* Page Welcome Header */}
         <div className="bg-gradient-to-l from-[#0B1220] via-[#0F172A] to-[#1E293B] text-white p-6 sm:p-8 rounded-3xl shadow-xl relative overflow-hidden border border-white/10">
           <div className="absolute -top-12 -left-12 w-48 h-48 bg-[#0F9D58]/20 rounded-full blur-3xl pointer-events-none" />
-          
+
           <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="space-y-2">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#0F9D58]/20 border border-[#0F9D58]/40 text-[#2ECC8F] text-xs font-black">
                 <ShieldCheck className="w-4 h-4" />
                 <span>منطقة المشتركين المعتمدة</span>
               </div>
-              
+
               <h1 className="text-2xl sm:text-3xl font-black text-white flex items-center gap-3">
                 <span>أهلاً بك، {userSession?.user?.name}</span>
               </h1>
-              
+
               <p className="text-xs sm:text-sm text-gray-300 max-w-xl leading-relaxed">
                 جميع أدواتك، كورساتك، وفيديوهات الشرح متاحة لك فوراً أدناه بدون أي قيود.
               </p>
@@ -119,7 +119,7 @@ export const MyOrdersPageClient: React.FC<MyOrdersPageClientProps> = ({ orders, 
                 <p className="text-xs text-gray-600">خطوات بسيطة للاستفادة القصوى من اشتراكك فوراً</p>
               </div>
             </div>
-            
+
             <span className="text-[11px] font-bold bg-[#0F9D58]/10 text-[#0F9D58] px-3 py-1 rounded-full border border-[#0F9D58]/20 hidden sm:inline-block">
               نصائح التفعيل
             </span>
@@ -193,10 +193,10 @@ export const MyOrdersPageClient: React.FC<MyOrdersPageClientProps> = ({ orders, 
 
               // Filtering files by search and category
               const filteredTools = toolFiles.filter((f: any) => {
-                const matchesSearch = !searchQuery.trim() || 
-                  f.fileName.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                const matchesSearch = !searchQuery.trim() ||
+                  f.fileName.toLowerCase().includes(searchQuery.toLowerCase()) ||
                   (f.description && f.description.toLowerCase().includes(searchQuery.toLowerCase()));
-                
+
                 if (!matchesSearch) return false;
                 if (selectedCategory === 'all') return true;
                 if (selectedCategory === 'whatsapp' && (f.fileName.includes('واتساب') || f.fileName.includes('WhatsApp'))) return true;
@@ -303,7 +303,7 @@ export const MyOrdersPageClient: React.FC<MyOrdersPageClientProps> = ({ orders, 
                       </div>
 
                       <div className="w-full h-2 rounded-full bg-gray-200 overflow-hidden">
-                        <div 
+                        <div
                           className="h-full bg-gradient-to-l from-[#0F9D58] to-[#2ECC8F] transition-all duration-500 rounded-full"
                           style={{ width: `${Math.max(10, progressPercentage)}%` }}
                         />
@@ -397,7 +397,7 @@ export const MyOrdersPageClient: React.FC<MyOrdersPageClientProps> = ({ orders, 
                               <div className="w-7 h-7 rounded-lg bg-blue-500/15 border border-blue-500/30 flex items-center justify-center text-blue-600">
                                 <FolderOpen className="w-4 h-4" />
                               </div>
-                              <span>2. كورسات التسويق الشاملة (+1 TB سحابي)</span>
+                              <span>2. كورسات التسويق الشاملة</span>
                             </h4>
                             <span className="text-[10px] font-bold bg-blue-500/10 text-blue-600 px-2.5 py-1 rounded-full border border-blue-500/20">
                               سيرفر محمي
@@ -490,11 +490,10 @@ export const MyOrdersPageClient: React.FC<MyOrdersPageClientProps> = ({ orders, 
                               key={cat.id}
                               type="button"
                               onClick={() => setSelectedCategory(cat.id)}
-                              className={`px-3.5 py-1.5 rounded-xl font-bold whitespace-nowrap transition-colors cursor-pointer ${
-                                selectedCategory === cat.id
+                              className={`px-3.5 py-1.5 rounded-xl font-bold whitespace-nowrap transition-colors cursor-pointer ${selectedCategory === cat.id
                                   ? 'bg-[#0B1220] text-white'
                                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                              }`}
+                                }`}
                             >
                               {cat.label}
                             </button>
@@ -509,18 +508,17 @@ export const MyOrdersPageClient: React.FC<MyOrdersPageClientProps> = ({ orders, 
                                 className="p-4 bg-gray-50/90 border border-gray-200/80 hover:border-[#0F9D58]/40 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-colors shadow-2xs"
                               >
                                 <div className="flex items-center gap-3">
-                                  <div className={`w-11 h-11 rounded-xl border flex items-center justify-center shrink-0 font-extrabold text-[11px] ${
-                                    f.fileType === 'apk'
+                                  <div className={`w-11 h-11 rounded-xl border flex items-center justify-center shrink-0 font-extrabold text-[11px] ${f.fileType === 'apk'
                                       ? 'bg-blue-500/10 border-blue-500/20 text-blue-600'
                                       : 'bg-[#0F9D58]/10 border-[#0F9D58]/20 text-[#0F9D58]'
-                                  }`}>
+                                    }`}>
                                     {f.fileType === 'apk' ? 'APK' : 'ZIP'}
                                   </div>
 
                                   <div className="space-y-1">
                                     <div className="flex items-center gap-2 flex-wrap">
                                       <span className="font-extrabold text-xs text-[#0B1220] block">{f.fileName}</span>
-                                      
+
                                       {/* Compatibility Badges */}
                                       <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-gray-200 text-gray-700 flex items-center gap-1">
                                         {f.fileType === 'apk' ? (
