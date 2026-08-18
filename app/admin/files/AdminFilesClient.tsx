@@ -2,8 +2,8 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { addPackageFileAction, deletePackageFileAction, seedInitialDefaultFilesAction } from '@/lib/actions/files';
-import { FolderDown, Plus, Trash2, Database, FileArchive, CheckCircle2, AlertCircle, Sparkles, RefreshCw } from 'lucide-react';
+import { addPackageFileAction, deletePackageFileAction, seedInitialDefaultFilesAction, deleteDummyFilesAction } from '@/lib/actions/files';
+import { FolderDown, Plus, Trash2, Database, FileArchive, CheckCircle2, AlertCircle, Sparkles, RefreshCw, Eraser } from 'lucide-react';
 import { SITE_CONFIG } from '@/config/site';
 
 interface AdminFilesClientProps {
@@ -65,6 +65,22 @@ export const AdminFilesClient: React.FC<AdminFilesClientProps> = ({ filesList })
     }
   };
 
+  const handleDeleteDummyFiles = async () => {
+    if (!confirm('هل أنت تأكد من إزالة جميع الملفات الوهمية بحجم 45 MB؟')) return;
+    setLoading(true);
+    setMsg(null);
+
+    const res = await deleteDummyFilesAction();
+    setLoading(false);
+
+    if (res.success) {
+      setMsg({ type: 'success', text: res.message || 'تم حذف الملفات الوهمية بنجاح' });
+      router.refresh();
+    } else {
+      setMsg({ type: 'error', text: res.error || 'فشل الحذف' });
+    }
+  };
+
   const handleSeedDefaults = async () => {
     setLoading(true);
     setMsg(null);
@@ -96,6 +112,8 @@ export const AdminFilesClient: React.FC<AdminFilesClientProps> = ({ filesList })
     }
   };
 
+  const hasDummyFiles = filesList.some((f) => f.fileSize === '45 MB' || (f.fileSize && f.fileSize.includes('45 MB')));
+
   return (
     <div className="space-y-8">
       {/* Page Header */}
@@ -117,6 +135,17 @@ export const AdminFilesClient: React.FC<AdminFilesClientProps> = ({ filesList })
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
             <span>مزامنة ملفات R2 الحقيقية</span>
           </button>
+
+          {hasDummyFiles && (
+            <button
+              onClick={handleDeleteDummyFiles}
+              disabled={loading}
+              className="py-2.5 px-4 rounded-xl bg-red-500/20 text-red-300 border border-red-500/30 text-xs font-bold flex items-center gap-1.5 hover:bg-red-500/30 transition-colors"
+            >
+              <Eraser className="w-4 h-4" />
+              <span>تنظيف الملفات الوهمية (45 MB)</span>
+            </button>
+          )}
 
           {filesList.length === 0 && (
             <button
