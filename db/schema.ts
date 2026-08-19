@@ -130,6 +130,9 @@ export const orders = pgTable('orders', {
   paymentMethod: varchar('payment_method', { length: 100 }).notNull(),
   senderNumber: varchar('sender_number', { length: 100 }).notNull(),
   amount: varchar('amount', { length: 50 }).notNull(),
+  originalAmount: varchar('original_amount', { length: 50 }),
+  discountAmount: varchar('discount_amount', { length: 50 }),
+  couponCode: varchar('coupon_code', { length: 50 }),
   status: varchar('status', { length: 20 }).default('pending').notNull(), // 'pending' | 'approved' | 'rejected'
   adminNotes: text('admin_notes'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
@@ -178,5 +181,30 @@ export const megaLinks = pgTable('mega_links', {
   sortOrder: integer('sort_order').default(0).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+// 13. Coupons Table (Admin Discount Coupons)
+export const coupons = pgTable('coupons', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  code: varchar('code', { length: 50 }).notNull().unique(), // e.g. 'GROWIX20'
+  discountPercent: integer('discount_percent').notNull(), // Discount percentage, e.g. 20 for 20%
+  validFrom: timestamp('valid_from').defaultNow().notNull(),
+  validUntil: timestamp('valid_until').notNull(),
+  usageLimit: integer('usage_limit').default(100), // Maximum number of users allowed to use this coupon
+  usedCount: integer('used_count').default(0).notNull(), // Current count of uses
+  isActive: boolean('is_active').default(true).notNull(),
+  description: text('description'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+// 14. Coupon Usages Table (Tracking which users used which coupon)
+export const couponUsages = pgTable('coupon_usages', {
+  id: serial('id').primaryKey(),
+  couponId: uuid('coupon_id').notNull().references(() => coupons.id, { onDelete: 'cascade' }),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  orderId: uuid('order_id').references(() => orders.id, { onDelete: 'set null' }),
+  discountApplied: varchar('discount_applied', { length: 50 }).notNull(),
+  usedAt: timestamp('used_at').defaultNow().notNull(),
 });
 

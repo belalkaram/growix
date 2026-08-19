@@ -84,9 +84,23 @@ export default async function AdminOrdersPage() {
                         </span>
                       </td>
 
-                      {/* Amount */}
-                      <td className="p-4 font-black text-white text-sm">
-                        {ord.amount} جنية
+                      {/* Amount & Coupon */}
+                      <td className="p-4">
+                        <span className="font-black text-white text-sm block">
+                          {ord.amount} جنية
+                        </span>
+                        {ord.couponCode && (
+                          <div className="mt-1 space-y-0.5">
+                            <span className="inline-flex items-center gap-1 text-[10px] font-black bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 px-1.5 py-0.5 rounded dir-ltr">
+                              🏷️ {ord.couponCode}
+                            </span>
+                            {ord.originalAmount && (
+                              <span className="block text-[10px] text-gray-500 line-through">
+                                الأصلي: {ord.originalAmount} ج
+                              </span>
+                            )}
+                          </div>
+                        )}
                       </td>
 
                       {/* Date */}

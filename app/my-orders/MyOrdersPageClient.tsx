@@ -107,55 +107,125 @@ export const MyOrdersPageClient: React.FC<MyOrdersPageClientProps> = ({ orders, 
           </div>
         </div>
 
-        {/* Onboarding Wizard ("ابدأ من هنا") */}
-        <div className="bg-gradient-to-l from-emerald-50 via-teal-50/40 to-white border border-emerald-200/80 rounded-3xl p-6 sm:p-7 shadow-sm space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-[#0F9D58] text-white flex items-center justify-center shadow-md shadow-[#0F9D58]/20">
-                <Compass className="w-5 h-5" />
+        {/* ─── IMPORTANT SOFTWARE USAGE INSTRUCTIONS & RULES BANNER ─── */}
+        <div className="bg-gradient-to-br from-amber-50 via-white to-emerald-50 border-2 border-amber-300/80 rounded-3xl p-6 sm:p-8 shadow-lg space-y-6 relative overflow-hidden text-[#0B1220]">
+          
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-amber-200/80">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-2xl bg-amber-500 text-white flex items-center justify-center shadow-md shadow-amber-500/25 shrink-0">
+                <AlertTriangle className="w-6 h-6 animate-pulse" />
               </div>
               <div>
-                <h3 className="text-sm font-black text-gray-900">دليل البداية السريعة (ابدأ من هنا)</h3>
-                <p className="text-xs text-gray-600">خطوات بسيطة للاستفادة القصوى من اشتراكك فوراً</p>
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-800 border border-amber-400/40 text-[11px] font-black mb-1">
+                  <span>هام جداً قبل الاستخدام</span>
+                </div>
+                <h2 className="text-base sm:text-lg font-black text-gray-900">
+                  إرشادات وقوانين تشغيل واستخدام برامج GROWIX
+                </h2>
               </div>
             </div>
 
-            <span className="text-[11px] font-bold bg-[#0F9D58]/10 text-[#0F9D58] px-3 py-1 rounded-full border border-[#0F9D58]/20 hidden sm:inline-block">
-              نصائح التفعيل
+            <span className="text-xs font-black text-amber-900 bg-amber-200/70 border border-amber-400/60 px-3.5 py-1.5 rounded-xl self-start sm:self-auto shadow-2xs">
+              ⚠️ يرجى القراءة بعناية لتفادي حظر الحساب
             </span>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
-            <div className="p-4 bg-white border border-emerald-100 rounded-2xl space-y-1.5 shadow-2xs">
-              <div className="flex items-center gap-2 text-xs font-black text-[#0F9D58]">
-                <span className="w-5 h-5 rounded-full bg-[#0F9D58]/10 text-[#0F9D58] flex items-center justify-center text-[11px] font-black">1</span>
-                <span>شاهد فيديو الشرح الأساسي</span>
+          {/* The 5 Key Instructions Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            
+            {/* Rule 1: No sharing (Ban warning) */}
+            <div className="p-4 sm:p-5 bg-red-50/70 border border-red-200 rounded-2xl space-y-2 shadow-2xs relative">
+              <div className="flex items-center gap-2.5">
+                <span className="w-7 h-7 rounded-xl bg-red-600 text-white flex items-center justify-center text-xs font-black shrink-0 shadow-sm">
+                  1
+                </span>
+                <h4 className="text-xs sm:text-sm font-black text-red-900">
+                  ممنوع مشاركة البرامج أو الروابط
+                </h4>
               </div>
-              <p className="text-[11px] text-gray-500 leading-relaxed">
-                ابدأ بمشاهدة مقطع الشرح المباشر لتعلم كيفية ربط الأداة بحساباتك وسحب الداتا.
+              <p className="text-xs text-red-800 leading-relaxed font-medium">
+                يُمنع منعاً باتاً مشاركة الروابط أو الملفات مع أي شخص آخر. السيرفر يرصد الأجهزة تلقائياً، وأي مشاركة تعرض حسابك **للحظر النهائي الفوري بدون استرجاع**.
               </p>
             </div>
 
-            <div className="p-4 bg-white border border-emerald-100 rounded-2xl space-y-1.5 shadow-2xs">
-              <div className="flex items-center gap-2 text-xs font-black text-[#0F9D58]">
-                <span className="w-5 h-5 rounded-full bg-[#0F9D58]/10 text-[#0F9D58] flex items-center justify-center text-[11px] font-black">2</span>
-                <span>حمل الأدوات والبرامج</span>
+            {/* Rule 2: Download & Extract completely */}
+            <div className="p-4 sm:p-5 bg-white border border-gray-200 rounded-2xl space-y-2 shadow-2xs">
+              <div className="flex items-center gap-2.5">
+                <span className="w-7 h-7 rounded-xl bg-[#0F9D58] text-white flex items-center justify-center text-xs font-black shrink-0 shadow-sm">
+                  2
+                </span>
+                <h4 className="text-xs sm:text-sm font-black text-gray-900">
+                  تحميل البرامج وفك الضغط كاملاً
+                </h4>
               </div>
-              <p className="text-[11px] text-gray-500 leading-relaxed">
-                قم بتحميل ملفات الأدوات المتاحة لويندوز أو أندرويد وفك الضغط للبدء فوراً.
+              <p className="text-xs text-gray-600 leading-relaxed font-medium">
+                قم بتحميل ملف الأداة بالكامل على جهاز الكمبيوتر، ثم استخدم برنامج (WinRAR أو 7-Zip) لفك الضغط عن المجلد بالكامل قبل محاولة فتح أو تشغيل أي ملف.
               </p>
             </div>
 
-            <div className="p-4 bg-white border border-emerald-100 rounded-2xl space-y-1.5 shadow-2xs">
-              <div className="flex items-center gap-2 text-xs font-black text-[#0F9D58]">
-                <span className="w-5 h-5 rounded-full bg-[#0F9D58]/10 text-[#0F9D58] flex items-center justify-center text-[11px] font-black">3</span>
-                <span>تواصل مع الدعم الفني</span>
+            {/* Rule 3: Disable Antivirus (Cracked software explanation) */}
+            <div className="p-4 sm:p-5 bg-amber-50/80 border border-amber-200 rounded-2xl space-y-2 shadow-2xs">
+              <div className="flex items-center gap-2.5">
+                <span className="w-7 h-7 rounded-xl bg-amber-600 text-white flex items-center justify-center text-xs font-black shrink-0 shadow-sm">
+                  3
+                </span>
+                <h4 className="text-xs sm:text-sm font-black text-amber-950">
+                  إيقاف الأنتي فيروس (Antivirus) مؤقتاً
+                </h4>
               </div>
-              <p className="text-[11px] text-gray-500 leading-relaxed">
-                إذا واجهتك أي مشكلة في التثبيت، فريق الدعم الفني متواجد 24/7 لمساعدتك.
+              <p className="text-xs text-amber-900 leading-relaxed font-medium">
+                البرامج مفعلة ومكركة مسبقاً، لذا يتعرف عليها الأنتي فيروس كإنذار خاطئ (False Positive). يجب إيقاف الحماية مؤقتاً أثناء فك الضغط والتثبيت، والبرامج آمنة ومجربة 100%.
               </p>
             </div>
+
+            {/* Rule 4: Watch tutorial video first */}
+            <div className="p-4 sm:p-5 bg-cyan-50/70 border border-cyan-200 rounded-2xl space-y-2 shadow-2xs">
+              <div className="flex items-center gap-2.5">
+                <span className="w-7 h-7 rounded-xl bg-cyan-600 text-white flex items-center justify-center text-xs font-black shrink-0 shadow-sm">
+                  4
+                </span>
+                <h4 className="text-xs sm:text-sm font-black text-cyan-950">
+                  مشاهدة فيديو الشرح أولاً
+                </h4>
+              </div>
+              <p className="text-xs text-cyan-900 leading-relaxed font-medium">
+                شاهد فيديو الشرح الخاص بالأداة (المتاح بالأسفل) قبل البدء في استخدامها، لتتعلم خطوات التشغيل والإعداد الصحيحة وتحصل على أفضل نتائج وتفادي أي أخطاء.
+              </p>
+            </div>
+
+            {/* Rule 5: Run as administrator & install */}
+            <div className="p-4 sm:p-5 bg-emerald-50/70 border border-emerald-200 rounded-2xl space-y-2 shadow-2xs md:col-span-2 lg:col-span-2">
+              <div className="flex items-center gap-2.5">
+                <span className="w-7 h-7 rounded-xl bg-[#0F9D58] text-white flex items-center justify-center text-xs font-black shrink-0 shadow-sm">
+                  5
+                </span>
+                <h4 className="text-xs sm:text-sm font-black text-emerald-950">
+                  التشغيل والتثبيت كمسؤول (Run as Administrator)
+                </h4>
+              </div>
+              <p className="text-xs text-emerald-900 leading-relaxed font-medium">
+                بعد فك الضغط، اضغط بزر الفأرة الأيمن على ملف البرنامج واختر «تشغيل كمسؤول»، وسيعمل البرنامج معك بكل كفاءة وسلاسة ومدى الحياة بدون قيود.
+              </p>
+            </div>
+
           </div>
+
+          <div className="flex items-center justify-between text-xs text-gray-500 pt-2 border-t border-amber-200/50">
+            <span className="flex items-center gap-1.5 font-bold text-gray-700">
+              <ShieldCheck className="w-4 h-4 text-[#0F9D58]" />
+              <span>فريق الدعم الفني متواجد لمساعدتك عبر الواتساب على مدار الساعة</span>
+            </span>
+            <a
+              href={`https://wa.me/${SITE_CONFIG.whatsappNumber}?text=مرحباً، أحتاج مساعدة في تثبيت وتشغيل البرامج`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs font-black text-[#0F9D58] hover:underline flex items-center gap-1"
+            >
+              <span>مراسلة الدعم الفني</span>
+              <MessageSquare className="w-3.5 h-3.5" />
+            </a>
+          </div>
+
         </div>
 
         {orders.length === 0 ? (

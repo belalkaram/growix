@@ -1,8 +1,8 @@
 'use server';
 
 import { db } from '@/db';
-import { orders, users, packages, tools } from '@/db/schema';
-import { eq, desc } from 'drizzle-orm';
+import { orders, users, packages, tools, coupons, couponUsages } from '@/db/schema';
+import { eq, desc, sql } from 'drizzle-orm';
 import { auth } from '@/lib/auth';
 import { revalidatePath } from 'next/cache';
 
@@ -12,6 +12,9 @@ export async function createOrderAction(data: {
   paymentMethod: string;
   senderNumber: string;
   amount: string;
+  originalAmount?: string;
+  discountAmount?: string;
+  couponCode?: string;
 }) {
   const session = await auth();
   if (!session?.user?.id) {
@@ -32,13 +35,51 @@ export async function createOrderAction(data: {
         paymentMethod: data.paymentMethod,
         senderNumber: data.senderNumber.trim(),
         amount: data.amount,
+        originalAmount: data.originalAmount || null,
+        discountAmount: data.discountAmount || null,
+        couponCode: data.couponCode ? data.couponCode.trim().toUpperCase() : null,
         status: 'pending',
       })
       .returning();
 
+    // If coupon code was provided, record coupon usage and increment used_count
+    if (data.couponCode) {
+      try {
+        const cleanCode = data.couponCode.trim().toUpperCase();
+        const matchedCoupon = await db
+          .select()
+          .from(coupons)
+          .where(eq(sql`UPPER(${coupons.code})`, cleanCode))
+          .limit(1);
+
+        if (matchedCoupon.length > 0) {
+          const c = matchedCoupon[0];
+          // Record usage in coupon_usages
+          await db.insert(couponUsages).values({
+            couponId: c.id,
+            userId: session.user.id,
+            orderId: newOrder.id,
+            discountApplied: data.discountAmount || `${c.discountPercent}%`,
+          });
+
+          // Increment coupon used count
+          await db
+            .update(coupons)
+            .set({
+              usedCount: c.usedCount + 1,
+              updatedAt: new Date(),
+            })
+            .where(eq(coupons.id, c.id));
+        }
+      } catch (couponErr) {
+        console.error('Error recording coupon usage:', couponErr);
+      }
+    }
+
     revalidatePath('/checkout');
     revalidatePath('/my-orders');
     revalidatePath('/admin/orders');
+    revalidatePath('/admin/coupons');
 
     return { success: true, orderId: newOrder.id };
   } catch (error) {
@@ -86,6 +127,9 @@ export async function getUserOrders() {
       paymentMethod: orders.paymentMethod,
       senderNumber: orders.senderNumber,
       amount: orders.amount,
+      originalAmount: orders.originalAmount,
+      discountAmount: orders.discountAmount,
+      couponCode: orders.couponCode,
       status: orders.status,
       adminNotes: orders.adminNotes,
       createdAt: orders.createdAt,
@@ -113,6 +157,9 @@ export async function getAllOrdersForAdmin() {
       paymentMethod: orders.paymentMethod,
       senderNumber: orders.senderNumber,
       amount: orders.amount,
+      originalAmount: orders.originalAmount,
+      discountAmount: orders.discountAmount,
+      couponCode: orders.couponCode,
       status: orders.status,
       adminNotes: orders.adminNotes,
       createdAt: orders.createdAt,
@@ -121,3 +168,4 @@ export async function getAllOrdersForAdmin() {
     .innerJoin(users, eq(orders.userId, users.id))
     .orderBy(desc(orders.createdAt));
 }
+

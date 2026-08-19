@@ -14,7 +14,11 @@ import {
   CreditCard,
   AlertCircle,
   Lock,
-  Send
+  Send,
+  Tag,
+  Percent,
+  Trash2,
+  X
 } from 'lucide-react';
 import { SITE_CONFIG, SITE_PRICING } from '@/config/site';
 import { GrowixLogo } from '@/components/GrowixLogo';
@@ -22,6 +26,7 @@ import { CustomToolSelector } from '@/components/CustomToolSelector';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { createOrderAction } from '@/lib/actions/orders';
+import { validateCouponAction } from '@/lib/actions/coupons';
 
 function CheckoutContent() {
   const router = useRouter();
@@ -58,9 +63,70 @@ function CheckoutContent() {
   const [orderMessage, setOrderMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [countdown, setCountdown] = useState<number | null>(null);
 
+  // Coupon State
+  const [couponCodeInput, setCouponCodeInput] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState<{
+    id: string;
+    code: string;
+    discountPercent: number;
+    discountAmount: number;
+    finalPrice: number;
+    description?: string | null;
+  } | null>(null);
+  const [couponLoading, setCouponLoading] = useState(false);
+  const [couponMessage, setCouponMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
   const currentPkg = SITE_CONFIG.packages.find((p) => p.id === activePkgId) || SITE_CONFIG.packages[0];
   const currentTool = SITE_CONFIG.tools.find((t) => t.id === selectedToolId) || SITE_CONFIG.tools[0];
   const currentPayment = SITE_CONFIG.paymentMethods.find((m) => m.id === activePaymentMethod) || SITE_CONFIG.paymentMethods[0];
+
+  const packagePriceNum = parseInt(currentPkg.discountedPrice.replace(/[^0-9]/g, '')) || 0;
+
+  // Recalculate coupon discount if package changes
+  useEffect(() => {
+    if (appliedCoupon) {
+      const discountRate = appliedCoupon.discountPercent / 100;
+      const newDiscountAmount = Math.round(packagePriceNum * discountRate);
+      const newFinalPrice = Math.max(0, packagePriceNum - newDiscountAmount);
+      setAppliedCoupon((prev) => prev ? {
+        ...prev,
+        discountAmount: newDiscountAmount,
+        finalPrice: newFinalPrice,
+      } : null);
+    }
+  }, [activePkgId, packagePriceNum]);
+
+  const handleApplyCoupon = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!couponCodeInput || !couponCodeInput.trim()) {
+      setCouponMessage({ type: 'error', text: 'يرجى إدخال كود الكوبون' });
+      return;
+    }
+
+    setCouponLoading(true);
+    setCouponMessage(null);
+
+    const res = await validateCouponAction(couponCodeInput.trim(), packagePriceNum);
+    setCouponLoading(false);
+
+    if (!res.success || !res.coupon) {
+      setCouponMessage({ type: 'error', text: res.error || 'كود الكوبون غير صالح' });
+    } else {
+      setAppliedCoupon(res.coupon);
+      setCouponMessage({ 
+        type: 'success', 
+        text: `تم تفعيل الكوبون (${res.coupon.code}) بنجاح! خصم ${res.coupon.discountPercent}% (وفرت ${res.coupon.discountAmount} جنية)` 
+      });
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponCodeInput('');
+    setCouponMessage(null);
+  };
+
+  const finalPayableAmount = appliedCoupon ? appliedCoupon.finalPrice : packagePriceNum;
 
   const handleCopy = (text: string, id: string) => {
     navigator.clipboard.writeText(text);
@@ -82,7 +148,10 @@ function CheckoutContent() {
       toolId: currentPkg.id === 'single-tool' ? currentTool.id : undefined,
       paymentMethod: activePaymentMethod,
       senderNumber: senderNumber.trim(),
-      amount: currentPkg.discountedPrice,
+      amount: finalPayableAmount.toString(),
+      originalAmount: currentPkg.discountedPrice,
+      discountAmount: appliedCoupon ? appliedCoupon.discountAmount.toString() : undefined,
+      couponCode: appliedCoupon ? appliedCoupon.code : undefined,
     });
 
     setIsSubmittingOrder(false);
@@ -90,7 +159,12 @@ function CheckoutContent() {
     if (!res.success) {
       setOrderMessage({ type: 'error', text: res.error || 'حدث خطأ أثناء حفظ الطلب' });
     } else {
-      const waText = `مرحباً فريق GROWIX 👋%0A%0Aأنا قمت بتحويل المبلغ لتأكيد اشتراكي:%0A- الباقة: ${encodeURIComponent(currentPkg.name)}%0A- المبلغ: ${currentPkg.discountedPrice} ${currentPkg.currency}%0A- طريقة الدفع: ${encodeURIComponent(currentPayment.name)}%0A- رقم المحفظة/الحساب المحول منه: ${encodeURIComponent(senderNumber.trim())}%0A- رقم الطلب: ${res.orderId}%0A%0Aبرجاء تفعيل حسابي فوراً وشكراً!`;
+      let couponLine = '';
+      if (appliedCoupon) {
+        couponLine = `%0A- كود الخصم المستخدم: ${encodeURIComponent(appliedCoupon.code)} (خصم ${appliedCoupon.discountPercent}% - وفرت ${appliedCoupon.discountAmount} ج)`;
+      }
+
+      const waText = `مرحباً فريق GROWIX 👋%0A%0Aأنا قمت بتحويل المبلغ لتأكيد اشتراكي:%0A- الباقة: ${encodeURIComponent(currentPkg.name)}%0A- المبلغ المدفوع: ${finalPayableAmount} ${currentPkg.currency}${couponLine}%0A- طريقة الدفع: ${encodeURIComponent(currentPayment.name)}%0A- رقم المحفظة/الحساب المحول منه: ${encodeURIComponent(senderNumber.trim())}%0A- رقم الطلب: ${res.orderId}%0A%0Aبرجاء تفعيل حسابي فوراً وشكراً!`;
       const waUrl = `https://wa.me/${SITE_CONFIG.whatsappNumber}?text=${waText}`;
 
       // Start 3..2..1 Countdown for WhatsApp Redirect
@@ -100,7 +174,7 @@ function CheckoutContent() {
           if (prev === null || prev <= 1) {
             clearInterval(timer);
             window.open(waUrl, '_blank');
-            router.push('/my-orders');
+            router.push(`/my-orders?orderId=${res.orderId}`);
             return null;
           }
           return prev - 1;
@@ -166,22 +240,36 @@ function CheckoutContent() {
           <div className="p-4 bg-white/10 backdrop-blur rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 border border-white/15 relative z-10">
             <div>
               <span className="text-xs text-gray-300 block mb-0.5">المبلغ المطلوب تحويله حالياً:</span>
-              <div className="flex items-baseline gap-2">
+              <div className="flex items-baseline gap-2 flex-wrap">
                 <span className="text-2xl sm:text-3xl font-black text-[#2ECC8F]">
-                  {currentPkg.discountedPrice} {currentPkg.currency}
+                  {finalPayableAmount} {currentPkg.currency}
                 </span>
-                <span className="text-sm text-gray-400 line-through">
-                  {currentPkg.originalPrice} {currentPkg.currency}
-                </span>
-                <span className="text-[11px] bg-[#2ECC8F]/20 text-[#2ECC8F] px-2 py-0.5 rounded-md font-bold">
-                  خصم لفترة محدودة
-                </span>
+
+                {appliedCoupon ? (
+                  <>
+                    <span className="text-sm text-gray-400 line-through">
+                      {currentPkg.discountedPrice} {currentPkg.currency}
+                    </span>
+                    <span className="text-[11px] bg-emerald-500/30 text-emerald-300 px-2 py-0.5 rounded-md font-black border border-emerald-400/40">
+                      وفرت {appliedCoupon.discountAmount} ج ({appliedCoupon.discountPercent}%)
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <span className="text-sm text-gray-400 line-through">
+                      {currentPkg.originalPrice} {currentPkg.currency}
+                    </span>
+                    <span className="text-[11px] bg-[#2ECC8F]/20 text-[#2ECC8F] px-2 py-0.5 rounded-md font-bold">
+                      خصم لفترة محدودة
+                    </span>
+                  </>
+                )}
               </div>
             </div>
 
             <div className="text-xs text-emerald-300 flex items-center gap-2 bg-[#0F9D58]/20 px-3.5 py-2 rounded-xl border border-[#0F9D58]/30">
               <ShieldCheck className="w-4 h-4 text-[#2ECC8F] shrink-0" />
-              <span>تفعيل دائم مدى الحياة بدون اشتراكات</span>
+              <span>تفعيل دائم مدى الحياة بدون تجديد</span>
             </div>
           </div>
         </div>
@@ -289,6 +377,104 @@ function CheckoutContent() {
                 label={`حدد البرنامج المطلوب (${SITE_PRICING.singleToolPrice} جنيه):`}
               />
             </div>
+          )}
+        </div>
+
+        {/* COUPON PROMO CODE SECTION */}
+        <div className="bg-white rounded-3xl p-5 sm:p-7 border border-gray-200 space-y-4 shadow-sm text-[#0B1220]">
+          <div className="flex items-center justify-between">
+            <label className="block text-sm sm:text-base font-extrabold text-[#0B1220] flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg bg-[#0F9D58]/10 text-[#0F9D58] flex items-center justify-center font-black text-xs border border-[#0F9D58]/20">
+                <Tag className="w-3.5 h-3.5" />
+              </div>
+              <span>هل لديك كود خصم أو كوبون؟</span>
+            </label>
+
+            {appliedCoupon && (
+              <span className="text-xs font-black text-emerald-600 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-full flex items-center gap-1">
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                <span>مفعّل ({appliedCoupon.code})</span>
+              </span>
+            )}
+          </div>
+
+          {appliedCoupon ? (
+            <div className="bg-emerald-50/80 border border-emerald-300/80 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-in fade-in">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-emerald-500 text-white flex items-center justify-center font-black shadow-md shadow-emerald-500/20">
+                  <Percent className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-sm font-black text-emerald-950 bg-white px-2.5 py-0.5 rounded-lg border border-emerald-300">
+                      {appliedCoupon.code}
+                    </span>
+                    <span className="text-xs font-bold text-emerald-700">
+                      خصم {appliedCoupon.discountPercent}%
+                    </span>
+                  </div>
+                  <p className="text-xs text-emerald-800 font-medium mt-0.5">
+                    وفرت <span className="font-black">{appliedCoupon.discountAmount} جنية</span> من إجمالي سعر الباقة!
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleRemoveCoupon}
+                className="text-xs font-bold text-red-600 hover:text-red-700 flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-50 hover:bg-red-100 border border-red-200 transition-colors cursor-pointer self-end sm:self-auto"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>إلغاء الكوبون</span>
+              </button>
+            </div>
+          ) : (
+            <form onSubmit={handleApplyCoupon} className="space-y-3">
+              <div className="flex flex-col sm:flex-row gap-2.5">
+                <div className="relative flex-1">
+                  <input
+                    type="text"
+                    value={couponCodeInput}
+                    onChange={(e) => setCouponCodeInput(e.target.value.toUpperCase())}
+                    placeholder="أدخل كود الخصم (مثال: GROWIX20)"
+                    className="w-full px-4 py-3 rounded-2xl bg-gray-50 border border-gray-300 text-xs sm:text-sm font-mono font-black text-[#0B1220] placeholder:text-gray-400 placeholder:font-sans focus:bg-white focus:outline-none focus:border-[#0F9D58] focus:ring-2 focus:ring-[#0F9D58]/20 transition-all uppercase dir-ltr"
+                  />
+                  {couponCodeInput && (
+                    <button
+                      type="button"
+                      onClick={() => setCouponCodeInput('')}
+                      className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={couponLoading || !couponCodeInput.trim()}
+                  className="px-6 py-3 rounded-2xl bg-[#0B1220] hover:bg-gray-800 active:scale-[0.98] text-white font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all disabled:opacity-50 cursor-pointer shrink-0 shadow-sm"
+                >
+                  <Tag className="w-4 h-4 text-[#2ECC8F]" />
+                  <span>{couponLoading ? 'جاري التحقق...' : 'تطبيق الكود'}</span>
+                </button>
+              </div>
+
+              {couponMessage && (
+                <div className={`p-3 rounded-xl text-xs font-bold flex items-center gap-2 ${
+                  couponMessage.type === 'success'
+                    ? 'bg-emerald-50 text-emerald-800 border border-emerald-300'
+                    : 'bg-red-50 text-red-800 border border-red-300'
+                }`}>
+                  {couponMessage.type === 'success' ? (
+                    <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600" />
+                  ) : (
+                    <AlertCircle className="w-4 h-4 shrink-0 text-red-600" />
+                  )}
+                  <span>{couponMessage.text}</span>
+                </div>
+              )}
+            </form>
           )}
         </div>
 
