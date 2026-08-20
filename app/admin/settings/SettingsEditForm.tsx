@@ -3,7 +3,22 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { updateSiteSettingsAction } from '@/lib/actions/settings';
-import { Save, CheckCircle2, AlertCircle, Phone, Send, Mail, Clock, FileText, Wrench, ShieldAlert } from 'lucide-react';
+import { testTelegramConnectionAction } from '@/lib/telegram';
+import { 
+  Save, 
+  CheckCircle2, 
+  AlertCircle, 
+  Phone, 
+  Send, 
+  Mail, 
+  Clock, 
+  FileText, 
+  Wrench, 
+  ShieldAlert,
+  Bot,
+  Zap,
+  CreditCard
+} from 'lucide-react';
 
 export const SettingsEditForm: React.FC<{ initialSettings: Record<string, string> }> = ({ initialSettings }) => {
   const router = useRouter();
@@ -18,6 +33,12 @@ export const SettingsEditForm: React.FC<{ initialSettings: Record<string, string
   const [workingHours, setWorkingHours] = useState(initialSettings.working_hours || 'تفعيل فوري خلال أقل من ساعة | دعم فني على مدار 24/7');
   const [heroTitle, setHeroTitle] = useState(initialSettings.hero_title || '');
   const [heroSubtitle, setHeroSubtitle] = useState(initialSettings.hero_subtitle || '');
+
+  // Telegram Bot Settings
+  const [telegramBotToken, setTelegramBotToken] = useState(initialSettings.telegram_bot_token || '');
+  const [telegramChatId, setTelegramChatId] = useState(initialSettings.telegram_chat_id || '');
+  const [testingTelegram, setTestingTelegram] = useState(false);
+  const [telegramTestResult, setTelegramTestResult] = useState<{ success: boolean; message: string } | null>(null);
 
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -37,33 +58,44 @@ export const SettingsEditForm: React.FC<{ initialSettings: Record<string, string
       working_hours: workingHours,
       hero_title: heroTitle,
       hero_subtitle: heroSubtitle,
+      telegram_bot_token: telegramBotToken,
+      telegram_chat_id: telegramChatId,
     });
 
     setLoading(false);
 
     if (res.success) {
-      setMessage({ type: 'success', text: 'تم تحديث إعدادات الموقع وتفعيل خيارات وضع الصيانة فوراً!' });
+      setMessage({ type: 'success', text: 'تم تحديث إعدادات الموقع وبوت تليجرام بنجاح!' });
       router.refresh();
     } else {
       setMessage({ type: 'error', text: res.error || 'حدث خطأ أثناء الحفظ' });
     }
   };
 
+  const handleTestTelegram = async () => {
+    setTestingTelegram(true);
+    setTelegramTestResult(null);
+
+    const res = await testTelegramConnectionAction(telegramBotToken, telegramChatId);
+    setTestingTelegram(false);
+    setTelegramTestResult(res);
+  };
+
   return (
     <form onSubmit={handleSubmit} className="p-6 sm:p-8 rounded-3xl bg-[#0F172A] border border-white/10 space-y-8">
       {message && (
-        <div className={`p-4 rounded-xl text-xs font-bold flex items-center gap-2 ${message.type === 'success' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30' : 'bg-red-500/10 text-red-400 border border-red-500/30'
-          }`}>
+        <div className={`p-4 rounded-xl text-xs font-bold flex items-center gap-2 ${message.type === 'success' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30' : 'bg-red-500/10 text-red-400 border border-red-500/30'}`}>
           {message.type === 'success' ? <CheckCircle2 className="w-4 h-4 shrink-0" /> : <AlertCircle className="w-4 h-4 shrink-0" />}
           <span>{message.text}</span>
         </div>
       )}
 
       {/* 🛑 Maintenance Mode Control Card */}
-      <div className={`p-6 rounded-2xl border transition-colors space-y-4 ${maintenanceMode
-        ? 'bg-amber-500/10 border-amber-500/40 text-amber-200'
-        : 'bg-white/5 border-white/10 text-gray-200'
-        }`}>
+      <div className={`p-6 rounded-2xl border transition-colors space-y-4 ${
+        maintenanceMode
+          ? 'bg-amber-500/10 border-amber-500/40 text-amber-200'
+          : 'bg-white/5 border-white/10 text-gray-200'
+      }`}>
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className={`p-2.5 rounded-xl ${maintenanceMode ? 'bg-amber-500/20 text-amber-400' : 'bg-white/10 text-gray-300'}`}>
@@ -110,8 +142,75 @@ export const SettingsEditForm: React.FC<{ initialSettings: Record<string, string
         </div>
       </div>
 
+      {/* 🤖 Telegram Bot Auto-Alerts Configuration */}
+      <div className="p-6 rounded-2xl bg-white/5 border border-white/10 space-y-4">
+        <div className="flex items-center justify-between gap-4 pb-2 border-b border-white/10">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-[#2ECC8F]/20 text-[#2ECC8F] flex items-center justify-center font-bold">
+              <Bot className="w-4 h-4" />
+            </div>
+            <div>
+              <h3 className="text-sm font-black text-white">إشعارات بوت تليجرام للطلبات الجديدة (Telegram Bot Alerts)</h3>
+              <p className="text-xs text-gray-400">إرسال تفاصيل كل طلب اشتراك أو تحويل جديد فوراً إلى قناتك أو محادثتك الخاصة</p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleTestTelegram}
+            disabled={testingTelegram}
+            className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-xs font-bold text-white flex items-center gap-1.5 transition-colors disabled:opacity-50 cursor-pointer"
+          >
+            <Send className={`w-3.5 h-3.5 ${testingTelegram ? 'animate-bounce text-[#2ECC8F]' : ''}`} />
+            <span>{testingTelegram ? 'جاري الفحص...' : 'تجربة إرسال رسالة للبوت ⚡'}</span>
+          </button>
+        </div>
+
+        {telegramTestResult && (
+          <div className={`p-3 rounded-xl text-xs font-bold flex items-center gap-2 ${
+            telegramTestResult.success
+              ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
+              : 'bg-red-500/10 text-red-400 border border-red-500/30'
+          }`}>
+            {telegramTestResult.success ? <CheckCircle2 className="w-4 h-4 shrink-0" /> : <AlertCircle className="w-4 h-4 shrink-0" />}
+            <span>{telegramTestResult.message}</span>
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-xs font-bold text-gray-300 mb-1.5 flex items-center gap-1.5">
+              <Bot className="w-3.5 h-3.5 text-[#2ECC8F]" />
+              <span>رمز توكن البوت (Telegram Bot Token)</span>
+            </label>
+            <input
+              type="password"
+              value={telegramBotToken}
+              onChange={(e) => setTelegramBotToken(e.target.value)}
+              placeholder="123456789:ABCdefGHIjklMNOpqrs..."
+              className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-xs font-medium text-white focus:outline-none focus:border-[#2ECC8F] dir-ltr text-right"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-gray-300 mb-1.5 flex items-center gap-1.5">
+              <Send className="w-3.5 h-3.5 text-[#2ECC8F]" />
+              <span>معرف المحادثة أو القناة (Telegram Chat ID)</span>
+            </label>
+            <input
+              type="text"
+              value={telegramChatId}
+              onChange={(e) => setTelegramChatId(e.target.value)}
+              placeholder="مثال: 987654321 أو -100123456789"
+              className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-xs font-medium text-white focus:outline-none focus:border-[#2ECC8F] dir-ltr text-right"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Direct Contact & Support */}
       <div className="space-y-4">
-        <h3 className="text-sm font-black text-[#2ECC8F] border-b border-white/10 pb-2">بيانات التواصل المباشر والتحويل</h3>
+        <h3 className="text-sm font-black text-[#2ECC8F] border-b border-white/10 pb-2">بيانات التواصل المباشر والدعم الفني</h3>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
@@ -124,7 +223,7 @@ export const SettingsEditForm: React.FC<{ initialSettings: Record<string, string
               value={whatsappNumber}
               onChange={(e) => setWhatsappNumber(e.target.value)}
               placeholder="201019033661"
-              className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-xs font-medium text-white focus:outline-none focus:border-[#2ECC8F]"
+              className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-xs font-medium text-white focus:outline-none focus:border-[#2ECC8F] dir-ltr text-right"
             />
           </div>
 
@@ -138,7 +237,7 @@ export const SettingsEditForm: React.FC<{ initialSettings: Record<string, string
               value={whatsappDisplayNumber}
               onChange={(e) => setWhatsappDisplayNumber(e.target.value)}
               placeholder="01019033661"
-              className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-xs font-medium text-white focus:outline-none focus:border-[#2ECC8F]"
+              className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-xs font-medium text-white focus:outline-none focus:border-[#2ECC8F] dir-ltr text-right"
             />
           </div>
 
@@ -152,7 +251,7 @@ export const SettingsEditForm: React.FC<{ initialSettings: Record<string, string
               value={telegramUsername}
               onChange={(e) => setTelegramUsername(e.target.value)}
               placeholder="growix_official"
-              className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-xs font-medium text-white focus:outline-none focus:border-[#2ECC8F]"
+              className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-xs font-medium text-white focus:outline-none focus:border-[#2ECC8F] dir-ltr text-right"
             />
           </div>
 
@@ -166,12 +265,13 @@ export const SettingsEditForm: React.FC<{ initialSettings: Record<string, string
               value={supportEmail}
               onChange={(e) => setSupportEmail(e.target.value)}
               placeholder="growix@belalkaram.dev"
-              className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-xs font-medium text-white focus:outline-none focus:border-[#2ECC8F]"
+              className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-xs font-medium text-white focus:outline-none focus:border-[#2ECC8F] dir-ltr text-right"
             />
           </div>
         </div>
       </div>
 
+      {/* Header & Timings */}
       <div className="space-y-4 pt-2">
         <h3 className="text-sm font-black text-[#2ECC8F] border-b border-white/10 pb-2">نصوص الهيدر والعنوان الرئيسية</h3>
 
@@ -205,10 +305,10 @@ export const SettingsEditForm: React.FC<{ initialSettings: Record<string, string
       <button
         type="submit"
         disabled={loading}
-        className="w-full py-3.5 rounded-xl bg-gradient-to-l from-[#0F9D58] to-[#2ECC8F] text-white font-extrabold text-sm flex items-center justify-center gap-2 shadow-lg shadow-[#0F9D58]/30 hover:scale-[1.01] active:scale-95 transition-all disabled:opacity-50"
+        className="w-full py-4 rounded-2xl bg-[#00FF87] hover:bg-[#00E676] text-[#0A1128] font-black text-sm flex items-center justify-center gap-2 shadow-lg shadow-[#00FF87]/25 hover:scale-[1.01] active:scale-95 transition-all disabled:opacity-50 cursor-pointer"
       >
         <Save className="w-4 h-4" />
-        <span>{loading ? 'جاري الحفظ...' : 'حفظ وإرسال التغييرات'}</span>
+        <span>{loading ? 'جاري الحفظ...' : 'حفظ إعدادات الموقع وبوت تليجرام الآن'}</span>
       </button>
     </form>
   );

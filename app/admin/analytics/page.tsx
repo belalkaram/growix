@@ -1,22 +1,38 @@
 import React, { Suspense } from 'react';
 import { getAnalyticsSummary } from '@/lib/queries/analytics';
-import { AnalyticsFilterBar } from './AnalyticsFilterBar';
-import { BarChart3, Eye, Users, Smartphone, Monitor, Globe, Filter } from 'lucide-react';
+import { AdvancedDateFilter } from './AdvancedDateFilter';
+import { BarChart3, Eye, Users, Smartphone, Globe } from 'lucide-react';
 
 export default async function AdminAnalyticsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ range?: string; device?: string; path?: string }>;
+  searchParams: Promise<{
+    range?: string;
+    device?: string;
+    path?: string;
+    startDate?: string;
+    startTime?: string;
+    endDate?: string;
+    endTime?: string;
+  }>;
 }) {
   const params = await searchParams;
   const range = params.range || 'all';
   const device = params.device || 'all';
   const path = params.path || 'all';
+  const startDate = params.startDate;
+  const startTime = params.startTime;
+  const endDate = params.endDate;
+  const endTime = params.endTime;
 
   const analytics = await getAnalyticsSummary({
-    timeRange: range as any,
+    range,
     deviceType: device as any,
     path,
+    startDate,
+    startTime,
+    endDate,
+    endTime,
   });
 
   const mobileCount = analytics.deviceStats.find((d) => d.deviceType === 'mobile')?.views || 0;
@@ -32,42 +48,42 @@ export default async function AdminAnalyticsPage({
           <BarChart3 className="w-6 h-6 text-[#2ECC8F]" />
           <span>إحصائيات الترافيك والزيارات المتقدمة</span>
         </h1>
-        <p className="text-xs text-gray-400">تحليل وتصفية زوار الموقع بحسب الوقت، الأجهزة، والصفحات دون الحاجة لأي أدوات خارجية</p>
+        <p className="text-xs text-gray-400">تحليل وتصفية زوار الموقع بحسب اليوم، التاريخ، الوقت، الأجهزة، والصفحات</p>
       </div>
 
       {/* Advanced Filter Control Bar */}
       <Suspense fallback={null}>
-        <AnalyticsFilterBar availablePaths={analytics.availablePaths} />
+        <AdvancedDateFilter availablePaths={analytics.availablePaths} />
       </Suspense>
 
       {/* Top Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-        <div className="p-6 rounded-2xl bg-[#0F172A] border border-white/10 flex items-center justify-between">
+        <div className="p-6 rounded-3xl bg-[#0F172A] border border-white/10 flex items-center justify-between shadow-xl">
           <div>
             <span className="text-xs text-gray-400 font-semibold block mb-1">المشاهدات المفلترة (Page Views)</span>
             <span className="text-3xl font-black text-white">{analytics.totalViews}</span>
           </div>
-          <div className="w-12 h-12 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center">
+          <div className="w-12 h-12 rounded-2xl bg-purple-500/10 text-purple-400 flex items-center justify-center">
             <Eye className="w-6 h-6" />
           </div>
         </div>
 
-        <div className="p-6 rounded-2xl bg-[#0F172A] border border-white/10 flex items-center justify-between">
+        <div className="p-6 rounded-3xl bg-[#0F172A] border border-white/10 flex items-center justify-between shadow-xl">
           <div>
             <span className="text-xs text-gray-400 font-semibold block mb-1">الزوار الفريدين (Unique Sessions)</span>
             <span className="text-3xl font-black text-[#2ECC8F]">{analytics.uniqueSessions}</span>
           </div>
-          <div className="w-12 h-12 rounded-xl bg-emerald-500/10 text-[#2ECC8F] flex items-center justify-center">
+          <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 text-[#2ECC8F] flex items-center justify-center">
             <Users className="w-6 h-6" />
           </div>
         </div>
 
-        <div className="p-6 rounded-2xl bg-[#0F172A] border border-white/10 flex items-center justify-between">
+        <div className="p-6 rounded-3xl bg-[#0F172A] border border-white/10 flex items-center justify-between shadow-xl">
           <div>
             <span className="text-xs text-gray-400 font-semibold block mb-1">نسبة الأجهزة (Device Ratio)</span>
             <span className="text-sm font-black text-white">📱 {mobilePct}% | 💻 {desktopPct}%</span>
           </div>
-          <div className="w-12 h-12 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center">
+          <div className="w-12 h-12 rounded-2xl bg-blue-500/10 text-blue-400 flex items-center justify-center">
             <Smartphone className="w-6 h-6" />
           </div>
         </div>
@@ -75,7 +91,7 @@ export default async function AdminAnalyticsPage({
 
       {/* Top Visited Pages & Realtime Visits */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="p-6 rounded-2xl bg-[#0F172A] border border-white/10 space-y-4">
+        <div className="p-6 rounded-3xl bg-[#0F172A] border border-white/10 space-y-4 shadow-xl">
           <h2 className="text-base font-black text-white flex items-center gap-2">
             <Globe className="w-5 h-5 text-[#2ECC8F]" />
             <span>أكثر الصفحات زيارة (حسب الفلترة)</span>
@@ -98,26 +114,26 @@ export default async function AdminAnalyticsPage({
         </div>
 
         {/* Recent Realtime Visits Table */}
-        <div className="p-6 rounded-2xl bg-[#0F172A] border border-white/10 space-y-4">
+        <div className="p-6 rounded-3xl bg-[#0F172A] border border-white/10 space-y-4 shadow-xl">
           <h2 className="text-base font-black text-white flex items-center gap-2">
-            <Eye className="w-5 h-5 text-purple-400" />
-            <span>سجل الزيارات المفلترة المباشرة</span>
+            <BarChart3 className="w-5 h-5 text-[#2ECC8F]" />
+            <span>سجل آخر الزيارات المتطابقة للفلتر</span>
           </h2>
 
           {analytics.recentViews.length === 0 ? (
-            <p className="text-xs text-gray-400 py-6 text-center">لا توجد زيارات مطابقة للبحث</p>
+            <p className="text-xs text-gray-400 py-6 text-center">لا توجد زيارات حديثة</p>
           ) : (
-            <div className="space-y-3">
-              {analytics.recentViews.map((rv, i) => (
-                <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-white/5 text-xs">
+            <div className="space-y-2 max-h-96 overflow-y-auto">
+              {analytics.recentViews.map((view) => (
+                <div key={view.id} className="flex items-center justify-between p-2.5 rounded-xl bg-white/5 text-[11px]">
                   <div>
-                    <span className="font-mono text-white block">{rv.path}</span>
-                    <span className="text-[10px] text-gray-400">
-                      {rv.deviceType === 'mobile' ? '📱 موبايل' : '💻 ديسكتوب'} • {new Date(rv.createdAt).toLocaleTimeString('ar-EG')}
+                    <span className="font-mono font-bold text-white block">{view.path}</span>
+                    <span className="text-gray-500 font-mono text-[10px]">
+                      {view.deviceType} • {view.sessionId.slice(0, 8)}...
                     </span>
                   </div>
-                  <span className="text-[10px] font-mono text-gray-400 bg-white/5 px-2 py-0.5 rounded">
-                    {rv.country || 'EG'}
+                  <span className="text-gray-400 text-[10px] font-mono">
+                    {new Date(view.createdAt).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                   </span>
                 </div>
               ))}

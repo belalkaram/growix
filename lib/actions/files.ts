@@ -462,3 +462,115 @@ export async function syncR2BucketObjectsAction() {
   }
 }
 
+export async function createPackageFileAction(data: {
+  packageId: string;
+  toolId?: string | null;
+  fileName: string;
+  fileKey: string;
+  fileSize?: string | null;
+  fileType?: string;
+  category: string;
+  description?: string | null;
+  sortOrder?: number;
+}) {
+  const session = await auth();
+  if (!session?.user || (session.user as { role?: string }).role !== 'admin') {
+    return { success: false, error: 'غير مصرح بالوصول' };
+  }
+
+  await ensurePackageFilesTableExists();
+
+  try {
+    const [file] = await db
+      .insert(packageFiles)
+      .values({
+        packageId: data.packageId,
+        toolId: data.toolId || null,
+        fileName: data.fileName.trim(),
+        fileKey: data.fileKey.trim(),
+        fileSize: data.fileSize?.trim() || null,
+        fileType: data.fileType || 'zip',
+        category: data.category || 'tool',
+        description: data.description?.trim() || null,
+        sortOrder: data.sortOrder || 0,
+        isActive: true,
+      })
+      .returning();
+
+    revalidatePath('/admin/files');
+    revalidatePath('/my-orders');
+    return { success: true, file };
+  } catch (err: any) {
+    console.error('Error creating package file:', err);
+    return { success: false, error: err.message || 'حدث خطأ أثناء إضافة الملف' };
+  }
+}
+
+export async function updatePackageFileAction(data: {
+  id: number;
+  packageId: string;
+  toolId?: string | null;
+  fileName: string;
+  fileKey: string;
+  fileSize?: string | null;
+  fileType?: string;
+  category: string;
+  description?: string | null;
+  sortOrder?: number;
+  isActive?: boolean;
+}) {
+  const session = await auth();
+  if (!session?.user || (session.user as { role?: string }).role !== 'admin') {
+    return { success: false, error: 'غير مصرح بالوصول' };
+  }
+
+  await ensurePackageFilesTableExists();
+
+  try {
+    await db
+      .update(packageFiles)
+      .set({
+        packageId: data.packageId,
+        toolId: data.toolId || null,
+        fileName: data.fileName.trim(),
+        fileKey: data.fileKey.trim(),
+        fileSize: data.fileSize?.trim() || null,
+        fileType: data.fileType || 'zip',
+        category: data.category || 'tool',
+        description: data.description?.trim() || null,
+        sortOrder: data.sortOrder || 0,
+        isActive: data.isActive !== undefined ? data.isActive : true,
+        updatedAt: new Date(),
+      })
+      .where(eq(packageFiles.id, data.id));
+
+    revalidatePath('/admin/files');
+    revalidatePath('/my-orders');
+    return { success: true };
+  } catch (err: any) {
+    console.error('Error updating package file:', err);
+    return { success: false, error: err.message || 'حدث خطأ أثناء تعديل الملف' };
+  }
+}
+
+export async function togglePackageFileAction(fileId: number, isActive: boolean) {
+  const session = await auth();
+  if (!session?.user || (session.user as { role?: string }).role !== 'admin') {
+    return { success: false, error: 'غير مصرح بالوصول' };
+  }
+
+  try {
+    await db
+      .update(packageFiles)
+      .set({ isActive, updatedAt: new Date() })
+      .where(eq(packageFiles.id, fileId));
+
+    revalidatePath('/admin/files');
+    revalidatePath('/my-orders');
+    return { success: true };
+  } catch (err: any) {
+    console.error('Error toggling package file:', err);
+    return { success: false, error: 'حدث خطأ أثناء تغيير حالة الملف' };
+  }
+}
+

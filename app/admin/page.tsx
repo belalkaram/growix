@@ -1,9 +1,10 @@
 import React from 'react';
 import Link from 'next/link';
 import { db } from '@/db';
-import { users, packages, tools, pageViews } from '@/db/schema';
-import { count } from 'drizzle-orm';
-import { Users, Package, Wrench, Eye, ArrowUpRight, ShieldCheck } from 'lucide-react';
+import { users, packages, tools, pageViews, orders } from '@/db/schema';
+import { count, eq } from 'drizzle-orm';
+import { Users, Package, Wrench, Eye, ArrowUpRight, ShoppingBag, ShieldCheck, Tag, Film, FolderOpen, Sliders } from 'lucide-react';
+import { SystemHealthLive } from './SystemHealthLive';
 
 export default async function AdminDashboardPage() {
   const [
@@ -11,28 +12,40 @@ export default async function AdminDashboardPage() {
     [{ value: packagesCount }],
     [{ value: toolsCount }],
     [{ value: viewsCount }],
+    [{ value: pendingOrdersCount }],
   ] = await Promise.all([
     db.select({ value: count() }).from(users),
     db.select({ value: count() }).from(packages),
     db.select({ value: count() }).from(tools),
     db.select({ value: count() }).from(pageViews),
+    db.select({ value: count() }).from(orders).where(eq(orders.status, 'pending')),
   ]);
 
   const stats = [
+    { label: 'طلبات الاشتراك المعلقة', value: pendingOrdersCount.toString(), icon: ShoppingBag, color: 'text-amber-400', href: '/admin/orders', alert: Number(pendingOrdersCount) > 0 },
     { label: 'إجمالي المستخدمين المسجلين', value: usersCount.toString(), icon: Users, color: 'text-blue-400', href: '/admin/users' },
-    { label: 'الباقات المتاحة', value: packagesCount.toString(), icon: Package, color: 'text-emerald-400', href: '/admin/packages' },
-    { label: 'الأدوات التسويقية الـ 12', value: toolsCount.toString(), icon: Wrench, color: 'text-amber-400', href: '/admin/tools' },
+    { label: 'الأدوات التسويقية الـ 12', value: toolsCount.toString(), icon: Wrench, color: 'text-emerald-400', href: '/admin/tools' },
     { label: 'إجمالي مشاهدات الصفحات', value: viewsCount.toString(), icon: Eye, color: 'text-purple-400', href: '/admin/analytics' },
+  ];
+
+  const quickNav = [
+    { label: 'إدارة المستخدمين والأدوار', href: '/admin/users', icon: Users, desc: 'إنشاء يدوي/تلقائي بضغطة زر وتعديل وحذف' },
+    { label: 'طلبات الاشتراك والتحويلات', href: '/admin/orders', icon: ShoppingBag, desc: 'مراجعة وتأكيد إيصالات التحويل وإشعارات تليجرام' },
+    { label: 'الكوبونات وقسائم الخصم', href: '/admin/coupons', icon: Tag, desc: 'إضافة وتتبع المستفيدين وتعديل نسب الخصم' },
+    { label: 'الأدوات التسويقية والـ SEO', href: '/admin/tools', icon: Wrench, desc: 'تعديل وحذف وإضافة برامج المونتاج والرسائل' },
+    { label: 'روابط الكورسات السحابية', href: '/admin/mega', icon: FolderOpen, desc: 'إدارة روابط مجلدات MEGA والكورسات' },
+    { label: 'فيديوهات الشرح والتثبيت', href: '/admin/videos', icon: Film, desc: 'إضافة وتعديل شروحات اليوتيوب لصفحة طلباتي' },
   ];
 
   return (
     <div className="space-y-8">
+      {/* Header */}
       <div>
-        <h1 className="text-2xl sm:text-3xl font-black text-white mb-2">لوحة التحكم والأدمن</h1>
-        <p className="text-xs sm:text-sm text-gray-400">إدارة الباقات والأدوات والمستخدمين والإعدادات العامة لمنصة GROWIX</p>
+        <h1 className="text-2xl sm:text-3xl font-black text-white mb-2">لوحة التحكم وإدارة النظام</h1>
+        <p className="text-xs sm:text-sm text-gray-400">تحكم كامل وشامل في مستخدمي منصة GROWIX، الطلبات، الأسعار، والفيديوهات والملفات (Full CRUD)</p>
       </div>
 
-      {/* Stats Cards Grid */}
+      {/* Top 4 Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
         {stats.map((stat, i) => {
           const Icon = stat.icon;
@@ -40,11 +53,18 @@ export default async function AdminDashboardPage() {
             <Link
               key={i}
               href={stat.href}
-              className="p-6 rounded-2xl bg-[#0F172A] border border-white/10 hover:border-[#2ECC8F]/50 transition-all shadow-md group"
+              className={`p-6 rounded-3xl bg-[#0F172A] border transition-all shadow-xl group relative overflow-hidden ${
+                stat.alert ? 'border-amber-500/50 ring-1 ring-amber-500/30' : 'border-white/10 hover:border-[#2ECC8F]/50'
+              }`}
             >
+              {stat.alert && (
+                <span className="absolute top-3 left-3 px-2 py-0.5 rounded-full bg-amber-500 text-black text-[10px] font-black animate-pulse">
+                  يتطلب المراجعة
+                </span>
+              )}
               <div className="flex items-center justify-between mb-4">
-                <div className={`w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center ${stat.color}`}>
-                  <Icon className="w-5 h-5" />
+                <div className={`w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center ${stat.color}`}>
+                  <Icon className="w-6 h-6" />
                 </div>
                 <ArrowUpRight className="w-4 h-4 text-gray-500 group-hover:text-white transition-colors" />
               </div>
@@ -55,48 +75,41 @@ export default async function AdminDashboardPage() {
         })}
       </div>
 
-      {/* Quick Quicklinks & Controls */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="p-6 rounded-2xl bg-[#0F172A] border border-white/10 space-y-4">
-          <h2 className="text-base font-black text-white flex items-center gap-2">
-            <Wrench className="w-5 h-5 text-[#2ECC8F]" />
-            <span>إدارة المحتوى السريعة</span>
+      {/* Live System Health Section (100% Real Live Data) */}
+      <SystemHealthLive />
+
+      {/* Full CRUD Management Quick Hub */}
+      <div className="p-6 sm:p-8 rounded-3xl bg-[#0F172A] border border-white/10 space-y-6 shadow-xl">
+        <div>
+          <h2 className="text-base sm:text-lg font-black text-white flex items-center gap-2">
+            <Sliders className="w-5 h-5 text-[#2ECC8F]" />
+            <span>بوابة التحكم وإدارة الأقسام (Full CRUD Management)</span>
           </h2>
-          <p className="text-xs text-gray-400 leading-relaxed">
-            يمكنك تعديل أسعار الباقات أو وصف البرامج الـ 12 أو تحديث رقم الواتساب فوراً من الأقسام المخصصة وتنعكس التغيرات مباشرة على الموقع دون إعادة نشر.
+          <p className="text-xs text-gray-400 mt-1">
+            اختر القسم الذي ترغب في تعديل أو إضافة أو حذف بياناته مباشرةً:
           </p>
-          <div className="flex flex-wrap gap-2 pt-2">
-            <Link href="/admin/packages" className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-xs font-bold text-white transition-colors">
-              تعديل الأسعار
-            </Link>
-            <Link href="/admin/tools" className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-xs font-bold text-white transition-colors">
-              تعديل الأدوات
-            </Link>
-            <Link href="/admin/settings" className="px-4 py-2 rounded-xl bg-[#0F9D58] hover:bg-[#0F9D58]/80 text-xs font-bold text-white transition-colors">
-              تعديل الواتساب والروابط
-            </Link>
-          </div>
         </div>
 
-        <div className="p-6 rounded-2xl bg-[#0F172A] border border-white/10 space-y-4">
-          <h2 className="text-base font-black text-white flex items-center gap-2">
-            <ShieldCheck className="w-5 h-5 text-[#2ECC8F]" />
-            <span>حالة النظام والبيانات</span>
-          </h2>
-          <div className="space-y-2 text-xs">
-            <div className="flex items-center justify-between p-2.5 rounded-xl bg-white/5">
-              <span className="text-gray-400">قاعدة البيانات (Neon PostgreSQL):</span>
-              <span className="text-emerald-400 font-bold">متصلة 🟢</span>
-            </div>
-            <div className="flex items-center justify-between p-2.5 rounded-xl bg-white/5">
-              <span className="text-gray-400">نظام الأرشفة والـ SEO:</span>
-              <span className="text-emerald-400 font-bold">مُفعل 🟢</span>
-            </div>
-            <div className="flex items-center justify-between p-2.5 rounded-xl bg-white/5">
-              <span className="text-gray-400">التفعيل التلقائي للزوار:</span>
-              <span className="text-emerald-400 font-bold">نشط ⚡</span>
-            </div>
-          </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {quickNav.map((item, idx) => {
+            const Icon = item.icon;
+            return (
+              <Link
+                key={idx}
+                href={item.href}
+                className="p-5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/5 hover:border-[#2ECC8F]/40 transition-all space-y-2 group"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="w-9 h-9 rounded-xl bg-[#0F9D58]/15 text-[#2ECC8F] flex items-center justify-center">
+                    <Icon className="w-4 h-4" />
+                  </div>
+                  <ArrowUpRight className="w-4 h-4 text-gray-500 group-hover:text-white transition-colors" />
+                </div>
+                <h3 className="text-sm font-bold text-white group-hover:text-[#2ECC8F] transition-colors">{item.label}</h3>
+                <p className="text-[11px] text-gray-400 leading-relaxed">{item.desc}</p>
+              </Link>
+            );
+          })}
         </div>
       </div>
     </div>

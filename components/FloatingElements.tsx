@@ -1,16 +1,26 @@
 'use client';
 
 import React from 'react';
-import { SITE_CONFIG, SITE_PRICING } from '@/config/site';
+import { SITE_CONFIG, SITE_PRICING, PricingPackage } from '@/config/site';
 import { MessageSquare, Sparkles, ArrowLeft } from 'lucide-react';
 
 interface FloatingElementsProps {
   onOpenPaymentModal: () => void;
   settings?: Record<string, string>;
+  packages?: PricingPackage[];
+  vipPrice?: string;
 }
 
-export const FloatingElements: React.FC<FloatingElementsProps> = ({ onOpenPaymentModal, settings }) => {
+export const FloatingElements: React.FC<FloatingElementsProps> = ({ 
+  onOpenPaymentModal, 
+  settings,
+  packages,
+  vipPrice
+}) => {
   const whatsappNum = settings?.whatsapp_number || SITE_CONFIG.whatsappNumber;
+  const vipPkg = packages?.find((p) => p.id === 'bundle-vip');
+  const priceDisplay = vipPrice || vipPkg?.discountedPrice || SITE_PRICING.vipPackagePrice;
+  const currencyDisplay = vipPkg?.currency || SITE_PRICING.currency;
 
   return (
     <>
@@ -33,13 +43,13 @@ export const FloatingElements: React.FC<FloatingElementsProps> = ({ onOpenPaymen
         <div className="flex flex-col">
           <span className="text-[10px] text-gray-400">الباقة الشاملة VIP</span>
           <span className="text-base font-black text-[#2ECC8F] dir-rtl">
-            {SITE_PRICING.fullPackagePrice} {SITE_PRICING.currency}
+            {priceDisplay} {currencyDisplay}
           </span>
         </div>
 
         <button
           onClick={() => onOpenPaymentModal()}
-          className="py-2.5 px-6 rounded-xl bg-growix-gradient text-white font-extrabold text-xs flex items-center gap-2 shadow-lg shadow-[#0F9D58]/30 active:scale-95 transition-transform"
+          className="py-2.5 px-6 rounded-xl bg-growix-gradient text-white font-extrabold text-xs flex items-center gap-2 shadow-lg shadow-[#0F9D58]/30 active:scale-95 transition-transform cursor-pointer"
         >
           <Sparkles className="w-4 h-4" />
           <span>اشترك الآن</span>

@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { updateToolAction } from '@/lib/actions/tools';
+import { updateToolAction, deleteToolAction } from '@/lib/actions/tools';
 import { Save, CheckCircle2, AlertCircle, Edit2, ChevronDown, ChevronUp, Plus, Trash2, X } from 'lucide-react';
 
 export const ToolEditRow: React.FC<{ tool: any }> = ({ tool }) => {
@@ -17,6 +17,7 @@ export const ToolEditRow: React.FC<{ tool: any }> = ({ tool }) => {
   const [features, setFeatures] = useState<string[]>((tool.features as string[]) || []);
   const [isActive, setIsActive] = useState(tool.isActive);
   const [loading, setLoading] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const handleFeatureChange = (index: number, value: string) => {
@@ -62,6 +63,20 @@ export const ToolEditRow: React.FC<{ tool: any }> = ({ tool }) => {
     }
   };
 
+  const handleDelete = async () => {
+    if (!confirm(`هل أنت متأكد من حذف أداة "${tool.name}" نهائياً من الموقع وقاعدة البيانات؟`)) {
+      return;
+    }
+    setDeleting(true);
+    const res = await deleteToolAction(tool.id);
+    setDeleting(false);
+    if (res.success) {
+      router.refresh();
+    } else {
+      alert(res.error || 'حدث خطأ أثناء الحذف');
+    }
+  };
+
   return (
     <div className={`p-4 sm:p-5 space-y-4 transition-all ${
       isExpanded ? 'bg-emerald-950/20 border-l-4 border-l-[#2ECC8F]' : ''
@@ -73,11 +88,11 @@ export const ToolEditRow: React.FC<{ tool: any }> = ({ tool }) => {
           </span>
           <div>
             <h3 className="text-sm font-black text-white">{name}</h3>
-            <span className="text-[11px] text-gray-400">{tool.slug}</span>
+            <span className="text-[11px] text-gray-400 font-mono">{tool.slug}</span>
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5">
           <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full ${
             isActive ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'
           }`}>
@@ -104,6 +119,16 @@ export const ToolEditRow: React.FC<{ tool: any }> = ({ tool }) => {
                 <span>تعديل المحتوى</span>
               </>
             )}
+          </button>
+
+          <button
+            type="button"
+            onClick={handleDelete}
+            disabled={deleting}
+            className="p-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 transition-colors disabled:opacity-50 cursor-pointer"
+            title="حذف الأداة نهائياً"
+          >
+            <Trash2 className="w-4 h-4" />
           </button>
         </div>
       </div>

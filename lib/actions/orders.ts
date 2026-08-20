@@ -2,9 +2,11 @@
 
 import { db } from '@/db';
 import { orders, users, packages, tools, coupons, couponUsages } from '@/db/schema';
-import { eq, desc, sql } from 'drizzle-orm';
+import { eq, desc, sql, and, gte, lte } from 'drizzle-orm';
 import { auth } from '@/lib/auth';
 import { revalidatePath } from 'next/cache';
+import { sendTelegramOrderAlert } from '@/lib/telegram';
+import { checkRateLimit } from '@/lib/rate-limit';
 
 export async function createOrderAction(data: {
   packageId: string;
@@ -21,7 +23,20 @@ export async function createOrderAction(data: {
     return { success: false, error: 'يجب تسجيل الدخول أولاً لإرسال الطلب' };
   }
 
-  if (!data.senderNumber || data.senderNumber.trim().length < 6) {
+  // Rate Limiting on order submissions (Max 5 orders per 15 mins per user/IP)
+  const rateLimit = await checkRateLimit({
+    action: 'order',
+    maxRequests: 5,
+    windowMs: 15 * 60 * 1000,
+    customIdentifier: session.user.id,
+    errorMessage: 'تم إرسال عدة طلبات مؤخراً. يرجى الانتظار قليلاً أو التواصل مع الدعم الفني.',
+  });
+
+  if (!rateLimit.allowed) {
+    return { success: false, error: rateLimit.error };
+  }
+
+  if (!data.senderNumber || data.senderNumber.trim().length < 4) {
     return { success: false, error: 'يرجى كتابة رقم الهاتف أو المحفظة المحوّل منها بشكل صحيح' };
   }
 
@@ -42,6 +57,26 @@ export async function createOrderAction(data: {
       })
       .returning();
 
+    // Fetch user details for accurate Telegram alert
+    const [userRecord] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, session.user.id))
+      .limit(1);
+
+    // Fetch package / tool names
+    let packageName = data.packageId === 'bundle-vip' ? 'باقة VIP الشاملة (كورسات + 12 أداة + داتا)' :
+      data.packageId === 'bundle-premium' ? 'باقة Premium (الـ 12 أداة + داتا مصر)' :
+      'باقة أداة تسويقية واحدة';
+
+    let toolName: string | undefined = undefined;
+    if (data.toolId) {
+      const matchedTool = await db.select().from(tools).where(eq(tools.id, data.toolId)).limit(1);
+      if (matchedTool.length > 0) {
+        toolName = matchedTool[0].name;
+      }
+    }
+
     // If coupon code was provided, record coupon usage and increment used_count
     if (data.couponCode) {
       try {
@@ -54,7 +89,6 @@ export async function createOrderAction(data: {
 
         if (matchedCoupon.length > 0) {
           const c = matchedCoupon[0];
-          // Record usage in coupon_usages
           await db.insert(couponUsages).values({
             couponId: c.id,
             userId: session.user.id,
@@ -62,7 +96,6 @@ export async function createOrderAction(data: {
             discountApplied: data.discountAmount || `${c.discountPercent}%`,
           });
 
-          // Increment coupon used count
           await db
             .update(coupons)
             .set({
@@ -76,10 +109,28 @@ export async function createOrderAction(data: {
       }
     }
 
+    // 🚀 Send Instant Telegram Bot Alert (Non-blocking / Background safe)
+    sendTelegramOrderAlert({
+      orderId: newOrder.id,
+      userName: userRecord?.name || session.user.name || 'عميل GROWIX',
+      userEmail: userRecord?.email || session.user.email || '—',
+      userPhone: userRecord?.phone || undefined,
+      packageName,
+      toolName,
+      amount: data.amount,
+      originalAmount: data.originalAmount,
+      discountAmount: data.discountAmount,
+      couponCode: data.couponCode,
+      paymentMethod: data.paymentMethod,
+      senderNumber: data.senderNumber.trim(),
+      createdAt: newOrder.createdAt,
+    }).catch((err) => console.error('Telegram dispatch error in order action:', err));
+
     revalidatePath('/checkout');
     revalidatePath('/my-orders');
     revalidatePath('/admin/orders');
     revalidatePath('/admin/coupons');
+    revalidatePath('/admin');
 
     return { success: true, orderId: newOrder.id };
   } catch (error) {
@@ -99,13 +150,14 @@ export async function updateOrderStatusAction(orderId: string, newStatus: 'appro
       .update(orders)
       .set({
         status: newStatus,
-        adminNotes: adminNotes || null,
+        adminNotes: adminNotes !== undefined ? adminNotes : undefined,
         updatedAt: new Date(),
       })
       .where(eq(orders.id, orderId));
 
     revalidatePath('/admin/orders');
     revalidatePath('/my-orders');
+    revalidatePath('/admin');
     return { success: true };
   } catch (error) {
     console.error('Error updating order status:', error);
@@ -113,12 +165,24 @@ export async function updateOrderStatusAction(orderId: string, newStatus: 'appro
   }
 }
 
-export async function getUserOrders() {
+export async function deleteOrderAction(orderId: string) {
   const session = await auth();
-  if (!session?.user?.id) {
-    return [];
+  if (!session?.user || (session.user as { role?: string }).role !== 'admin') {
+    return { success: false, error: 'غير مصرح بالوصول' };
   }
 
+  try {
+    await db.delete(orders).where(eq(orders.id, orderId));
+    revalidatePath('/admin/orders');
+    revalidatePath('/admin');
+    return { success: true };
+  } catch (error) {
+    console.error('Error deleting order:', error);
+    return { success: false, error: 'حدث خطأ أثناء حذف الطلب' };
+  }
+}
+
+export async function getUserOrders(userId: string) {
   return await db
     .select({
       id: orders.id,
@@ -135,17 +199,32 @@ export async function getUserOrders() {
       createdAt: orders.createdAt,
     })
     .from(orders)
-    .where(eq(orders.userId, session.user.id))
+    .where(eq(orders.userId, userId))
     .orderBy(desc(orders.createdAt));
 }
 
-export async function getAllOrdersForAdmin() {
+export async function getAllOrdersForAdmin(filter?: {
+  status?: string;
+  startDate?: string;
+  endDate?: string;
+}) {
   const session = await auth();
   if (!session?.user || (session.user as { role?: string }).role !== 'admin') {
     throw new Error('غير مصرح بالوصول');
   }
 
-  return await db
+  const conditions: any[] = [];
+  if (filter?.status && filter.status !== 'all') {
+    conditions.push(eq(orders.status, filter.status));
+  }
+  if (filter?.startDate) {
+    conditions.push(gte(orders.createdAt, new Date(filter.startDate)));
+  }
+  if (filter?.endDate) {
+    conditions.push(lte(orders.createdAt, new Date(filter.endDate)));
+  }
+
+  const query = db
     .select({
       id: orders.id,
       userId: orders.userId,
@@ -165,7 +244,12 @@ export async function getAllOrdersForAdmin() {
       createdAt: orders.createdAt,
     })
     .from(orders)
-    .innerJoin(users, eq(orders.userId, users.id))
+    .leftJoin(users, eq(orders.userId, users.id))
     .orderBy(desc(orders.createdAt));
-}
 
+  if (conditions.length > 0) {
+    return await query.where(and(...conditions));
+  }
+
+  return await query;
+}

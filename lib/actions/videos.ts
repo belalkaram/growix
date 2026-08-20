@@ -2,7 +2,7 @@
 
 import { db } from '@/db';
 import { toolVideos } from '@/db/schema';
-import { eq, desc } from 'drizzle-orm';
+import { eq, desc, asc } from 'drizzle-orm';
 import { auth } from '@/lib/auth';
 import { revalidatePath } from 'next/cache';
 import { sql } from 'drizzle-orm';
@@ -33,7 +33,7 @@ export async function getVideosForOrderAction(packageId: string, toolId?: string
       .select()
       .from(toolVideos)
       .where(eq(toolVideos.isActive, true))
-      .orderBy(toolVideos.sortOrder, toolVideos.createdAt);
+      .orderBy(asc(toolVideos.sortOrder), asc(toolVideos.createdAt));
 
     if (packageId === 'bundle-vip') {
       // VIP gets all videos
@@ -58,7 +58,7 @@ export async function getAllVideosAdminAction() {
     throw new Error('غير مصرح');
   }
   await ensureVideosTable();
-  return db.select().from(toolVideos).orderBy(toolVideos.sortOrder, desc(toolVideos.createdAt));
+  return db.select().from(toolVideos).orderBy(asc(toolVideos.sortOrder), desc(toolVideos.createdAt));
 }
 
 /** Admin: Add a video */
@@ -92,6 +92,46 @@ export async function addVideoAction(data: {
     revalidatePath('/admin/videos');
     revalidatePath('/my-orders');
     return { success: true, video };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
+/** Admin: Update a video */
+export async function updateVideoAction(data: {
+  id: number;
+  toolId?: string | null;
+  title: string;
+  videoUrl: string;
+  description?: string | null;
+  sortOrder?: number;
+  isActive?: boolean;
+}) {
+  const session = await auth();
+  if (!session?.user || (session.user as { role?: string }).role !== 'admin') {
+    return { success: false, error: 'غير مصرح' };
+  }
+  if (!data.title || !data.videoUrl) {
+    return { success: false, error: 'العنوان ورابط الفيديو مطلوبان' };
+  }
+  try {
+    await ensureVideosTable();
+    await db
+      .update(toolVideos)
+      .set({
+        toolId: data.toolId || null,
+        title: data.title.trim(),
+        videoUrl: data.videoUrl.trim(),
+        description: data.description?.trim() || null,
+        sortOrder: data.sortOrder ?? 0,
+        isActive: data.isActive !== undefined ? data.isActive : true,
+        updatedAt: new Date(),
+      })
+      .where(eq(toolVideos.id, data.id));
+
+    revalidatePath('/admin/videos');
+    revalidatePath('/my-orders');
+    return { success: true };
   } catch (error: any) {
     return { success: false, error: error.message };
   }

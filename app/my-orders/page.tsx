@@ -12,7 +12,7 @@ import { MyOrdersPageClient } from './MyOrdersPageClient';
 export default async function MyOrdersPage() {
   const session = await auth();
 
-  if (!session?.user) {
+  if (!session?.user?.id) {
     redirect('/login?callbackUrl=/my-orders');
   }
 
@@ -31,7 +31,7 @@ export default async function MyOrdersPage() {
     );
   }
 
-  const ordersList = await getUserOrders();
+  const ordersList = await getUserOrders(session.user.id);
 
   const ordersWithFiles = await Promise.all(
     ordersList.map(async (ord) => {

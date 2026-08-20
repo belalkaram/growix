@@ -208,3 +208,17 @@ export const couponUsages = pgTable('coupon_usages', {
   usedAt: timestamp('used_at').defaultNow().notNull(),
 });
 
+// 15. Security Logs & Rate Limiting Table
+export const securityLogs = pgTable('security_logs', {
+  id: serial('id').primaryKey(),
+  ip: varchar('ip', { length: 100 }).notNull(),
+  action: varchar('action', { length: 50 }).notNull(), // 'register' | 'login' | 'order' | 'blocked'
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'set null' }),
+  identifier: varchar('identifier', { length: 255 }), // e.g. email or username attempted
+  userAgent: text('user_agent'),
+  status: varchar('status', { length: 20 }).default('allowed').notNull(), // 'allowed' | 'throttled' | 'blocked'
+  details: jsonb('details'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+

@@ -131,7 +131,11 @@ export const HomePageClient: React.FC<HomePageClientProps> = ({
       <Footer onOpenPaymentModal={() => handleNavigateToCheckout()} settings={settings} />
 
       {/* Floating CTA Buttons */}
-      <FloatingElements onOpenPaymentModal={() => handleNavigateToCheckout()} settings={settings} />
+      <FloatingElements 
+        onOpenPaymentModal={() => handleNavigateToCheckout()} 
+        settings={settings} 
+        packages={packages} 
+      />
 
       {/* Social Proof Live Sales Popup */}
       <LiveSalesToast />

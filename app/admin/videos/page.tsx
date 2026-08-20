@@ -5,10 +5,11 @@ import { SITE_CONFIG } from '@/config/site';
 import { 
   getAllVideosAdminAction, 
   addVideoAction, 
+  updateVideoAction,
   deleteVideoAction, 
   toggleVideoActiveAction 
 } from '@/lib/actions/videos';
-import { Video, Plus, Trash2, ExternalLink, Eye, EyeOff, Loader2, Sparkles } from 'lucide-react';
+import { Video, Plus, Trash2, ExternalLink, Eye, EyeOff, Loader2, Sparkles, Edit2, X, Save } from 'lucide-react';
 
 export default function AdminVideosPage() {
   const [videos, setVideos] = useState<any[]>([]);
@@ -24,6 +25,10 @@ export default function AdminVideosPage() {
     description: '',
     sortOrder: 0,
   });
+
+  // Edit Video State
+  const [editingVideo, setEditingVideo] = useState<any | null>(null);
+  const [editLoading, setEditLoading] = useState(false);
 
   const loadVideos = async () => {
     setLoading(true);
@@ -77,8 +82,32 @@ export default function AdminVideosPage() {
     }
   };
 
+  const handleUpdateVideo = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingVideo) return;
+
+    setEditLoading(true);
+    const res = await updateVideoAction({
+      id: editingVideo.id,
+      title: editingVideo.title,
+      toolId: editingVideo.toolId || null,
+      videoUrl: editingVideo.videoUrl,
+      description: editingVideo.description || null,
+      sortOrder: Number(editingVideo.sortOrder) || 0,
+      isActive: editingVideo.isActive,
+    });
+    setEditLoading(false);
+
+    if (res.success) {
+      setEditingVideo(null);
+      loadVideos();
+    } else {
+      alert(res.error || 'حدث خطأ أثناء تعديل الفيديو');
+    }
+  };
+
   const handleDelete = async (id: number) => {
-    if (!confirm('هل أنت تأكد من رغبتك في حذف هذا الفيديو؟')) return;
+    if (!confirm('هل أنت متأكد من رغبتك في حذف هذا الفيديو نهائياً؟')) return;
     const res = await deleteVideoAction(id);
     if (res.success) {
       loadVideos();
@@ -99,111 +128,134 @@ export default function AdminVideosPage() {
   return (
     <div className="space-y-8 dir-rtl" dir="rtl">
       <div>
-        <h1 className="text-2xl sm:text-3xl font-black text-white flex items-center gap-3">
-          <Video className="w-8 h-8 text-[#2ECC8F]" />
-          <span>إدارة فيديوهات الشرح والتدريب</span>
+        <h1 className="text-2xl sm:text-3xl font-black text-white flex items-center gap-2">
+          <Video className="w-7 h-7 text-[#2ECC8F]" />
+          <span>إدارة فيديوهات الشرح والتثبيت (Full CRUD)</span>
         </h1>
         <p className="text-xs sm:text-sm text-gray-400 mt-1">
-          أضف ودعّم طلبات المشتركين بفيديوهات شرح للأدوات والكورس. تظهر هذه الفيديوهات تلقائياً في صفحة "طلباتي" للمشتركين المفعّلين.
+          إضافة وتعديل وحذف الفيديوهات التي تظهر للمشتركين في صفحة حسابي وطلباتي لشرح وتثبيت البرامج
         </p>
       </div>
 
       {error && (
-        <div className="p-4 bg-red-500/10 border border-red-500/30 text-red-400 rounded-2xl text-xs font-bold">
+        <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-2xl text-red-400 text-xs font-bold">
           {error}
         </div>
       )}
 
       {success && (
-        <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 rounded-2xl text-xs font-bold">
+        <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl text-emerald-400 text-xs font-bold">
           {success}
         </div>
       )}
 
-      {/* Add New Video Form */}
-      <div className="bg-[#1E293B] border border-white/10 rounded-3xl p-6 shadow-xl space-y-6">
+      {/* Add Video Form Card */}
+      <div className="bg-[#0F172A] border border-white/10 rounded-3xl p-6 sm:p-8 shadow-xl space-y-5">
         <h2 className="text-base font-extrabold text-white flex items-center gap-2">
           <Plus className="w-5 h-5 text-[#2ECC8F]" />
           <span>إضافة فيديو شرح جديد</span>
         </h2>
 
-        <form onSubmit={handleAddVideo} className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-          <div className="space-y-1 sm:col-span-2">
-            <label className="text-gray-300 font-bold block">عنوان الفيديو *</label>
-            <input
-              type="text"
-              required
-              placeholder="مثال: شرح طريقة تشغيل واستخراج الداتا ببرنامج واتساب سندر"
-              value={formData.title}
-              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              className="w-full px-4 py-2.5 rounded-xl bg-[#0F172A] border border-white/10 text-white focus:border-[#2ECC8F] outline-none"
-            />
+        <form onSubmit={handleAddVideo} className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold text-gray-300 mb-1">
+                عنوان الفيديو <span className="text-red-400">*</span>
+              </label>
+              <input
+                type="text"
+                required
+                value={formData.title}
+                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                placeholder="مثال: شرح أداة سحب داتا فيسبوك Pro بالتفصيل"
+                className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-xs font-bold text-white focus:outline-none focus:border-[#2ECC8F]"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-gray-300 mb-1">
+                البرنامج المرتبط بالفيديو
+              </label>
+              <select
+                value={formData.toolId}
+                onChange={(e) => setFormData({ ...formData, toolId: e.target.value })}
+                className="w-full px-4 py-2.5 rounded-xl bg-[#0F172A] border border-white/10 text-xs font-bold text-white focus:outline-none focus:border-[#2ECC8F]"
+              >
+                <option value="">🎓 فيديو عام / كورس التسويق (يظهر لجميع المشتركين)</option>
+                {SITE_CONFIG.tools.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.name}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
-          <div className="space-y-1">
-            <label className="text-gray-300 font-bold block">الأداة / القسم التابع له</label>
-            <select
-              value={formData.toolId}
-              onChange={(e) => setFormData({ ...formData, toolId: e.target.value })}
-              className="w-full px-4 py-2.5 rounded-xl bg-[#0F172A] border border-white/10 text-white focus:border-[#2ECC8F] outline-none"
-            >
-              <option value="">🎓 عام / فيديو شرح الكورس الأساسي</option>
-              {SITE_CONFIG.tools.map((t) => (
-                <option key={t.id} value={t.id}>
-                  🛠️ {t.name} ({t.id})
-                </option>
-              ))}
-            </select>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="sm:col-span-2">
+              <label className="block text-xs font-bold text-gray-300 mb-1">
+                رابط الفيديو (YouTube / Vimeo / Direct Link) <span className="text-red-400">*</span>
+              </label>
+              <input
+                type="url"
+                required
+                value={formData.videoUrl}
+                onChange={(e) => setFormData({ ...formData, videoUrl: e.target.value })}
+                placeholder="https://www.youtube.com/watch?v=..."
+                className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-xs font-bold text-white focus:outline-none focus:border-[#2ECC8F] dir-ltr text-right"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-gray-300 mb-1">
+                الترتيب (Sort Order)
+              </label>
+              <input
+                type="number"
+                value={formData.sortOrder}
+                onChange={(e) => setFormData({ ...formData, sortOrder: Number(e.target.value) })}
+                className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-xs font-bold text-white focus:outline-none focus:border-[#2ECC8F]"
+              />
+            </div>
           </div>
 
-          <div className="space-y-1">
-            <label className="text-gray-300 font-bold block">ترتيب العرض</label>
-            <input
-              type="number"
-              value={formData.sortOrder}
-              onChange={(e) => setFormData({ ...formData, sortOrder: Number(e.target.value) })}
-              className="w-full px-4 py-2.5 rounded-xl bg-[#0F172A] border border-white/10 text-white focus:border-[#2ECC8F] outline-none"
-            />
-          </div>
-
-          <div className="space-y-1 sm:col-span-2">
-            <label className="text-gray-300 font-bold block">رابط الفيديو (YouTube / Drive / Direct Link) *</label>
-            <input
-              type="url"
-              required
-              placeholder="https://www.youtube.com/watch?v=... أو رابط مباشر"
-              value={formData.videoUrl}
-              onChange={(e) => setFormData({ ...formData, videoUrl: e.target.value })}
-              className="w-full px-4 py-2.5 rounded-xl bg-[#0F172A] border border-white/10 text-white focus:border-[#2ECC8F] outline-none dir-ltr text-left"
-            />
-          </div>
-
-          <div className="space-y-1 sm:col-span-2">
-            <label className="text-gray-300 font-bold block">وصف مختصر أو تعليمات إضافية (اختياري)</label>
+          <div>
+            <label className="block text-xs font-bold text-gray-300 mb-1">
+              وصف مختصر أو تعليمات إضافية (اختياري)
+            </label>
             <textarea
-              rows={2}
-              placeholder="اكتب ملاحظات أو خطوات هامة قبل مشاهدة الفيديو..."
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              className="w-full px-4 py-2.5 rounded-xl bg-[#0F172A] border border-white/10 text-white focus:border-[#2ECC8F] outline-none"
+              placeholder="اكتب ملاحظات حول تشغيل وتفعيل الأداة المذكورة في الفيديو..."
+              rows={2}
+              className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-xs font-medium text-white focus:outline-none focus:border-[#2ECC8F]"
             />
           </div>
 
-          <div className="sm:col-span-2 pt-2">
+          <div className="flex justify-end">
             <button
               type="submit"
               disabled={submitting}
-              className="px-6 py-3 rounded-xl bg-gradient-to-l from-[#0F9D58] to-[#2ECC8F] text-white font-extrabold flex items-center gap-2 hover:opacity-90 transition-opacity disabled:opacity-50 shadow-lg shadow-[#0F9D58]/20"
+              className="py-3 px-7 rounded-2xl bg-[#00FF87] hover:bg-[#00E676] text-[#0A1128] font-black text-xs sm:text-sm flex items-center gap-2 shadow-lg shadow-[#00FF87]/25 transition-transform active:scale-95 disabled:opacity-50 cursor-pointer"
             >
-              {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-              <span>حفظ إضافة الفيديو</span>
+              {submitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>جاري الحفظ...</span>
+                </>
+              ) : (
+                <>
+                  <Plus className="w-4 h-4" />
+                  <span>إضافة الفيديو الآن</span>
+                </>
+              )}
             </button>
           </div>
         </form>
       </div>
 
       {/* Videos List Table */}
-      <div className="bg-[#1E293B] border border-white/10 rounded-3xl p-6 shadow-xl space-y-4">
+      <div className="bg-[#0F172A] border border-white/10 rounded-3xl p-6 shadow-xl space-y-4">
         <h2 className="text-base font-extrabold text-white flex items-center justify-between">
           <span className="flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-[#2ECC8F]" />
@@ -228,7 +280,7 @@ export default function AdminVideosPage() {
               return (
                 <div
                   key={vid.id}
-                  className="p-4 bg-[#0F172A] border border-white/10 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs hover:border-[#2ECC8F]/40 transition-colors"
+                  className="p-4 bg-white/5 border border-white/10 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs hover:border-[#2ECC8F]/40 transition-colors"
                 >
                   <div className="space-y-1 max-w-xl">
                     <div className="flex items-center gap-2">
@@ -260,9 +312,17 @@ export default function AdminVideosPage() {
 
                   <div className="flex items-center gap-2 shrink-0">
                     <button
+                      onClick={() => setEditingVideo({ ...vid })}
+                      className="p-2 rounded-xl bg-blue-500/10 border border-blue-500/30 text-blue-400 hover:bg-blue-500/20 transition-colors cursor-pointer"
+                      title="تعديل بيانات الفيديو"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </button>
+
+                    <button
                       onClick={() => handleToggleActive(vid.id, vid.isActive)}
                       title={vid.isActive ? 'إخفاء الفيديو' : 'إظهار الفيديو'}
-                      className={`p-2 rounded-xl border transition-colors ${
+                      className={`p-2 rounded-xl border transition-colors cursor-pointer ${
                         vid.isActive
                           ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20'
                           : 'bg-gray-500/10 border-gray-500/30 text-gray-400 hover:bg-gray-500/20'
@@ -274,7 +334,7 @@ export default function AdminVideosPage() {
                     <button
                       onClick={() => handleDelete(vid.id)}
                       title="حذف الفيديو"
-                      className="p-2 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20 transition-colors"
+                      className="p-2 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20 transition-colors cursor-pointer"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -285,6 +345,93 @@ export default function AdminVideosPage() {
           </div>
         )}
       </div>
+
+      {/* EDIT VIDEO MODAL */}
+      {editingVideo && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+          <div className="w-full max-w-lg bg-[#0F172A] border border-white/10 rounded-3xl p-6 sm:p-8 space-y-5 shadow-2xl relative">
+            <div className="flex items-center justify-between pb-4 border-b border-white/10">
+              <h3 className="text-base font-black text-white flex items-center gap-2">
+                <Edit2 className="w-5 h-5 text-blue-400" />
+                <span>تعديل فيديو الشرح</span>
+              </h3>
+              <button
+                onClick={() => setEditingVideo(null)}
+                className="p-2 text-gray-400 hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleUpdateVideo} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-300 mb-1">عنوان الفيديو</label>
+                <input
+                  type="text"
+                  required
+                  value={editingVideo.title}
+                  onChange={(e) => setEditingVideo({ ...editingVideo, title: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-xs font-bold text-white focus:outline-none focus:border-blue-400"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-300 mb-1">البرنامج المرتبط</label>
+                <select
+                  value={editingVideo.toolId || ''}
+                  onChange={(e) => setEditingVideo({ ...editingVideo, toolId: e.target.value || null })}
+                  className="w-full px-3 py-2 rounded-xl bg-[#0F172A] border border-white/10 text-xs font-bold text-white focus:outline-none focus:border-blue-400"
+                >
+                  <option value="">🎓 فيديو عام / كورس التسويق</option>
+                  {SITE_CONFIG.tools.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-300 mb-1">رابط الفيديو</label>
+                <input
+                  type="url"
+                  required
+                  value={editingVideo.videoUrl}
+                  onChange={(e) => setEditingVideo({ ...editingVideo, videoUrl: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-xs font-bold text-white focus:outline-none focus:border-blue-400 dir-ltr text-right"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-300 mb-1">الوصف</label>
+                <textarea
+                  value={editingVideo.description || ''}
+                  onChange={(e) => setEditingVideo({ ...editingVideo, description: e.target.value })}
+                  rows={2}
+                  className="w-full px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-xs font-medium text-white focus:outline-none focus:border-blue-400"
+                />
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <button
+                  type="submit"
+                  disabled={editLoading}
+                  className="flex-1 py-3 rounded-xl bg-blue-500 hover:bg-blue-600 text-white font-black text-xs transition-all disabled:opacity-50 cursor-pointer"
+                >
+                  {editLoading ? 'جاري الحفظ...' : 'حفظ التعديلات'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditingVideo(null)}
+                  className="px-5 py-3 rounded-xl bg-white/10 text-white font-bold text-xs cursor-pointer"
+                >
+                  إلغاء
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

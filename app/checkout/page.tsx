@@ -20,28 +20,35 @@ import {
   Trash2,
   X
 } from 'lucide-react';
-import { SITE_CONFIG, SITE_PRICING } from '@/config/site';
+import { SITE_CONFIG, SITE_PRICING, PricingPackage } from '@/config/site';
 import { GrowixLogo } from '@/components/GrowixLogo';
 import { CustomToolSelector } from '@/components/CustomToolSelector';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { createOrderAction } from '@/lib/actions/orders';
 import { validateCouponAction } from '@/lib/actions/coupons';
+import { getAllPackagesAction } from '@/lib/actions/packages';
 
 function CheckoutContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { status } = useSession();
 
+  const [packages, setPackages] = useState<PricingPackage[]>(SITE_CONFIG.packages);
+
   useEffect(() => {
-    if (status === 'unauthenticated') {
-      const currentUrl = window.location.pathname + window.location.search;
-      router.push(`/login?callbackUrl=${encodeURIComponent(currentUrl)}`);
-    }
-  }, [status, router]);
+    getAllPackagesAction().then((pkgs) => {
+      if (pkgs && pkgs.length > 0) {
+        setPackages(pkgs);
+      }
+    });
+  }, []);
 
   const initialPkgParam = searchParams.get('package');
   const initialToolParam = searchParams.get('tool');
+  const initialCouponParam = searchParams.get('coupon');
+  const initialSenderParam = searchParams.get('sender');
+  const initialMethodParam = searchParams.get('method');
 
   const [userPkgId, setUserPkgId] = useState<string | null>(null);
   const [userToolId, setUserToolId] = useState<string | null>(null);
@@ -56,15 +63,15 @@ function CheckoutContent() {
   const setActivePkgId = (id: string) => setUserPkgId(id);
   const setSelectedToolId = (id: string) => setUserToolId(id);
 
-  const [activePaymentMethod, setActivePaymentMethod] = useState<string>('electronic-wallet');
-  const [senderNumber, setSenderNumber] = useState<string>('');
+  const [activePaymentMethod, setActivePaymentMethod] = useState<string>(initialMethodParam || 'electronic-wallet');
+  const [senderNumber, setSenderNumber] = useState<string>(initialSenderParam || '');
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
   const [orderMessage, setOrderMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [countdown, setCountdown] = useState<number | null>(null);
 
   // Coupon State
-  const [couponCodeInput, setCouponCodeInput] = useState('');
+  const [couponCodeInput, setCouponCodeInput] = useState(initialCouponParam || '');
   const [appliedCoupon, setAppliedCoupon] = useState<{
     id: string;
     code: string;
@@ -76,9 +83,29 @@ function CheckoutContent() {
   const [couponLoading, setCouponLoading] = useState(false);
   const [couponMessage, setCouponMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  const currentPkg = SITE_CONFIG.packages.find((p) => p.id === activePkgId) || SITE_CONFIG.packages[0];
+  // Auto-validate initial coupon from query param if present
+  useEffect(() => {
+    if (initialCouponParam && !appliedCoupon) {
+      validateCouponAction(initialCouponParam.trim(), packagePriceNum).then((res) => {
+        if (res.success && res.coupon) {
+          setAppliedCoupon(res.coupon);
+          setCouponMessage({
+            type: 'success',
+            text: `تم استعادة وتطبيق الكوبون (${res.coupon.code}) بنجاح! خصم ${res.coupon.discountPercent}%`,
+          });
+        }
+      });
+    }
+  }, [initialCouponParam]);
+
+  const availablePackages = packages && packages.length > 0 ? packages : SITE_CONFIG.packages;
+  const currentPkg = availablePackages.find((p) => p.id === activePkgId) || availablePackages[0];
   const currentTool = SITE_CONFIG.tools.find((t) => t.id === selectedToolId) || SITE_CONFIG.tools[0];
   const currentPayment = SITE_CONFIG.paymentMethods.find((m) => m.id === activePaymentMethod) || SITE_CONFIG.paymentMethods[0];
+
+  const vipPkg = availablePackages.find((p) => p.id === 'bundle-vip');
+  const premiumPkg = availablePackages.find((p) => p.id === 'bundle-premium');
+  const singlePkg = availablePackages.find((p) => p.id === 'single-tool');
 
   const packagePriceNum = parseInt(currentPkg.discountedPrice.replace(/[^0-9]/g, '')) || 0;
 
@@ -135,7 +162,19 @@ function CheckoutContent() {
   };
 
   const handleOrderSubmit = async () => {
-    if (!senderNumber || senderNumber.trim().length < 6) {
+    // 1. If user is guest/unauthenticated, redirect to login while preserving full checkout choices
+    if (status === 'unauthenticated') {
+      const returnUrl = `/checkout?package=${activePkgId}${
+        activePkgId === 'single-tool' ? `&tool=${selectedToolId}` : ''
+      }${appliedCoupon ? `&coupon=${appliedCoupon.code}` : ''}${
+        senderNumber ? `&sender=${encodeURIComponent(senderNumber)}` : ''
+      }&method=${activePaymentMethod}`;
+
+      router.push(`/login?callbackUrl=${encodeURIComponent(returnUrl)}`);
+      return;
+    }
+
+    if (!senderNumber || senderNumber.trim().length < 4) {
       setOrderMessage({ type: 'error', text: 'يرجى إدخال رقم المحفظة أو الحساب المحوّل منه أولاً' });
       return;
     }
@@ -294,7 +333,7 @@ function CheckoutContent() {
             >
               <div className="flex items-start justify-between gap-2 mb-2">
                 <span className="text-[11px] font-black px-2.5 py-1 rounded-md bg-amber-400 text-[#0B1220]">
-                  VIP ({SITE_PRICING.vipPackagePrice} ج)
+                  VIP ({vipPkg?.discountedPrice || SITE_PRICING.vipPackagePrice} ج)
                 </span>
                 {activePkgId === 'bundle-vip' && (
                   <CheckCircle2 className="w-5 h-5 text-[#2ECC8F] shrink-0" />
@@ -322,7 +361,7 @@ function CheckoutContent() {
             >
               <div className="flex items-start justify-between gap-2 mb-2">
                 <span className="text-[11px] font-black px-2.5 py-1 rounded-md bg-[#2ECC8F] text-[#0B1220]">
-                  Premium ({SITE_PRICING.fullPackagePrice} ج)
+                  Premium ({premiumPkg?.discountedPrice || SITE_PRICING.fullPackagePrice} ج)
                 </span>
                 {activePkgId === 'bundle-premium' && (
                   <CheckCircle2 className="w-5 h-5 text-[#2ECC8F] shrink-0" />
@@ -350,7 +389,7 @@ function CheckoutContent() {
             >
               <div className="flex items-start justify-between gap-2 mb-2">
                 <span className="text-[11px] font-black px-2.5 py-1 rounded-md bg-emerald-100 text-emerald-900 border border-emerald-300">
-                  أداة واحدة ({SITE_PRICING.singleToolPrice} ج)
+                  أداة واحدة ({singlePkg?.discountedPrice || SITE_PRICING.singleToolPrice} ج)
                 </span>
                 {activePkgId === 'single-tool' && (
                   <CheckCircle2 className="w-5 h-5 text-[#2ECC8F] shrink-0" />
@@ -374,7 +413,7 @@ function CheckoutContent() {
                 id="checkout-tool-selector"
                 selectedToolId={selectedToolId}
                 onSelectTool={(toolId) => setUserToolId(toolId)}
-                label={`حدد البرنامج المطلوب (${SITE_PRICING.singleToolPrice} جنيه):`}
+                label={`حدد البرنامج المطلوب (${singlePkg?.discountedPrice || SITE_PRICING.singleToolPrice} جنيه):`}
               />
             </div>
           )}

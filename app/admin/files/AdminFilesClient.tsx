@@ -2,8 +2,8 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { addPackageFileAction, deletePackageFileAction, seedInitialDefaultFilesAction, deleteDummyFilesAction } from '@/lib/actions/files';
-import { FolderDown, Plus, Trash2, Database, FileArchive, CheckCircle2, AlertCircle, Sparkles, RefreshCw, Eraser } from 'lucide-react';
+import { addPackageFileAction, updatePackageFileAction, deletePackageFileAction, seedInitialDefaultFilesAction, deleteDummyFilesAction } from '@/lib/actions/files';
+import { FolderDown, Plus, Trash2, Database, FileArchive, CheckCircle2, AlertCircle, Sparkles, RefreshCw, Eraser, Edit2, X } from 'lucide-react';
 import { SITE_CONFIG } from '@/config/site';
 
 interface AdminFilesClientProps {
@@ -15,6 +15,10 @@ export const AdminFilesClient: React.FC<AdminFilesClientProps> = ({ filesList })
   const [showAddForm, setShowAddForm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  // Edit State
+  const [editingFile, setEditingFile] = useState<any | null>(null);
+  const [editLoading, setEditLoading] = useState(false);
 
   // Form states
   const [packageId, setPackageId] = useState('bundle-vip');
@@ -358,13 +362,24 @@ export const AdminFilesClient: React.FC<AdminFilesClientProps> = ({ filesList })
                     </td>
 
                     <td className="p-4">
-                      <button
-                        onClick={() => handleDeleteFile(f.id)}
-                        className="p-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 transition-colors flex items-center gap-1 text-xs font-bold"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                        <span>حذف</span>
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => setEditingFile({ ...f })}
+                          className="p-2 rounded-xl bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/20 transition-colors flex items-center gap-1 text-xs font-bold cursor-pointer"
+                          title="تعديل بيانات الملف"
+                        >
+                          <Edit2 className="w-3.5 h-3.5" />
+                          <span>تعديل</span>
+                        </button>
+
+                        <button
+                          onClick={() => handleDeleteFile(f.id)}
+                          className="p-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 transition-colors flex items-center gap-1 text-xs font-bold cursor-pointer"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          <span>حذف</span>
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -373,6 +388,117 @@ export const AdminFilesClient: React.FC<AdminFilesClientProps> = ({ filesList })
           </div>
         )}
       </div>
+
+      {/* EDIT FILE MODAL */}
+      {editingFile && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md" dir="rtl">
+          <div className="w-full max-w-lg bg-[#0F172A] border border-white/10 rounded-3xl p-6 sm:p-8 space-y-5 shadow-2xl relative">
+            <div className="flex items-center justify-between pb-4 border-b border-white/10">
+              <h3 className="text-base font-black text-white flex items-center gap-2">
+                <Edit2 className="w-5 h-5 text-blue-400" />
+                <span>تعديل بيانات الملف</span>
+              </h3>
+              <button
+                onClick={() => setEditingFile(null)}
+                className="p-2 text-gray-400 hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault();
+                setEditLoading(true);
+                const res = await updatePackageFileAction({
+                  id: editingFile.id,
+                  packageId: editingFile.packageId,
+                  toolId: editingFile.toolId || null,
+                  fileName: editingFile.fileName,
+                  fileKey: editingFile.fileKey,
+                  fileSize: editingFile.fileSize || null,
+                  category: editingFile.category,
+                  description: editingFile.description || null,
+                  sortOrder: Number(editingFile.sortOrder) || 0,
+                  isActive: editingFile.isActive,
+                });
+                setEditLoading(false);
+                if (res.success) {
+                  setEditingFile(null);
+                  router.refresh();
+                } else {
+                  alert(res.error || 'حدث خطأ أثناء تعديل الملف');
+                }
+              }}
+              className="space-y-4 text-xs"
+            >
+              <div>
+                <label className="block text-gray-300 font-bold mb-1">اسم الملف</label>
+                <input
+                  type="text"
+                  required
+                  value={editingFile.fileName}
+                  onChange={(e) => setEditingFile({ ...editingFile, fileName: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-white font-bold focus:outline-none focus:border-blue-400"
+                />
+              </div>
+
+              <div>
+                <label className="block text-gray-300 font-bold mb-1">مسار ملف R2 (Key)</label>
+                <input
+                  type="text"
+                  required
+                  value={editingFile.fileKey}
+                  onChange={(e) => setEditingFile({ ...editingFile, fileKey: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-white font-mono dir-ltr text-right focus:outline-none focus:border-blue-400"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-gray-300 font-bold mb-1">حجم الملف</label>
+                  <input
+                    type="text"
+                    value={editingFile.fileSize || ''}
+                    onChange={(e) => setEditingFile({ ...editingFile, fileSize: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:border-blue-400"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-gray-300 font-bold mb-1">الفئة</label>
+                  <select
+                    value={editingFile.category}
+                    onChange={(e) => setEditingFile({ ...editingFile, category: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl bg-[#0F172A] border border-white/10 text-white font-bold focus:outline-none focus:border-blue-400"
+                  >
+                    <option value="tool">🛠️ برنامج / أداة</option>
+                    <option value="data">📊 داتا تسويقية</option>
+                    <option value="course">🎓 كورس تدريبي</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <button
+                  type="submit"
+                  disabled={editLoading}
+                  className="flex-1 py-3 rounded-xl bg-blue-500 hover:bg-blue-600 text-white font-black text-xs transition-all disabled:opacity-50 cursor-pointer"
+                >
+                  {editLoading ? 'جاري الحفظ...' : 'حفظ التعديلات'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditingFile(null)}
+                  className="px-5 py-3 rounded-xl bg-white/10 text-white font-bold text-xs cursor-pointer"
+                >
+                  إلغاء
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

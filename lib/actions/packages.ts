@@ -67,8 +67,17 @@ export async function updatePackageAction(data: z.infer<typeof packageSchema>) {
         },
       });
 
+    revalidatePath('/', 'layout');
     revalidatePath('/');
     revalidatePath('/checkout');
+    revalidatePath('/pricing');
+    revalidatePath('/course');
+    revalidatePath('/data-bonus');
+    revalidatePath('/how-it-works');
+    revalidatePath('/faq');
+    revalidatePath('/about');
+    revalidatePath('/tools');
+    revalidatePath('/admin/packages');
     return { success: true };
   } catch (error: any) {
     if (error?.issues && error.issues.length > 0) {
@@ -77,4 +86,9 @@ export async function updatePackageAction(data: z.infer<typeof packageSchema>) {
     console.error('Update package error:', error);
     return { success: false, error: 'حدث خطأ أثناء حفظ الباقة' };
   }
+}
+
+export async function getAllPackagesAction() {
+  const { getPackages } = await import('@/lib/queries');
+  return await getPackages();
 }

@@ -25,6 +25,7 @@ interface PaymentModalProps {
   onClose: () => void;
   selectedPackage: PricingPackage | null;
   initialToolId?: string;
+  packages?: PricingPackage[];
 }
 
 export const PaymentModal: React.FC<PaymentModalProps> = ({
@@ -32,6 +33,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   onClose,
   selectedPackage,
   initialToolId,
+  packages,
 }) => {
   useBodyScrollLock(isOpen);
 
@@ -51,8 +53,13 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 
   if (!isOpen) return null;
 
-  const currentPkg = SITE_CONFIG.packages.find((p) => p.id === activePkgId) || SITE_CONFIG.packages[0];
+  const availablePackages = packages && packages.length > 0 ? packages : SITE_CONFIG.packages;
+  const currentPkg = availablePackages.find((p) => p.id === activePkgId) || availablePackages[0];
   const currentTool = SITE_CONFIG.tools.find((t) => t.id === selectedToolId) || SITE_CONFIG.tools[0];
+
+  const vipPkg = availablePackages.find((p) => p.id === 'bundle-vip');
+  const premiumPkg = availablePackages.find((p) => p.id === 'bundle-premium');
+  const singlePkg = availablePackages.find((p) => p.id === 'single-tool');
 
   const handleCopy = (text: string, id: string) => {
     navigator.clipboard.writeText(text);
@@ -166,7 +173,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                 >
                   <div className="flex items-start justify-between gap-1 mb-1.5">
                     <span className="text-[10px] font-black px-2 py-0.5 rounded-md bg-amber-400 text-[#0B1220]">
-                      VIP ({SITE_PRICING.vipPackagePrice} ج)
+                      VIP ({vipPkg?.discountedPrice || SITE_PRICING.vipPackagePrice} ج)
                     </span>
                     {activePkgId === 'bundle-vip' && (
                       <CheckCircle2 className="w-4 h-4 text-[#2ECC8F] shrink-0" />
@@ -192,7 +199,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                 >
                   <div className="flex items-start justify-between gap-1 mb-1.5">
                     <span className="text-[10px] font-black px-2 py-0.5 rounded-md bg-[#2ECC8F] text-[#0B1220]">
-                      Premium ({SITE_PRICING.fullPackagePrice} ج)
+                      Premium ({premiumPkg?.discountedPrice || SITE_PRICING.fullPackagePrice} ج)
                     </span>
                     {activePkgId === 'bundle-premium' && (
                       <CheckCircle2 className="w-4 h-4 text-[#2ECC8F] shrink-0" />
@@ -218,7 +225,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                 >
                   <div className="flex items-start justify-between gap-1 mb-1.5">
                     <span className="text-[10px] font-black px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-900 border border-emerald-300">
-                      أداة واحدة ({SITE_PRICING.singleToolPrice} ج)
+                      أداة واحدة ({singlePkg?.discountedPrice || SITE_PRICING.singleToolPrice} ج)
                     </span>
                     {activePkgId === 'single-tool' && (
                       <CheckCircle2 className="w-4 h-4 text-[#2ECC8F] shrink-0" />
@@ -240,7 +247,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                 <div className="flex items-center justify-between">
                   <label className="block text-xs sm:text-sm font-extrabold text-[#0B1220] flex items-center gap-1.5">
                     <Wrench className="w-4 h-4 text-[#0F9D58]" />
-                    <span>حدد البرنامج المطلوب ({SITE_PRICING.singleToolPrice} جنيه):</span>
+                    <span>حدد البرنامج المطلوب ({singlePkg?.discountedPrice || SITE_PRICING.singleToolPrice} جنيه):</span>
                   </label>
                   <span className="text-[11px] bg-[#0F9D58] text-white px-2.5 py-0.5 rounded-full font-bold">
                     12 أداة متاحة

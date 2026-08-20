@@ -7,6 +7,7 @@ import { MaintenanceScreen } from '@/components/MaintenanceScreen';
 import { HeaderNavbar } from '@/components/HeaderNavbar';
 import { Footer } from '@/components/Footer';
 import { PricingSection } from '@/components/PricingSection';
+import { FloatingElements } from '@/components/FloatingElements';
 import { Zap, ShieldCheck, Check, Sparkles } from 'lucide-react';
 
 export const metadata: Metadata = {
@@ -34,6 +35,10 @@ export default async function PricingPage() {
     getSiteSettings(),
     auth(),
   ]);
+
+  const vipPkg = packages.find((p) => p.id === 'bundle-vip');
+  const premiumPkg = packages.find((p) => p.id === 'bundle-premium');
+  const singlePkg = packages.find((p) => p.id === 'single-tool');
 
   if (siteSettings?.maintenance_mode === 'true' && (session?.user as { role?: string })?.role !== 'admin') {
     return (
@@ -99,9 +104,9 @@ export default async function PricingPage() {
               <thead>
                 <tr className="bg-[#0B1220] text-white">
                   <th className="p-4 font-black">الميزة / الأداة</th>
-                  <th className="p-4 font-black text-center text-[#2ECC8F]">باقة VIP (500ج) ⭐</th>
-                  <th className="p-4 font-black text-center">باقة Premium (300ج)</th>
-                  <th className="p-4 font-black text-center">برنامج واحد (200ج)</th>
+                  <th className="p-4 font-black text-center text-[#2ECC8F]">باقة VIP ({vipPkg?.discountedPrice || '500'}ج) ⭐</th>
+                  <th className="p-4 font-black text-center">باقة Premium ({premiumPkg?.discountedPrice || '300'}ج)</th>
+                  <th className="p-4 font-black text-center">برنامج واحد ({singlePkg?.discountedPrice || '200'}ج)</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 bg-white">
@@ -165,13 +170,20 @@ export default async function PricingPage() {
               className="inline-flex items-center gap-2 px-9 py-4 rounded-2xl bg-gradient-to-l from-[#0F9D58] to-[#2ECC8F] text-white font-extrabold text-sm sm:text-base shadow-xl hover:scale-105 transition-transform"
             >
               <Sparkles className="w-5 h-5" />
-              <span>اختر الباقة الكاملة VIP (500ج)</span>
+              <span>اختر الباقة الكاملة VIP ({vipPkg?.discountedPrice || '500'}ج)</span>
             </a>
           </div>
         </div>
       </section>
 
       <Footer settings={siteSettings} />
+
+      {/* Mobile & Desktop Floating Elements */}
+      <FloatingElements 
+        settings={siteSettings} 
+        packages={packages} 
+        onOpenPaymentModal={undefined as any}
+      />
     </main>
   );
 }
