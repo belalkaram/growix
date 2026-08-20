@@ -3,6 +3,7 @@ import { IBM_Plex_Sans_Arabic } from 'next/font/google';
 import { Suspense } from 'react';
 import { GlobalNavigationLoader } from '@/components/GlobalNavigationLoader';
 import { AnalyticsTracker } from '@/components/AnalyticsTracker';
+import { FacebookPixelWrapper } from '@/components/FacebookPixelWrapper';
 import { AuthProvider } from '@/components/AuthProvider';
 import './globals.css';
 
@@ -95,6 +96,7 @@ export default function RootLayout({
           <Suspense fallback={null}>
             <GlobalNavigationLoader />
             <AnalyticsTracker />
+            <FacebookPixelWrapper />
           </Suspense>
           {children}
         </AuthProvider>

@@ -1,52 +1,106 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 
-export function AnalyticsTracker() {
+export const AnalyticsTracker: React.FC = () => {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const lastTrackedPath = useRef<string | null>(null);
+  const startTimeRef = useRef<number>(Date.now());
+  const currentPathRef = useRef<string>(pathname);
 
+  // Initialize or get Session ID
+  const getSessionId = (): string => {
+    if (typeof window === 'undefined') return 'unknown';
+    let sid = sessionStorage.getItem('growix_session_id');
+    if (!sid) {
+      sid = 'gx_' + Math.random().toString(36).substring(2, 11) + '_' + Date.now();
+      sessionStorage.setItem('growix_session_id', sid);
+    }
+    return sid;
+  };
+
+  // Helper to send duration ping
+  const sendDurationPing = (path: string, durationSec: number) => {
+    if (durationSec <= 0 || typeof window === 'undefined') return;
+    const sid = getSessionId();
+    const payload = JSON.stringify({
+      type: 'ping',
+      sessionId: sid,
+      path,
+      durationSeconds: durationSec,
+    });
+
+    if (navigator.sendBeacon) {
+      navigator.sendBeacon('/api/track', payload);
+    } else {
+      fetch('/api/track', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: payload,
+        keepalive: true,
+      }).catch(() => {});
+    }
+  };
+
+  // Track page view and handle duration on path changes
   useEffect(() => {
-    // Generate or retrieve persistent sessionId
-    let sessionId = sessionStorage.getItem('growix_analytics_sid');
-    if (!sessionId) {
-      sessionId = 'sid_' + Math.random().toString(36).substring(2, 15) + Date.now().toString(36);
-      sessionStorage.setItem('growix_analytics_sid', sessionId);
+    // 1. Send duration for previous path
+    const prevPath = currentPathRef.current;
+    const duration = Math.round((Date.now() - startTimeRef.current) / 1000);
+    if (prevPath && duration > 0) {
+      sendDurationPing(prevPath, duration);
     }
 
-    const currentPath = pathname + (searchParams?.toString() ? `?${searchParams.toString()}` : '');
+    // 2. Reset timer for new path
+    startTimeRef.current = Date.now();
+    currentPathRef.current = pathname;
+    const sid = getSessionId();
 
-    // Skip if tracked already on same path
-    if (lastTrackedPath.current === currentPath) return;
-    lastTrackedPath.current = currentPath;
+    // 3. Extract UTM parameters
+    const utmSource = searchParams?.get('utm_source') || undefined;
+    const utmMedium = searchParams?.get('utm_medium') || undefined;
+    const utmCampaign = searchParams?.get('utm_campaign') || undefined;
+    const referrer = typeof document !== 'undefined' ? document.referrer : undefined;
 
-    // Send pageview payload via fetch beacon
-    try {
-      const payload = {
-        path: currentPath,
-        referrer: document.referrer || null,
-        sessionId,
-        utmSource: searchParams?.get('utm_source') || null,
-        utmMedium: searchParams?.get('utm_medium') || null,
-        utmCampaign: searchParams?.get('utm_campaign') || null,
-      };
+    // 4. Send PageView to internal analytics
+    fetch('/api/track', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type: 'view',
+        sessionId: sid,
+        path: pathname,
+        referrer,
+        utmSource,
+        utmMedium,
+        utmCampaign,
+        durationSeconds: 0,
+      }),
+    }).catch(() => {});
 
-      if (navigator.sendBeacon) {
-        navigator.sendBeacon('/api/track', JSON.stringify(payload));
-      } else {
-        fetch('/api/track', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-          keepalive: true,
-        }).catch(() => {});
+    // 5. Setup periodic ping for long sessions (every 20s)
+    const interval = setInterval(() => {
+      const currentDuration = Math.round((Date.now() - startTimeRef.current) / 1000);
+      if (currentDuration > 5) {
+        sendDurationPing(pathname, currentDuration);
       }
-    } catch {
-      // Ignore tracking errors gracefully
-    }
+    }, 20000);
+
+    // 6. Handle beforeunload & visibility change
+    const handleUnload = () => {
+      const totalSec = Math.round((Date.now() - startTimeRef.current) / 1000);
+      sendDurationPing(pathname, totalSec);
+    };
+
+    window.addEventListener('beforeunload', handleUnload);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('beforeunload', handleUnload);
+      handleUnload();
+    };
   }, [pathname, searchParams]);
 
   return null;
-}
+};

@@ -32,6 +32,7 @@ import { createOrderAction } from '@/lib/actions/orders';
 import { validateCouponAction } from '@/lib/actions/coupons';
 import { getAllPackagesAction } from '@/lib/actions/packages';
 import { uploadReceiptAction } from '@/lib/actions/receipts';
+import { trackMetaEvent } from '@/components/FacebookPixel';
 
 function CheckoutContent() {
   const router = useRouter();
@@ -127,6 +128,13 @@ function CheckoutContent() {
         finalPrice: newFinalPrice,
       } : null);
     }
+    if (currentPkg) {
+      trackMetaEvent('InitiateCheckout', {
+        content_name: currentPkg.name,
+        value: packagePriceNum,
+        currency: 'EGP',
+      });
+    }
   }, [activePkgId, packagePriceNum]);
 
   const handleApplyCoupon = async (e?: React.FormEvent) => {
@@ -208,8 +216,46 @@ function CheckoutContent() {
       return;
     }
 
-    if (!senderNumber || senderNumber.trim().length < 4) {
-      setOrderMessage({ type: 'error', text: 'يرجى إدخال رقم المحفظة أو الحساب المحوّل منه أولاً' });
+    // 2. Validate Egyptian Mobile Number / InstaPay Handle
+    const cleanInput = senderNumber.trim().replace(/\s+/g, '');
+    if (!cleanInput) {
+      setOrderMessage({ type: 'error', text: 'يرجى إدخال رقم الهاتف أو الحساب الذي قمت بالتحويل منه أولاً' });
+      return;
+    }
+
+    const normalizedPhone = cleanInput.replace(/^(?:\+20|0020|20)/, '0');
+    const isEgyptianPhone = /^(010|011|012|015)[0-9]{8}$/.test(normalizedPhone);
+
+    if (activePaymentMethod === 'electronic-wallet') {
+      // Vodafone Cash must be a valid 11-digit Egyptian phone number
+      if (!isEgyptianPhone) {
+        setOrderMessage({ 
+          type: 'error', 
+          text: 'يرجى إدخال رقم هاتف محفظة مصري صحيح يبدأ بـ (010 أو 011 أو 012 أو 015) ومكون من 11 رقماً.' 
+        });
+        return;
+      }
+    } else if (activePaymentMethod === 'instapay') {
+      // InstaPay can be an Egyptian phone number or valid InstaPay handle/account (min 3 chars)
+      if (!isEgyptianPhone && cleanInput.length < 3) {
+        setOrderMessage({ 
+          type: 'error', 
+          text: 'يرجى إدخال رقم الهاتف أو عنوان إنستاباي الصحيح (مثال: 01012345678 أو username@instapay).' 
+        });
+        return;
+      }
+    }
+
+    // 3. 🛑 MANDATORY PAYMENT RECEIPT VALIDATION
+    if (!receiptFile) {
+      setOrderMessage({
+        type: 'error',
+        text: 'يرجى إرفاق صورة أو لقطة شاشة لإثبات التحويل أولاً لتأكيد طلبك وتفعيل باقتك فوراً 🖼️'
+      });
+      const uploadElement = document.getElementById('step-receipt-upload');
+      if (uploadElement) {
+        uploadElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
       return;
     }
 
@@ -217,27 +263,25 @@ function CheckoutContent() {
     setOrderMessage(null);
     setUploadStatusText('جاري معالجة الطلب...');
 
-    // 2. Upload Receipt Image to Cloudflare R2 if attached
+    // 4. Upload Receipt Image to Cloudflare R2
     let receiptUrl: string | undefined = undefined;
     let receiptKey: string | undefined = undefined;
 
-    if (receiptFile) {
-      setUploadStatusText('جاري رفع صورة الإثبات إلى السيرفر الآمن (R2)...');
-      const formData = new FormData();
-      formData.append('file', receiptFile);
-      formData.append('senderNumber', senderNumber.trim());
+    setUploadStatusText('جاري رفع صورة الإثبات إلى السيرفر الآمن (R2)...');
+    const formData = new FormData();
+    formData.append('file', receiptFile);
+    formData.append('senderNumber', isEgyptianPhone ? normalizedPhone : cleanInput);
 
-      const uploadRes = await uploadReceiptAction(formData);
-      if (!uploadRes.success) {
-        setIsSubmittingOrder(false);
-        setUploadStatusText('');
-        setOrderMessage({ type: 'error', text: uploadRes.error || 'فشل في رفع صورة الإثبات، يرجى المحاولة مرة أخرى' });
-        return;
-      }
-
-      receiptUrl = uploadRes.url;
-      receiptKey = uploadRes.key;
+    const uploadRes = await uploadReceiptAction(formData);
+    if (!uploadRes.success) {
+      setIsSubmittingOrder(false);
+      setUploadStatusText('');
+      setOrderMessage({ type: 'error', text: uploadRes.error || 'فشل في رفع صورة الإثبات، يرجى المحاولة مرة أخرى' });
+      return;
     }
+
+    receiptUrl = uploadRes.url;
+    receiptKey = uploadRes.key;
 
     setUploadStatusText('جاري توثيق وتأكيد الطلب...');
 
@@ -276,6 +320,15 @@ function CheckoutContent() {
     if (!res.success) {
       setOrderMessage({ type: 'error', text: res.error || 'حدث خطأ أثناء حفظ الطلب' });
     } else {
+      // Trigger Meta Pixel Purchase Event
+      trackMetaEvent('Purchase', {
+        value: finalPayableAmount,
+        currency: 'EGP',
+        content_name: currentPkg.name,
+        content_type: 'product',
+        order_id: res.orderId,
+      });
+
       // Direct instant redirection to My Orders page without WhatsApp
       router.push(`/my-orders?orderId=${res.orderId}&success=1`);
     }
@@ -668,7 +721,7 @@ function CheckoutContent() {
         </div>
 
         {/* STEP 4: Direct Cloudflare R2 Receipt Image Upload */}
-        <div className="bg-white rounded-3xl p-5 sm:p-7 border border-gray-200 space-y-4 shadow-sm text-[#0B1220]">
+        <div id="step-receipt-upload" className="bg-white rounded-3xl p-5 sm:p-7 border border-gray-200 space-y-4 shadow-sm text-[#0B1220] scroll-mt-24">
           <div className="flex items-center justify-between">
             <label className="block text-sm sm:text-base font-extrabold text-[#0B1220] flex items-center gap-2">
               <div className="w-7 h-7 rounded-lg bg-[#0F9D58]/10 text-[#0F9D58] flex items-center justify-center font-black text-xs border border-[#0F9D58]/20">4</div>

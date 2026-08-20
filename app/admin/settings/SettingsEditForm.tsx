@@ -35,9 +35,13 @@ export const SettingsEditForm: React.FC<{ initialSettings: Record<string, string
 
   // Telegram Bot Settings
   const [telegramBotToken, setTelegramBotToken] = useState(initialSettings.telegram_bot_token || '');
-  const [telegramChatId, setTelegramChatId] = useState(initialSettings.telegram_chat_id || '');
+  const [telegramChatId, setTelegramChatId] = useState(initialSettings.telegram_bot_token ? initialSettings.telegram_chat_id || '' : '');
   const [testingTelegram, setTestingTelegram] = useState(false);
   const [telegramTestResult, setTelegramTestResult] = useState<{ success: boolean; message: string } | null>(null);
+
+  // Facebook Meta Pixel Settings
+  const [facebookPixelId, setFacebookPixelId] = useState(initialSettings.facebook_pixel_id || '');
+  const [facebookPixelEnabled, setFacebookPixelEnabled] = useState(initialSettings.facebook_pixel_enabled !== 'false');
 
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -59,6 +63,8 @@ export const SettingsEditForm: React.FC<{ initialSettings: Record<string, string
       hero_subtitle: heroSubtitle,
       telegram_bot_token: telegramBotToken,
       telegram_chat_id: telegramChatId,
+      facebook_pixel_id: facebookPixelId.trim(),
+      facebook_pixel_enabled: facebookPixelEnabled ? 'true' : 'false',
     });
 
     setLoading(false);
@@ -270,7 +276,55 @@ export const SettingsEditForm: React.FC<{ initialSettings: Record<string, string
         </div>
       </div>
 
-      {/* Header & Timings */}
+      {/* 🎯 Facebook Meta Pixel Tracking Settings */}
+      <div className="space-y-4 pt-2 border-t border-white/10">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-black text-[#2ECC8F] flex items-center gap-2">
+            <Zap className="w-4 h-4 text-[#2ECC8F]" />
+            <span>ربط وتتبع إعلانات فيسبوك (Facebook Meta Pixel)</span>
+          </h3>
+          
+          <label className="relative inline-flex items-center cursor-pointer">
+            <input 
+              type="checkbox" 
+              checked={facebookPixelEnabled}
+              onChange={(e) => setFacebookPixelEnabled(e.target.checked)}
+              className="sr-only peer"
+            />
+            <div className="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#2ECC8F]"></div>
+            <span className="mr-2 text-xs font-bold text-gray-300">{facebookPixelEnabled ? 'مُفعّل' : 'معطّل'}</span>
+          </label>
+        </div>
+
+        <div className="p-5 rounded-2xl bg-white/5 border border-white/10 space-y-3">
+          <div>
+            <label className="block text-xs font-bold text-gray-300 mb-1.5 flex items-center justify-between">
+              <span className="flex items-center gap-1.5">
+                <Zap className="w-3.5 h-3.5 text-[#2ECC8F]" />
+                <span>معرف البيكسل (Meta Pixel ID / Dataset ID)</span>
+              </span>
+              <span className="text-[10px] text-gray-400 font-normal">من Meta Events Manager</span>
+            </label>
+            <input
+              type="text"
+              value={facebookPixelId}
+              onChange={(e) => setFacebookPixelId(e.target.value)}
+              placeholder="مثال: 123456789012345"
+              className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-xs font-mono font-bold text-white focus:outline-none focus:border-[#2ECC8F] dir-ltr text-right placeholder:text-gray-500"
+            />
+          </div>
+
+          <div className="text-[11px] text-gray-400 bg-white/5 p-3 rounded-xl border border-white/5 space-y-1">
+            <p className="font-bold text-gray-300">💡 الأحداث التي يتم تتبعها تلقائياً عند وضع الـ Pixel ID:</p>
+            <ul className="list-disc list-inside space-y-0.5 text-[10px] text-gray-400">
+              <li><b>PageView:</b> يتم تتبع كل زيارة لكافة صفحات المتجر.</li>
+              <li><b>ViewContent:</b> تتبع مشاهدة تفاصيل باقة معينة أو أداة تسويقية.</li>
+              <li><b>InitiateCheckout:</b> تتبع وصول العميل لصفحة الدفع مع قيمة الباقة.</li>
+              <li><b>Purchase:</b> تتبع إتمام الطلب بنجاح وإرسال المبلغ بالجنيه المصري (EGP).</li>
+            </ul>
+          </div>
+        </div>
+      </div>
       <div className="space-y-4 pt-2">
         <h3 className="text-sm font-black text-[#2ECC8F] border-b border-white/10 pb-2">نصوص الهيدر والعنوان الرئيسية</h3>
 

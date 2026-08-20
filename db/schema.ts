@@ -118,6 +118,7 @@ export const pageViews = pgTable('page_views', {
   utmCampaign: varchar('utm_campaign', { length: 200 }),
   country: varchar('country', { length: 10 }),
   deviceType: varchar('device_type', { length: 20 }), // 'mobile' | 'desktop'
+  durationSeconds: integer('duration_seconds').default(0),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
