@@ -2,8 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { updateSiteSettingsAction } from '@/lib/actions/settings';
-import { testTelegramConnectionAction } from '@/lib/telegram';
+import { updateSiteSettingsAction, testTelegramConnectionAction } from '@/lib/actions/settings';
 import { 
   Save, 
   CheckCircle2, 
