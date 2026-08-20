@@ -12,6 +12,7 @@ export async function createOrderAction(data: {
   packageId: string;
   toolId?: string;
   paymentMethod: string;
+  paymentProvider?: string;
   senderNumber: string;
   amount: string;
   originalAmount?: string;
@@ -48,6 +49,7 @@ export async function createOrderAction(data: {
         packageId: data.packageId,
         toolId: data.toolId || null,
         paymentMethod: data.paymentMethod,
+        paymentProvider: data.paymentProvider || null,
         senderNumber: data.senderNumber.trim(),
         amount: data.amount,
         originalAmount: data.originalAmount || null,

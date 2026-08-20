@@ -128,15 +128,41 @@ export const orders = pgTable('orders', {
   packageId: varchar('package_id', { length: 100 }).notNull(),
   toolId: varchar('tool_id', { length: 100 }),
   paymentMethod: varchar('payment_method', { length: 100 }).notNull(),
+  paymentProvider: varchar('payment_provider', { length: 50 }), // 'vodafone_cash' | 'instapay' | 'other'
   senderNumber: varchar('sender_number', { length: 100 }).notNull(),
   amount: varchar('amount', { length: 50 }).notNull(),
   originalAmount: varchar('original_amount', { length: 50 }),
   discountAmount: varchar('discount_amount', { length: 50 }),
   couponCode: varchar('coupon_code', { length: 50 }),
   status: varchar('status', { length: 20 }).default('pending').notNull(), // 'pending' | 'approved' | 'rejected'
+  approvalType: varchar('approval_type', { length: 20 }).default('manual'), // 'manual' | 'auto'
+  matchedTransactionId: varchar('matched_transaction_id', { length: 100 }),
   adminNotes: text('admin_notes'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+// 9.1. Payment Transactions Table (Vodafone Cash & Automated Payment Ingestion)
+export const paymentTransactions = pgTable('payment_transactions', {
+  id: serial('id').primaryKey(),
+  transactionId: varchar('transaction_id', { length: 100 }).notNull().unique(), // PostgreSQL UNIQUE constraint for idempotency
+  provider: varchar('provider', { length: 50 }).default('vodafone_cash').notNull(),
+  amount: varchar('amount', { length: 50 }).notNull(), // Exact string representation e.g. "320.00"
+  amountCents: integer('amount_cents').notNull(), // Integer minor units e.g. 32000 (320.00 EGP) for exact arithmetic
+  senderPhone: varchar('sender_phone', { length: 50 }).notNull(), // Normalized phone e.g. "01205798578"
+  senderName: varchar('sender_name', { length: 255 }), // Extracted customer name
+  walletPhone: varchar('wallet_phone', { length: 50 }).notNull(), // Receiving company wallet
+  transactionTimestamp: timestamp('transaction_timestamp'), // Full parsed timestamp (UTC/Cairo aligned)
+  rawTransactionDate: varchar('raw_transaction_date', { length: 50 }), // e.g. "26-08-09"
+  rawTransactionTime: varchar('raw_transaction_time', { length: 50 }), // e.g. "13:54"
+  rawMessage: text('raw_message').notNull(), // Full raw SMS text
+  status: varchar('status', { length: 50 }).notNull(), // 'WOULD_AUTO_APPROVE' | 'AUTO_APPROVED' | 'REVIEW_REQUIRED' | 'DUPLICATE' | 'NO_MATCH' | 'AMBIGUOUS' | 'INVALID_MESSAGE' | 'WRONG_WALLET' | 'AMOUNT_MISMATCH' | 'PHONE_MISMATCH' | 'TIME_MISMATCH' | 'FAILED'
+  matchedOrderId: uuid('matched_order_id').references(() => orders.id, { onDelete: 'set null' }),
+  reviewReason: text('review_reason'), // Detailed audit reason for review or rejection
+  metadata: jsonb('metadata'), // Extra payload context (client ip, candidates list, dryRun flags)
+  isDryRun: boolean('is_dry_run').default(true).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  processedAt: timestamp('processed_at'),
 });
 
 // 10. Package Files Table (Cloudflare R2 Files Mapping)

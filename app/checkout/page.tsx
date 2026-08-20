@@ -182,10 +182,26 @@ function CheckoutContent() {
     setIsSubmittingOrder(true);
     setOrderMessage(null);
 
+    // Determine paymentMethod and paymentProvider according to business logic
+    let resolvedPaymentMethod = 'electronic-wallet';
+    let resolvedPaymentProvider = 'vodafone_cash'; // Default assumption for electronic wallets
+
+    if (activePaymentMethod === 'instapay') {
+      resolvedPaymentMethod = 'electronic-wallet'; // Both use electronic-wallet base
+      resolvedPaymentProvider = 'instapay';
+    } else if (activePaymentMethod === 'electronic-wallet') {
+      resolvedPaymentMethod = 'electronic-wallet';
+      resolvedPaymentProvider = 'vodafone_cash'; 
+    } else {
+      resolvedPaymentMethod = activePaymentMethod;
+      resolvedPaymentProvider = 'other';
+    }
+
     const res = await createOrderAction({
       packageId: currentPkg.id,
       toolId: currentPkg.id === 'single-tool' ? currentTool.id : undefined,
-      paymentMethod: activePaymentMethod,
+      paymentMethod: resolvedPaymentMethod,
+      paymentProvider: resolvedPaymentProvider,
       senderNumber: senderNumber.trim(),
       amount: finalPayableAmount.toString(),
       originalAmount: currentPkg.discountedPrice,
