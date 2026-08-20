@@ -1,19 +1,30 @@
 import React from 'react';
 import { getAllOrdersForAdmin } from '@/lib/actions/orders';
 import { OrderStatusButtons } from './OrderStatusButtons';
-import { PackageCheck, Clock, CheckCircle2, XCircle, User, Phone, CreditCard } from 'lucide-react';
+import Link from 'next/link';
+import { PackageCheck, Clock, CheckCircle2, XCircle, User, Phone, CreditCard, Radio } from 'lucide-react';
 
 export default async function AdminOrdersPage() {
   const ordersList = await getAllOrdersForAdmin();
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-black text-white mb-1 flex items-center gap-2">
-          <PackageCheck className="w-6 h-6 text-[#2ECC8F]" />
-          <span>إدارة الطلبات والتحويلات</span>
-        </h1>
-        <p className="text-xs text-gray-400">مراجعة التحويلات المالية الواردة، وقبولها أو رفضها لتفعيل حسابات المشتركين</p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-black text-white mb-1 flex items-center gap-2">
+            <PackageCheck className="w-6 h-6 text-[#2ECC8F]" />
+            <span>إدارة الطلبات والتحويلات</span>
+          </h1>
+          <p className="text-xs text-gray-400">مراجعة التحويلات المالية الواردة، وقبولها أو رفضها لتفعيل حسابات المشتركين</p>
+        </div>
+
+        <Link
+          href="/admin/transactions"
+          className="flex items-center gap-2 px-4 py-2.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-[#2ECC8F] border border-emerald-500/30 rounded-xl text-xs font-black transition-all shadow-sm w-fit"
+        >
+          <Radio className="w-4 h-4 animate-pulse" />
+          <span>سجل رسائل الـ Webhook المباشرة</span>
+        </Link>
       </div>
 
       <div className="bg-[#0F172A] border border-white/10 rounded-2xl overflow-hidden shadow-xl">

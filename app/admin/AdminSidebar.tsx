@@ -21,7 +21,8 @@ import {
   Shield,
   FolderDown,
   FolderOpen,
-  Tag
+  Tag,
+  Radio
 } from 'lucide-react';
 
 interface AdminSidebarProps {
@@ -35,6 +36,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({ userEmail }) => {
   const navItems = [
     { label: 'اللوحة الرئيسية', href: '/admin', icon: LayoutDashboard },
     { label: 'طلبات الاشتراك والتحويلات', href: '/admin/orders', icon: PackageCheck },
+    { label: 'سجل تحويلات الـ Webhook', href: '/admin/transactions', icon: Radio },
     { label: 'الكوبونات وقسائم الخصم', href: '/admin/coupons', icon: Tag },
     { label: 'ملفات الباقات (R2)', href: '/admin/files', icon: FolderDown },
     { label: 'فيديوهات الشرح', href: '/admin/videos', icon: Wrench },
