@@ -141,6 +141,42 @@ export async function createOrderAction(data: {
   }
 }
 
+/**
+ * Unified Approval Service (Phase 7)
+ * Centralizes all side-effects and database updates for order approval.
+ * Safe to call from Webhooks (Auto) or Admin Dashboard (Manual).
+ */
+export async function approveOrderCore(params: {
+  orderId: string;
+  approvalType: 'manual' | 'auto';
+  provider?: string;
+  matchedTransactionId?: string;
+  adminNotes?: string;
+}) {
+  const { orderId, approvalType, matchedTransactionId, adminNotes } = params;
+
+  try {
+    await db
+      .update(orders)
+      .set({
+        status: 'approved',
+        approvalType: approvalType,
+        matchedTransactionId: matchedTransactionId || null,
+        adminNotes: adminNotes !== undefined ? adminNotes : undefined,
+        updatedAt: new Date(),
+      })
+      .where(eq(orders.id, orderId));
+
+    // Note: Future integrations (Emails, SMS, access token generation) 
+    // must be added here so both Manual and Auto approvals trigger them.
+
+    return { success: true };
+  } catch (error) {
+    console.error('Error in approveOrderCore:', error);
+    return { success: false, error: 'Failed to approve order core' };
+  }
+}
+
 export async function updateOrderStatusAction(orderId: string, newStatus: 'approved' | 'rejected', adminNotes?: string) {
   const session = await auth();
   if (!session?.user || (session.user as { role?: string }).role !== 'admin') {
@@ -148,14 +184,22 @@ export async function updateOrderStatusAction(orderId: string, newStatus: 'appro
   }
 
   try {
-    await db
-      .update(orders)
-      .set({
-        status: newStatus,
-        adminNotes: adminNotes !== undefined ? adminNotes : undefined,
-        updatedAt: new Date(),
-      })
-      .where(eq(orders.id, orderId));
+    if (newStatus === 'approved') {
+      await approveOrderCore({
+        orderId,
+        approvalType: 'manual',
+        adminNotes
+      });
+    } else {
+      await db
+        .update(orders)
+        .set({
+          status: newStatus,
+          adminNotes: adminNotes !== undefined ? adminNotes : undefined,
+          updatedAt: new Date(),
+        })
+        .where(eq(orders.id, orderId));
+    }
 
     revalidatePath('/admin/orders');
     revalidatePath('/my-orders');

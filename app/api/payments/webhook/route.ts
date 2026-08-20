@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db';
 import { paymentTransactions } from '@/db/schema';
 import { parseVodafoneCashMessage } from '@/lib/payments/vodafone-cash-parser';
-import { matchVodafoneCashPayment } from '@/lib/payments/vodafone-cash-matcher';
+import { parseInstaPayMessage } from '@/lib/payments/instapay-parser';
+import { matchPayment } from '@/lib/payments/matcher';
 import { checkRateLimit } from '@/lib/rate-limit';
 import crypto from 'crypto';
 
@@ -15,10 +16,10 @@ export async function POST(req: NextRequest) {
 
     // 2. Authentication
     const authHeader = req.headers.get('authorization');
-    const expectedSecret = process.env.VODAFONE_CASH_WEBHOOK_SECRET;
+    const expectedSecret = process.env.PAYMENT_WEBHOOK_SECRET || process.env.VODAFONE_CASH_WEBHOOK_SECRET;
     
     if (!expectedSecret) {
-      console.error('CRITICAL: VODAFONE_CASH_WEBHOOK_SECRET is not set');
+      console.error('CRITICAL: PAYMENT_WEBHOOK_SECRET is not set');
       return NextResponse.json({ success: false, status: 'SERVER_CONFIGURATION_ERROR' }, { status: 500 });
     }
     
@@ -55,13 +56,37 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, status: 'INVALID_JSON' }, { status: 400 });
     }
 
-    const { rawMessage } = body;
+    // Shortcut sends { message: "...", device: "iphone" }
+    const rawMessage = body.message || body.rawMessage; 
+    const device = body.device || 'unknown';
+
     if (!rawMessage || typeof rawMessage !== 'string') {
       return NextResponse.json({ success: false, status: 'MISSING_MESSAGE' }, { status: 400 });
     }
 
-    // 5. Parser Integration
-    const parsedMsg = parseVodafoneCashMessage(rawMessage);
+    // 5. Provider Detection (Conservative)
+    let detectedProvider: 'vodafone_cash' | 'instapay' | null = null;
+    
+    if (
+      (rawMessage.includes('استلام مبلغ') || rawMessage.includes('تم استلام')) && 
+      (rawMessage.includes('رقم العملية') || rawMessage.includes('رقم محفظتك'))
+    ) {
+      detectedProvider = 'vodafone_cash';
+    } else if (
+      rawMessage.includes('تحويل لحظي') && 
+      (rawMessage.includes('رقم مرجعي') || rawMessage.includes('رقم المرجع'))
+    ) {
+      detectedProvider = 'instapay';
+    }
+
+    if (!detectedProvider) {
+      return NextResponse.json({ success: false, status: 'INVALID_MESSAGE' }, { status: 400 });
+    }
+
+    // 6. Multi-provider Parsing
+    const parsedMsg = detectedProvider === 'vodafone_cash' 
+      ? parseVodafoneCashMessage(rawMessage) 
+      : parseInstaPayMessage(rawMessage);
 
     // Prepare fields for DB Insertion
     let transactionId = '';
@@ -71,10 +96,10 @@ export async function POST(req: NextRequest) {
     let walletPhone = 'unknown';
     let statusStr = 'INVALID_MESSAGE';
     let reviewReason = '';
-    let matchResultDetails = null;
+    let matchResultDetails: any = null;
 
     if (!parsedMsg) {
-      // Parser failed completely (missing critical amounts/phones)
+      // Parser failed completely (missing critical amounts/phones/reference)
       transactionId = `INV_${crypto.randomBytes(8).toString('hex')}`;
       reviewReason = 'Failed to parse SMS message structure';
     } else if (!parsedMsg.transactionId) {
@@ -82,20 +107,20 @@ export async function POST(req: NextRequest) {
       transactionId = `NOTX_${crypto.randomBytes(8).toString('hex')}`;
       amount = parsedMsg.amount;
       amountCents = parsedMsg.amountCents;
-      senderPhone = parsedMsg.senderPhone;
+      senderPhone = parsedMsg.senderPhone || 'unknown';
       walletPhone = parsedMsg.walletPhone || 'unknown';
-      reviewReason = 'Missing transactionId in SMS';
+      reviewReason = 'Missing transactionId or referenceId in SMS';
     } else {
       // Full successful parse
       transactionId = parsedMsg.transactionId;
       amount = parsedMsg.amount;
       amountCents = parsedMsg.amountCents;
-      senderPhone = parsedMsg.senderPhone;
+      senderPhone = parsedMsg.senderPhone || 'unknown';
       walletPhone = parsedMsg.walletPhone || 'unknown';
       
-      // PHASE 3B: DRY RUN Matching Engine
+      // PHASE 6: DRY RUN Matching Engine (No Order Mutation)
       try {
-        const matchResult = await matchVodafoneCashPayment(parsedMsg);
+        const matchResult = await matchPayment(parsedMsg);
         statusStr = matchResult.status;
         reviewReason = matchResult.matchReasons.join(', ');
         matchResultDetails = matchResult;
@@ -106,11 +131,14 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 6. DB Persistence & Idempotency (PHASE 3A)
+    // 7. DB Persistence & Idempotency
+    const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
+    const userAgent = req.headers.get('user-agent') || 'unknown';
+
     try {
       await db.insert(paymentTransactions).values({
         transactionId,
-        provider: 'vodafone_cash',
+        provider: detectedProvider,
         amount,
         amountCents,
         senderPhone,
@@ -118,16 +146,21 @@ export async function POST(req: NextRequest) {
         walletPhone,
         rawTransactionDate: parsedMsg?.rawTransactionDate || null,
         rawTransactionTime: parsedMsg?.rawTransactionTime || null,
-        rawMessage: rawMessage,
+        referenceId: parsedMsg?.provider === 'instapay' ? parsedMsg.transactionId : null,
+        rawMessage: rawMessage, // Kept original as received
         status: statusStr,
         matchedOrderId: matchResultDetails?.matchedOrderId || null,
         reviewReason,
         metadata: {
           candidates: matchResultDetails?.candidateCount || 0,
           isDryRun: true,
-          reasons: matchResultDetails?.matchReasons || []
+          reasons: matchResultDetails?.matchReasons || [],
+          device,
+          ip,
+          userAgent,
+          receivedAt: new Date().toISOString()
         },
-        isDryRun: true, // As requested, PHASE 3 is DRY RUN only
+        isDryRun: true, // DRY RUN only
         processedAt: new Date()
       });
     } catch (dbErr: any) {
@@ -143,8 +176,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, status: 'INTERNAL_DB_ERROR' }, { status: 500 });
     }
 
-    // Safe logging (No secrets)
-    console.log(`Webhook processed Vodafone Cash: status=${statusStr} txId=${transactionId}`);
+    // Safe logging (No secrets, no full raw SMS)
+    console.log(`Webhook processed ${detectedProvider}: txId=${transactionId} status=${statusStr} matchedOrderId=${matchResultDetails?.matchedOrderId || 'none'} candidates=${matchResultDetails?.candidateCount || 0}`);
 
     // Return safe external response
     return NextResponse.json({ success: true, status: statusStr });

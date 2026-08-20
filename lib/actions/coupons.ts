@@ -23,7 +23,9 @@ export async function ensureCouponsTableExists() {
         created_at TIMESTAMP NOT NULL DEFAULT NOW(),
         updated_at TIMESTAMP NOT NULL DEFAULT NOW()
       );
-
+    `);
+    
+    await db.execute(sql`
       CREATE TABLE IF NOT EXISTS coupon_usages (
         id SERIAL PRIMARY KEY,
         coupon_id UUID NOT NULL REFERENCES coupons(id) ON DELETE CASCADE,

@@ -152,6 +152,7 @@ export const paymentTransactions = pgTable('payment_transactions', {
   senderPhone: varchar('sender_phone', { length: 50 }).notNull(), // Normalized phone e.g. "01205798578"
   senderName: varchar('sender_name', { length: 255 }), // Extracted customer name
   walletPhone: varchar('wallet_phone', { length: 50 }).notNull(), // Receiving company wallet
+  referenceId: varchar('reference_id', { length: 100 }), // e.g. InstaPay reference
   transactionTimestamp: timestamp('transaction_timestamp'), // Full parsed timestamp (UTC/Cairo aligned)
   rawTransactionDate: varchar('raw_transaction_date', { length: 50 }), // e.g. "26-08-09"
   rawTransactionTime: varchar('raw_transaction_time', { length: 50 }), // e.g. "13:54"

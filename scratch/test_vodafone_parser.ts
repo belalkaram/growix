@@ -1,4 +1,5 @@
-import { parseVodafoneCashMessage, normalizeEgyptianPhone } from '../lib/payments/vodafone-cash-parser.js';
+import { parseVodafoneCashMessage } from '../lib/payments/vodafone-cash-parser.js';
+import { normalizeEgyptianPhone } from '../lib/payments/types.js';
 import assert from 'assert';
 
 function testNormalizePhone() {
