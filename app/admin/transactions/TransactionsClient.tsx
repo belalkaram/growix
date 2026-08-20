@@ -21,6 +21,7 @@ import {
   CreditCard
 } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 interface TransactionItem {
   id: number;
@@ -50,9 +51,22 @@ interface TransactionItem {
 }
 
 export function TransactionsClient({ initialTransactions }: { initialTransactions: TransactionItem[] }) {
+  const router = useRouter();
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [transactions, setTransactions] = useState<TransactionItem[]>(initialTransactions);
+
+  React.useEffect(() => {
+    setTransactions(initialTransactions);
+  }, [initialTransactions]);
+  
   const [selectedTx, setSelectedTx] = useState<TransactionItem | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    router.refresh();
+    setTimeout(() => setIsRefreshing(false), 800);
+  };
   
   // Filters
   const [providerFilter, setProviderFilter] = useState<'all' | 'vodafone_cash' | 'instapay'>('all');
@@ -182,6 +196,15 @@ export function TransactionsClient({ initialTransactions }: { initialTransaction
         </div>
 
         <div className="flex items-center gap-2">
+          <button
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className="flex items-center gap-2 px-4 py-2.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-[#2ECC8F] border border-emerald-500/30 rounded-xl text-xs font-black transition-all shadow-sm disabled:opacity-50"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
+            <span>{isRefreshing ? 'جاري التحديث...' : 'تحديث السجل فوري'}</span>
+          </button>
+
           <Link
             href="/admin/orders"
             className="flex items-center gap-2 px-4 py-2.5 bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white rounded-xl text-xs font-bold transition-all border border-white/10"
