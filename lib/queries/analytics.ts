@@ -1,6 +1,6 @@
 import { db } from '@/db';
-import { pageViews, orders } from '@/db/schema';
-import { desc, count, sql, and, gte, lte, eq } from 'drizzle-orm';
+import { pageViews, orders, users } from '@/db/schema';
+import { desc, count, sql, and, gte, lte, eq, not } from 'drizzle-orm';
 import { auth } from '@/lib/auth';
 
 export interface AnalyticsFilters {
@@ -11,6 +11,8 @@ export interface AnalyticsFilters {
   endTime?: string;
   deviceType?: 'all' | 'mobile' | 'desktop';
   path?: string;
+  includeAdminTraffic?: boolean;
+  includeTestOrders?: boolean;
 }
 
 export interface ShopifyAnalyticsReport {
@@ -33,6 +35,10 @@ export interface ShopifyAnalyticsReport {
   // Financials
   totalRevenue: number;
   averageOrderValue: number;
+
+  // Test & Admin Exclusions Audit
+  excludedAdminViews: number;
+  excludedTestOrders: number;
 
   // Breakdowns
   topPages: { path: string; views: number; avgDuration: number }[];
@@ -102,6 +108,17 @@ export async function getAnalyticsSummary(filters: AnalyticsFilters = {}): Promi
       pvConditions.push(eq(pageViews.path, filters.path));
     }
 
+    // 4. 🛡️ EXCLUDE ADMIN & TEST TRAFFIC AUTOMATICALLY (Unless explicitly included)
+    if (!filters.includeAdminTraffic) {
+      pvConditions.push(sql`(${pageViews.isAdmin} IS FALSE OR ${pageViews.isAdmin} IS NULL)`);
+      pvConditions.push(sql`(${pageViews.isTest} IS FALSE OR ${pageViews.isTest} IS NULL)`);
+    }
+
+    // 5. 🧪 EXCLUDE TEST ORDERS FROM LIVE REVENUE (Unless explicitly included)
+    if (!filters.includeTestOrders) {
+      orderConditions.push(sql`(${orders.isTest} IS FALSE OR ${orders.isTest} IS NULL)`);
+    }
+
     const pvWhereClause = pvConditions.length > 0 ? and(...pvConditions) : undefined;
     const orderWhereClause = orderConditions.length > 0 ? and(...orderConditions) : undefined;
 
@@ -116,14 +133,42 @@ export async function getAnalyticsSummary(filters: AnalyticsFilters = {}): Promi
       .from(pageViews)
       .where(pvWhereClause);
 
-    // 2. Realtime Active Visitors (Last 5 Minutes)
+    // 2. Realtime Active Visitors (Last 5 Minutes - Excluding Admin/Test)
     const fiveMinAgo = new Date(now.getTime() - 5 * 60 * 1000);
     const [{ liveVisitorsNow }] = await db
       .select({ liveVisitorsNow: count(sql`DISTINCT ${pageViews.sessionId}`) })
       .from(pageViews)
-      .where(gte(pageViews.createdAt, fiveMinAgo));
+      .where(
+        and(
+          gte(pageViews.createdAt, fiveMinAgo),
+          sql`(${pageViews.isAdmin} IS FALSE OR ${pageViews.isAdmin} IS NULL)`
+        )
+      );
 
-    // 3. Average Durations (Overall & Checkout)
+    // 3. Excluded Counts Audit
+    const [{ excludedAdminViews }] = await db
+      .select({ excludedAdminViews: count() })
+      .from(pageViews)
+      .where(
+        and(
+          filterStart ? gte(pageViews.createdAt, filterStart) : undefined,
+          filterEnd ? lte(pageViews.createdAt, filterEnd) : undefined,
+          eq(pageViews.isAdmin, true)
+        )
+      );
+
+    const [{ excludedTestOrders }] = await db
+      .select({ excludedTestOrders: count() })
+      .from(orders)
+      .where(
+        and(
+          filterStart ? gte(orders.createdAt, filterStart) : undefined,
+          filterEnd ? lte(orders.createdAt, filterEnd) : undefined,
+          eq(orders.isTest, true)
+        )
+      );
+
+    // 4. Average Durations (Overall & Checkout)
     const [{ avgDurationRaw }] = await db
       .select({ avgDurationRaw: sql<number>`COALESCE(AVG(${pageViews.durationSeconds}), 0)` })
       .from(pageViews)
@@ -135,27 +180,28 @@ export async function getAnalyticsSummary(filters: AnalyticsFilters = {}): Promi
       .from(pageViews)
       .where(and(...checkoutDurationConditions));
 
-    // 4. Funnel Stage 2: Viewed Tools or Pricing Catalog
+    // 5. Funnel Stage 2: Viewed Tools or Pricing Catalog
     const catalogConditions = [...pvConditions, sql`(${pageViews.path} LIKE '/tools%' OR ${pageViews.path} LIKE '/pricing%')`];
     const [{ viewedCatalogSessions }] = await db
       .select({ viewedCatalogSessions: count(sql`DISTINCT ${pageViews.sessionId}`) })
       .from(pageViews)
       .where(and(...catalogConditions));
 
-    // 5. Funnel Stage 3: Reached Checkout
+    // 6. Funnel Stage 3: Reached Checkout
     const reachedCheckoutConditions = [...pvConditions, sql`${pageViews.path} LIKE '/checkout%'`];
     const [{ reachedCheckoutSessions }] = await db
       .select({ reachedCheckoutSessions: count(sql`DISTINCT ${pageViews.sessionId}`) })
       .from(pageViews)
       .where(and(...reachedCheckoutConditions));
 
-    // 6. Orders in Filtered Window
+    // 7. Orders in Filtered Window
     const allOrders = await db
       .select({
         id: orders.id,
         amount: orders.amount,
         status: orders.status,
         createdAt: orders.createdAt,
+        isTest: orders.isTest,
       })
       .from(orders)
       .where(orderWhereClause);
@@ -178,7 +224,7 @@ export async function getAnalyticsSummary(filters: AnalyticsFilters = {}): Promi
       ? parseFloat(((totalOrdersPlaced / uniqueSessions) * 100).toFixed(1))
       : 0;
 
-    // 7. Top Visited Pages with Avg Duration
+    // 8. Top Visited Pages with Avg Duration
     const topPagesRaw = await db
       .select({
         path: pageViews.path,
@@ -197,7 +243,7 @@ export async function getAnalyticsSummary(filters: AnalyticsFilters = {}): Promi
       avgDuration: Math.round(Number(p.avgDuration) || 0),
     }));
 
-    // 8. Device Stats
+    // 9. Device Stats
     const deviceStatsRaw = await db
       .select({
         deviceType: pageViews.deviceType,
@@ -214,7 +260,7 @@ export async function getAnalyticsSummary(filters: AnalyticsFilters = {}): Promi
       sessions: Number(d.sessions) || 0,
     }));
 
-    // 9. Traffic Sources (UTM Source / Referrer)
+    // 10. Traffic Sources (UTM Source / Referrer)
     const trafficSourcesRaw = await db
       .select({
         source: sql<string>`COALESCE(${pageViews.utmSource}, SPLIT_PART(SPLIT_PART(${pageViews.referrer}, '//', 2), '/', 1), 'Direct / المباشر')`,
@@ -233,7 +279,7 @@ export async function getAnalyticsSummary(filters: AnalyticsFilters = {}): Promi
       sessions: Number(t.sessions) || 0,
     }));
 
-    // 10. Hourly Traffic Breakdown (0 to 23)
+    // 11. Hourly Traffic Breakdown (0 to 23)
     const hourlyRaw = await db
       .select({
         hour: sql<number>`EXTRACT(HOUR FROM ${pageViews.createdAt})`,
@@ -265,7 +311,7 @@ export async function getAnalyticsSummary(filters: AnalyticsFilters = {}): Promi
       sessions: data.sessions,
     }));
 
-    // 11. Recent 15 Filtered Views
+    // 12. Recent 15 Filtered Views
     const recentViews = await db
       .select()
       .from(pageViews)
@@ -273,7 +319,7 @@ export async function getAnalyticsSummary(filters: AnalyticsFilters = {}): Promi
       .orderBy(desc(pageViews.createdAt))
       .limit(15);
 
-    // 12. Distinct Paths for Filter
+    // 13. Distinct Paths for Filter
     const distinctPaths = await db
       .select({ path: pageViews.path })
       .from(pageViews)
@@ -296,6 +342,9 @@ export async function getAnalyticsSummary(filters: AnalyticsFilters = {}): Promi
 
       totalRevenue,
       averageOrderValue,
+
+      excludedAdminViews: Number(excludedAdminViews) || 0,
+      excludedTestOrders: Number(excludedTestOrders) || 0,
 
       topPages,
       deviceStats,
@@ -321,6 +370,8 @@ export async function getAnalyticsSummary(filters: AnalyticsFilters = {}): Promi
       conversionRate: 0,
       totalRevenue: 0,
       averageOrderValue: 0,
+      excludedAdminViews: 0,
+      excludedTestOrders: 0,
       topPages: [],
       deviceStats: [],
       trafficSources: [],

@@ -2,12 +2,34 @@
 
 import React, { useEffect, useRef } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 
 export const AnalyticsTracker: React.FC = () => {
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const { data: session } = useSession();
   const startTimeRef = useRef<number>(Date.now());
   const currentPathRef = useRef<string>(pathname);
+
+  // Determine if this browser / session belongs to an Admin or Test user
+  const userRole = (session?.user as { role?: string })?.role;
+  const isCurrentlyAdmin = userRole === 'admin';
+  const isCurrentlyTest = userRole === 'test';
+
+  // Persist admin flag in localStorage so admin devices (laptop / phone) stay flagged
+  useEffect(() => {
+    if (isCurrentlyAdmin && typeof window !== 'undefined') {
+      localStorage.setItem('gx_is_admin_device', 'true');
+    }
+  }, [isCurrentlyAdmin]);
+
+  const isAdminDevice = (): boolean => {
+    if (isCurrentlyAdmin) return true;
+    if (typeof window !== 'undefined' && localStorage.getItem('gx_is_admin_device') === 'true') {
+      return true;
+    }
+    return false;
+  };
 
   // Initialize or get Session ID
   const getSessionId = (): string => {
@@ -29,6 +51,8 @@ export const AnalyticsTracker: React.FC = () => {
       sessionId: sid,
       path,
       durationSeconds: durationSec,
+      isAdmin: isAdminDevice(),
+      isTest: isCurrentlyTest,
     });
 
     if (navigator.sendBeacon) {
@@ -63,7 +87,7 @@ export const AnalyticsTracker: React.FC = () => {
     const utmCampaign = searchParams?.get('utm_campaign') || undefined;
     const referrer = typeof document !== 'undefined' ? document.referrer : undefined;
 
-    // 4. Send PageView to internal analytics
+    // 4. Send PageView to internal analytics with admin/test detection
     fetch('/api/track', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -76,6 +100,8 @@ export const AnalyticsTracker: React.FC = () => {
         utmMedium,
         utmCampaign,
         durationSeconds: 0,
+        isAdmin: isAdminDevice(),
+        isTest: isCurrentlyTest,
       }),
     }).catch(() => {});
 
@@ -100,7 +126,7 @@ export const AnalyticsTracker: React.FC = () => {
       window.removeEventListener('beforeunload', handleUnload);
       handleUnload();
     };
-  }, [pathname, searchParams]);
+  }, [pathname, searchParams, userRole]);
 
   return null;
 };

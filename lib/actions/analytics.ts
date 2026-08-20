@@ -1,9 +1,83 @@
 'use server';
 
 import { db } from '@/db';
-import { pageViews, orders, users, tools } from '@/db/schema';
+import { pageViews, orders, users, tools, paymentTransactions } from '@/db/schema';
 import { eq, and, gte, lte, count, sql, desc } from 'drizzle-orm';
 import { auth } from '@/lib/auth';
+import { revalidatePath } from 'next/cache';
+
+export interface ResetAnalyticsOptions {
+  clearAdminViews?: boolean;
+  clearTestOrders?: boolean;
+  clearDryRunWebhooks?: boolean;
+  clearAllViews?: boolean;
+  beforeDate?: string;
+}
+
+export async function resetAnalyticsDataAction(options: ResetAnalyticsOptions) {
+  const session = await auth();
+  if (!session?.user || (session.user as { role?: string }).role !== 'admin') {
+    return { success: false, error: 'غير مصرح بالوصول' };
+  }
+
+  try {
+    const summary: string[] = [];
+    const dateLimit = options.beforeDate ? new Date(options.beforeDate) : undefined;
+
+    // 1. Clear Admin & Test Views only
+    if (options.clearAdminViews) {
+      await db.delete(pageViews).where(
+        and(
+          sql`(${pageViews.isAdmin} = true OR ${pageViews.isTest} = true)`,
+          dateLimit ? lte(pageViews.createdAt, dateLimit) : undefined
+        )
+      );
+      summary.push('تم مسح زيارات وتجارب الأدمن بنجاح');
+    }
+
+    // 2. Clear All Page Views
+    if (options.clearAllViews) {
+      await db.delete(pageViews).where(
+        dateLimit ? lte(pageViews.createdAt, dateLimit) : undefined
+      );
+      summary.push('تم تصفير كافة سجلات الزيارات');
+    }
+
+    // 3. Clear Test Orders
+    if (options.clearTestOrders) {
+      await db.delete(orders).where(
+        and(
+          eq(orders.isTest, true),
+          dateLimit ? lte(orders.createdAt, dateLimit) : undefined
+        )
+      );
+      summary.push('تم مسح جميع الطلبات التجريبية');
+    }
+
+    // 4. Clear Dry-Run Webhook Transactions
+    if (options.clearDryRunWebhooks) {
+      await db.delete(paymentTransactions).where(
+        and(
+          eq(paymentTransactions.isDryRun, true),
+          dateLimit ? lte(paymentTransactions.createdAt, dateLimit) : undefined
+        )
+      );
+      summary.push('تم مسح رسائل الويب هوك التجريبية');
+    }
+
+    revalidatePath('/admin/analytics');
+    revalidatePath('/admin/orders');
+    revalidatePath('/admin/transactions');
+
+    return { 
+      success: true, 
+      message: summary.length > 0 ? summary.join(' | ') : 'لم يتم تحديد أي بيانات للمسح' 
+    };
+  } catch (error: any) {
+    console.error('Reset analytics error:', error);
+    return { success: false, error: 'حدث خطأ أثناء إعادة ضبط البيانات' };
+  }
+}
 
 export interface AnalyticsFilterParams {
   range?: string; // 'all' | 'today' | 'yesterday' | '7days' | '30days' | 'month' | 'year' | 'custom'
@@ -15,7 +89,7 @@ export interface AnalyticsFilterParams {
   path?: string; // specific page path
 }
 
-export function parseDateRange(filter?: AnalyticsFilterParams): { start?: Date; end?: Date } {
+function parseDateRange(filter?: AnalyticsFilterParams): { start?: Date; end?: Date } {
   if (!filter) return {};
 
   const now = new Date();

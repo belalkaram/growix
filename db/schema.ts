@@ -119,6 +119,8 @@ export const pageViews = pgTable('page_views', {
   country: varchar('country', { length: 10 }),
   deviceType: varchar('device_type', { length: 20 }), // 'mobile' | 'desktop'
   durationSeconds: integer('duration_seconds').default(0),
+  isAdmin: boolean('is_admin').default(false).notNull(),
+  isTest: boolean('is_test').default(false).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
@@ -140,6 +142,7 @@ export const orders = pgTable('orders', {
   matchedTransactionId: varchar('matched_transaction_id', { length: 100 }),
   receiptUrl: varchar('receipt_url', { length: 1000 }), // Cloudflare R2 public URL for payment proof
   receiptKey: varchar('receipt_key', { length: 500 }), // Cloudflare R2 object key for deletion/cleanup
+  isTest: boolean('is_test').default(false).notNull(), // True for demo/test orders to exclude from real financial revenue
   adminNotes: text('admin_notes'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),

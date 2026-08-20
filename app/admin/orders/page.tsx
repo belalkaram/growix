@@ -2,6 +2,7 @@ import React from 'react';
 import { getAllOrdersForAdmin } from '@/lib/actions/orders';
 import { OrderStatusButtons } from './OrderStatusButtons';
 import { OrderReceiptViewer } from './OrderReceiptViewer';
+import { OrderTestToggle } from './OrderTestToggle';
 import Link from 'next/link';
 import { PackageCheck, Clock, CheckCircle2, XCircle, User, Phone, CreditCard, Radio, Image as ImageIcon } from 'lucide-react';
 
@@ -124,26 +125,33 @@ export default async function AdminOrdersPage() {
                         </span>
                       </td>
 
-                      {/* Status Badge */}
-                      <td className="p-4">
-                        {isPending && (
-                          <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center gap-1 w-fit">
-                            <Clock className="w-3 h-3" />
-                            <span>قيد المراجعة</span>
-                          </span>
-                        )}
-                        {isApproved && (
-                          <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-1 w-fit">
-                            <CheckCircle2 className="w-3 h-3" />
-                            <span>مقبول ومُفعل</span>
-                          </span>
-                        )}
-                        {isRejected && (
-                          <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-red-500/20 text-red-400 border border-red-500/30 flex items-center gap-1 w-fit">
-                            <XCircle className="w-3 h-3" />
-                            <span>مرفوض</span>
-                          </span>
-                        )}
+                      {/* Status & Test Mode Badges */}
+                      <td className="p-4 space-y-1.5">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          {isPending && (
+                            <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center gap-1 w-fit">
+                              <Clock className="w-3 h-3" />
+                              <span>قيد المراجعة</span>
+                            </span>
+                          )}
+                          {isApproved && (
+                            <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-1 w-fit">
+                              <CheckCircle2 className="w-3 h-3" />
+                              <span>مقبول ومُفعل</span>
+                            </span>
+                          )}
+                          {isRejected && (
+                            <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-red-500/20 text-red-400 border border-red-500/30 flex items-center gap-1 w-fit">
+                              <XCircle className="w-3 h-3" />
+                              <span>مرفوض</span>
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Toggle Test vs Live Order */}
+                        <div>
+                          <OrderTestToggle orderId={ord.id} initialIsTest={Boolean(ord.isTest)} />
+                        </div>
                       </td>
 
                       {/* Payment Proof Receipt Image */}

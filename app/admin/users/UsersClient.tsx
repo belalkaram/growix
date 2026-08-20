@@ -36,7 +36,7 @@ export const UsersClient: React.FC<{ initialUsers: UserRecord[] }> = ({ initialU
   const router = useRouter();
   const [usersList, setUsersList] = useState<UserRecord[]>(initialUsers);
   const [searchQuery, setSearchQuery] = useState('');
-  const [roleFilter, setRoleFilter] = useState<'all' | 'admin' | 'user'>('all');
+  const [roleFilter, setRoleFilter] = useState<'all' | 'admin' | 'user' | 'test'>('all');
   
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<UserRecord | null>(null);
@@ -68,7 +68,12 @@ export const UsersClient: React.FC<{ initialUsers: UserRecord[] }> = ({ initialU
   };
 
   const handleToggleRole = async (userId: string, currentRole: string) => {
-    const nextRole = currentRole === 'admin' ? 'user' : 'admin';
+    // Cycle roles: user -> test -> admin -> user
+    let nextRole: 'user' | 'admin' | 'test' = 'user';
+    if (currentRole === 'user') nextRole = 'test';
+    else if (currentRole === 'test') nextRole = 'admin';
+    else nextRole = 'user';
+
     const res = await updateUserRole(userId, nextRole);
     if (res.success) {
       setUsersList((prev) =>
@@ -88,7 +93,7 @@ export const UsersClient: React.FC<{ initialUsers: UserRecord[] }> = ({ initialU
             <span>إدارة المستخدمين والحسابات (Full CRUD)</span>
           </h1>
           <p className="text-xs text-gray-400 mt-1">
-            إضافة، تعديل، حذف، والتحكم التلقائي في صلاحيات أعضاء ومسؤولي المنصة
+            إضافة، تعديل، حذف، وتحديد حسابات المستخدمين (حقيقي، مدير، أو تجريبي Test)
           </p>
         </div>
 
@@ -122,8 +127,9 @@ export const UsersClient: React.FC<{ initialUsers: UserRecord[] }> = ({ initialU
             className="px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-xs font-bold text-white focus:outline-none focus:border-[#2ECC8F] cursor-pointer"
           >
             <option value="all" className="bg-[#0F172A] text-white">جميع الأدوار ({usersList.length})</option>
-            <option value="user" className="bg-[#0F172A] text-white">المستخدمين فقط ({usersList.filter(u => u.role === 'user').length})</option>
-            <option value="admin" className="bg-[#0F172A] text-white">المدراء فقط ({usersList.filter(u => u.role === 'admin').length})</option>
+            <option value="user" className="bg-[#0F172A] text-white">👤 مستخدمين حقيقيين ({usersList.filter(u => u.role === 'user').length})</option>
+            <option value="test" className="bg-[#0F172A] text-white">🧪 مستخدمين تجريبيين ({usersList.filter(u => u.role === 'test').length})</option>
+            <option value="admin" className="bg-[#0F172A] text-white">👑 المدراء فقط ({usersList.filter(u => u.role === 'admin').length})</option>
           </select>
         </div>
       </div>
@@ -153,8 +159,14 @@ export const UsersClient: React.FC<{ initialUsers: UserRecord[] }> = ({ initialU
                 filteredUsers.map((u) => (
                   <tr key={u.id} className="hover:bg-white/5 transition-colors">
                     <td className="p-4 font-bold text-white flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-xl bg-[#0F9D58]/20 text-[#2ECC8F] flex items-center justify-center font-black">
-                        {u.name.charAt(0)}
+                      <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-black ${
+                        u.role === 'admin'
+                          ? 'bg-amber-500/20 text-amber-400'
+                          : u.role === 'test'
+                            ? 'bg-purple-500/20 text-purple-400'
+                            : 'bg-[#0F9D58]/20 text-[#2ECC8F]'
+                      }`}>
+                        {u.role === 'test' ? '🧪' : u.name.charAt(0)}
                       </div>
                       <div>
                         <span className="block font-black text-white">{u.name}</span>
@@ -171,14 +183,16 @@ export const UsersClient: React.FC<{ initialUsers: UserRecord[] }> = ({ initialU
                     <td className="p-4 text-center">
                       <button
                         onClick={() => handleToggleRole(u.id, u.role)}
-                        title="اضغط للتبديل بين مدير ومستخدم"
+                        title="انقر للتبديل السريع بين (مستخدم / تجريبي / مدير)"
                         className={`px-3 py-1 rounded-full text-[10px] font-black transition-all cursor-pointer ${
                           u.role === 'admin'
                             ? 'bg-amber-500/20 text-amber-400 border border-amber-500/40 hover:bg-amber-500/30'
-                            : 'bg-blue-500/20 text-blue-400 border border-blue-500/40 hover:bg-blue-500/30'
+                            : u.role === 'test'
+                              ? 'bg-purple-500/20 text-purple-400 border border-purple-500/40 hover:bg-purple-500/30'
+                              : 'bg-blue-500/20 text-blue-400 border border-blue-500/40 hover:bg-blue-500/30'
                         }`}
                       >
-                        {u.role === 'admin' ? '👑 مدير (Admin)' : '👤 مستخدم (User)'}
+                        {u.role === 'admin' ? '👑 مدير (Admin)' : u.role === 'test' ? '🧪 تجريبي (Test)' : '👤 مستخدم (User)'}
                       </button>
                     </td>
 

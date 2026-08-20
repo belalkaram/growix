@@ -102,7 +102,7 @@ export async function createUserManualAction(data: {
   email: string;
   password: string;
   phone?: string;
-  role?: 'admin' | 'user';
+  role?: 'admin' | 'user' | 'test';
 }) {
   const session = await auth();
   if (!session?.user || (session.user as { role?: string }).role !== 'admin') {
@@ -147,7 +147,7 @@ export async function createUserManualAction(data: {
 }
 
 // 2. Admin Create User Automatically with 1-Click
-export async function createUserAutoAction() {
+export async function createUserAutoAction(role: 'admin' | 'user' | 'test' = 'user') {
   const session = await auth();
   if (!session?.user || (session.user as { role?: string }).role !== 'admin') {
     return { success: false, error: 'غير مصرح بالوصول' };
@@ -155,8 +155,12 @@ export async function createUserAutoAction() {
 
   try {
     const randomSuffix = crypto.randomBytes(3).toString('hex');
-    const autoName = `عميل GROWIX #${randomSuffix.toUpperCase()}`;
-    const autoEmail = `user_${randomSuffix}@growix.app`;
+    const autoName = role === 'test' 
+      ? `مستخدم تجريبي #${randomSuffix.toUpperCase()}`
+      : `عميل GROWIX #${randomSuffix.toUpperCase()}`;
+    const autoEmail = role === 'test'
+      ? `test_${randomSuffix}@growix.test`
+      : `user_${randomSuffix}@growix.app`;
     
     // Generate secure 10-char password
     const autoPassword = `Grx#${crypto.randomBytes(4).toString('hex')}!`;
@@ -168,7 +172,7 @@ export async function createUserAutoAction() {
         name: autoName,
         email: autoEmail,
         passwordHash: hashedPassword,
-        role: 'user',
+        role,
       })
       .returning();
 
@@ -196,7 +200,7 @@ export async function updateUserAction(data: {
   name: string;
   email: string;
   phone?: string | null;
-  role: 'admin' | 'user';
+  role: 'admin' | 'user' | 'test';
   password?: string;
 }) {
   const session = await auth();
@@ -250,7 +254,7 @@ export async function deleteUserAction(userId: string) {
 }
 
 // 5. Admin Update User Role
-export async function updateUserRole(userId: string, newRole: 'admin' | 'user') {
+export async function updateUserRole(userId: string, newRole: 'admin' | 'user' | 'test') {
   const session = await auth();
   if (!session?.user || (session.user as { role?: string }).role !== 'admin') {
     return { success: false, error: 'غير مصرح بالوصول' };

@@ -19,7 +19,18 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const { type = 'view', path, referrer, sessionId, utmSource, utmMedium, utmCampaign, durationSeconds = 0 } = body;
+    const { 
+      type = 'view', 
+      path, 
+      referrer, 
+      sessionId, 
+      utmSource, 
+      utmMedium, 
+      utmCampaign, 
+      durationSeconds = 0,
+      isAdmin = false,
+      isTest = false
+    } = body;
 
     if (!sessionId) {
       return NextResponse.json({ ok: false }, { status: 400 });
@@ -44,7 +55,11 @@ export async function POST(req: NextRequest) {
         if (recentView) {
           await db
             .update(pageViews)
-            .set({ durationSeconds: Math.max(recentView.durationSeconds || 0, Math.min(3600, durationSeconds)) })
+            .set({ 
+              durationSeconds: Math.max(recentView.durationSeconds || 0, Math.min(3600, durationSeconds)),
+              isAdmin: isAdmin || false,
+              isTest: isTest || false,
+            })
             .where(eq(pageViews.id, recentView.id));
         }
       }
@@ -73,6 +88,8 @@ export async function POST(req: NextRequest) {
         country,
         deviceType,
         durationSeconds: durationSeconds || 0,
+        isAdmin: isAdmin || false,
+        isTest: isTest || false,
       })
       .returning({ id: pageViews.id });
 

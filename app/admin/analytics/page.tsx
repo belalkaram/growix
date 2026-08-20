@@ -1,6 +1,7 @@
 import React, { Suspense } from 'react';
 import { getAnalyticsSummary } from '@/lib/queries/analytics';
 import { AdvancedDateFilter } from './AdvancedDateFilter';
+import { ResetAnalyticsModal } from './ResetAnalyticsModal';
 import { 
   BarChart3, 
   Eye, 
@@ -92,18 +93,23 @@ export default async function AdminAnalyticsPage({
           </p>
         </div>
 
-        {/* Live Realtime Active Visitors Pill */}
-        <div className="flex items-center gap-3 bg-[#0F172A] border border-[#2ECC8F]/30 px-4 py-2.5 rounded-2xl shadow-lg shrink-0">
-          <span className="relative flex h-3 w-3">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#2ECC8F] opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-3 w-3 bg-[#2ECC8F]"></span>
-          </span>
-          <div>
-            <span className="text-[10px] text-gray-400 block font-medium">الزوار النشطون حالياً في المتجر:</span>
-            <span className="text-sm font-black text-white flex items-center gap-1">
-              <span className="text-[#2ECC8F] text-base">{analytics.liveVisitorsNow}</span> زائر نشط
+        <div className="flex items-center gap-3 flex-wrap">
+          {/* Live Realtime Active Visitors Pill */}
+          <div className="flex items-center gap-3 bg-[#0F172A] border border-[#2ECC8F]/30 px-4 py-2.5 rounded-2xl shadow-lg shrink-0">
+            <span className="relative flex h-3 w-3">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#2ECC8F] opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-3 w-3 bg-[#2ECC8F]"></span>
             </span>
+            <div>
+              <span className="text-[10px] text-gray-400 block font-medium">الزوار النشطون حالياً في المتجر:</span>
+              <span className="text-sm font-black text-white flex items-center gap-1">
+                <span className="text-[#2ECC8F] text-base">{analytics.liveVisitorsNow}</span> زائر نشط
+              </span>
+            </div>
           </div>
+
+          {/* Reset Analytics Data Modal Button */}
+          <ResetAnalyticsModal />
         </div>
       </div>
 
@@ -111,6 +117,30 @@ export default async function AdminAnalyticsPage({
       <Suspense fallback={null}>
         <AdvancedDateFilter availablePaths={analytics.availablePaths} />
       </Suspense>
+
+      {/* 🛡️ Realtime Exclusion & Privacy Filter Banner */}
+      <div className="p-4 rounded-2xl bg-gradient-to-r from-emerald-500/10 via-white/5 to-purple-500/10 border border-white/10 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs shadow-lg">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-xl bg-[#2ECC8F]/20 text-[#2ECC8F] flex items-center justify-center font-bold shrink-0">
+            <CheckCircle2 className="w-4 h-4" />
+          </div>
+          <div>
+            <span className="font-bold text-white block">فلتر عزل ترافيك الأدمن والطلبات التجريبية نشط ومُفعّل 🛡️</span>
+            <span className="text-[11px] text-gray-400">
+              يتم استبعاد زيارات المطور وحسابات الإدارة والطلبات التجريبية (Test) تلقائياً لعرض الأرباح والزوار الحقيقيين فقط.
+            </span>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
+          <span className="px-3 py-1 rounded-xl bg-white/5 text-gray-300 font-mono text-[11px] border border-white/10">
+            🚫 زيارات أدمن مستبعدة: <b className="text-amber-400">{analytics.excludedAdminViews}</b>
+          </span>
+          <span className="px-3 py-1 rounded-xl bg-white/5 text-gray-300 font-mono text-[11px] border border-white/10">
+            🧪 طلبات تجريبية مستبعدة: <b className="text-purple-400">{analytics.excludedTestOrders}</b>
+          </span>
+        </div>
+      </div>
 
       {/* 🚀 TOP 5 SHOPIFY-STYLE KPI CARDS */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">

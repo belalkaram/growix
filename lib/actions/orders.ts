@@ -45,6 +45,15 @@ export async function createOrderAction(data: {
   }
 
   try {
+    // Fetch user details first to check for test role and Telegram alert
+    const [userRecord] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, session.user.id))
+      .limit(1);
+
+    const isTestUser = userRecord?.role === 'test';
+
     const [newOrder] = await db
       .insert(orders)
       .values({
@@ -60,16 +69,10 @@ export async function createOrderAction(data: {
         couponCode: data.couponCode ? data.couponCode.trim().toUpperCase() : null,
         receiptUrl: data.receiptUrl || null,
         receiptKey: data.receiptKey || null,
+        isTest: isTestUser,
         status: 'pending',
       })
       .returning();
-
-    // Fetch user details for accurate Telegram alert
-    const [userRecord] = await db
-      .select()
-      .from(users)
-      .where(eq(users.id, session.user.id))
-      .limit(1);
 
     // Fetch package / tool names
     let packageName = 'باقة غير محددة';
@@ -339,6 +342,8 @@ export async function getAllOrdersForAdmin(filter?: {
       couponCode: orders.couponCode,
       receiptUrl: orders.receiptUrl,
       receiptKey: orders.receiptKey,
+      isTest: orders.isTest,
+      userRole: users.role,
       status: orders.status,
       adminNotes: orders.adminNotes,
       createdAt: orders.createdAt,
@@ -352,4 +357,25 @@ export async function getAllOrdersForAdmin(filter?: {
   }
 
   return await query;
+}
+
+export async function toggleOrderTestAction(orderId: string, isTest: boolean) {
+  const session = await auth();
+  if (!session?.user || (session.user as { role?: string }).role !== 'admin') {
+    return { success: false, error: 'غير مصرح بالوصول' };
+  }
+
+  try {
+    await db
+      .update(orders)
+      .set({ isTest, updatedAt: new Date() })
+      .where(eq(orders.id, orderId));
+
+    revalidatePath('/admin/orders');
+    revalidatePath('/admin/analytics');
+    return { success: true };
+  } catch (err: any) {
+    console.error('Toggle order test error:', err);
+    return { success: false, error: 'حدث خطأ أثناء تعديل حالة الطلب التجريبي' };
+  }
 }

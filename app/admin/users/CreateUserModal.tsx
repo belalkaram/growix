@@ -18,7 +18,7 @@ export const CreateUserModal: React.FC<CreateUserModalProps> = ({ isOpen, onClos
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [phone, setPhone] = useState('');
-  const [role, setRole] = useState<'user' | 'admin'>('user');
+  const [role, setRole] = useState<'user' | 'admin' | 'test'>('user');
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -225,11 +225,12 @@ export const CreateUserModal: React.FC<CreateUserModalProps> = ({ isOpen, onClos
               </label>
               <select
                 value={role}
-                onChange={(e) => setRole(e.target.value as 'user' | 'admin')}
+                onChange={(e) => setRole(e.target.value as 'user' | 'admin' | 'test')}
                 className="w-full px-4 py-2.5 rounded-xl bg-[#0F172A] border border-white/10 text-sm font-bold text-white focus:outline-none focus:border-[#2ECC8F]"
               >
-                <option value="user">مستخدم عادي (User)</option>
-                <option value="admin">مدير نظام (Admin)</option>
+                <option value="user">👤 مستخدم عادي (User)</option>
+                <option value="admin">👑 مدير نظام (Admin)</option>
+                <option value="test">🧪 مستخدم تجريبي (Test Account)</option>
               </select>
             </div>
 
