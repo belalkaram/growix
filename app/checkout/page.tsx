@@ -434,6 +434,7 @@ function CheckoutContent() {
           )}
         </div>
 
+        {/* DISCOUNT COUPON CARD */}
         <div className="bg-white rounded-3xl p-5 sm:p-7 border border-gray-200 space-y-4 shadow-sm text-[#0B1220]">
           <div className="flex items-center justify-between">
             <label className="text-sm font-extrabold text-[#0B1220] flex items-center gap-2">
@@ -444,32 +445,43 @@ function CheckoutContent() {
           </div>
 
           {appliedCoupon ? (
-            <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-emerald-500 text-white flex items-center justify-center font-black">
-                  <Percent className="w-5 h-5" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-black text-emerald-900 text-sm dir-ltr font-mono">{appliedCoupon.code}</span>
-                    <span className="text-[10px] bg-emerald-200 text-emerald-800 px-2 py-0.5 rounded font-black">
-                      خصم {appliedCoupon.discountPercent}%
+            <div className="p-4 sm:p-5 bg-gradient-to-r from-emerald-500/10 via-emerald-50 to-white border-2 border-emerald-500/40 rounded-2xl space-y-3">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-[#0F9D58] text-white flex items-center justify-center font-black shadow-sm">
+                    <Percent className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-black text-emerald-950 text-sm sm:text-base dir-ltr font-mono">{appliedCoupon.code}</span>
+                      <span className="text-[10px] bg-emerald-200 text-emerald-900 px-2 py-0.5 rounded-md font-black">
+                        خصم {appliedCoupon.discountPercent}%
+                      </span>
+                    </div>
+                    <span className="text-xs text-emerald-700 font-medium">
+                      وفرت {appliedCoupon.discountAmount} جنية من السعر الأساسي
                     </span>
                   </div>
-                  <span className="text-xs text-emerald-700 font-medium">
-                    تم توفير {appliedCoupon.discountAmount} جنية من إجمالي الطلب
-                  </span>
                 </div>
+
+                <button
+                  type="button"
+                  onClick={handleRemoveCoupon}
+                  className="text-xs text-red-600 hover:text-red-800 font-bold flex items-center gap-1 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-xl border border-red-200 transition-colors cursor-pointer"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>إلغاء الكوبون</span>
+                </button>
               </div>
 
-              <button
-                type="button"
-                onClick={handleRemoveCoupon}
-                className="text-xs text-red-600 hover:text-red-800 font-bold flex items-center gap-1 bg-red-50 hover:bg-red-100 p-2 rounded-xl border border-red-200 transition-colors"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">إلغاء الكوبون</span>
-              </button>
+              {/* In-Context Dynamic Price Calculation Banner */}
+              <div className="p-3 bg-white rounded-xl border border-emerald-300/80 flex items-center justify-between text-xs shadow-2xs">
+                <span className="text-gray-700 font-bold">المبلغ المطلوب تحويله بعد الخصم:</span>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-gray-400 line-through text-xs">{packagePriceNum} ج</span>
+                  <span className="text-base sm:text-lg font-black text-[#0F9D58]">{finalPayableAmount} جنية مصري</span>
+                </div>
+              </div>
             </div>
           ) : (
             <form onSubmit={handleApplyCoupon} className="flex gap-2">
@@ -505,6 +517,7 @@ function CheckoutContent() {
           )}
         </div>
 
+        {/* STEP 2: Payment Method Selector */}
         <div className="bg-white rounded-3xl p-5 sm:p-7 border border-gray-200 space-y-4 shadow-sm text-[#0B1220]">
           <div className="flex items-center justify-between">
             <label className="block text-sm sm:text-base font-extrabold text-[#0B1220] flex items-center gap-2">
@@ -545,7 +558,52 @@ function CheckoutContent() {
             })}
           </div>
 
-          <div className="p-4 sm:p-5 bg-gray-50/90 rounded-2xl border border-gray-200 space-y-3">
+          {/* Active Payment Details Box */}
+          <div className="p-4 sm:p-5 bg-gray-50/90 rounded-2xl border border-gray-200 space-y-3.5">
+            
+            {/* 💰 CRITICAL PRICE REMINDER INSIDE PAYMENT STEP */}
+            <div className="p-3.5 sm:p-4 bg-emerald-500/10 border-2 border-emerald-500/30 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-[#0F9D58] text-white flex items-center justify-center font-black text-xs shrink-0 shadow-sm">
+                  EGP
+                </div>
+                <div>
+                  <span className="text-[11px] font-bold text-gray-600 block">المبلغ المطلوب تحويله بالضبط:</span>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-xl sm:text-2xl font-black text-[#0B1220] tracking-tight">
+                      {finalPayableAmount} {currentPkg.currency}
+                    </span>
+                    {appliedCoupon && (
+                      <span className="text-xs text-gray-400 line-through">
+                        {packagePriceNum} {currentPkg.currency}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleCopy(finalPayableAmount.toString(), 'amount-copy')}
+                  className="px-3 py-1.5 rounded-lg text-[11px] font-extrabold bg-white hover:bg-gray-100 text-gray-800 border border-gray-300 transition-all flex items-center gap-1.5 cursor-pointer shrink-0 shadow-2xs"
+                  title="نسخ المبلغ المطلوب"
+                >
+                  {copiedId === 'amount-copy' ? (
+                    <>
+                      <Check className="w-3.5 h-3.5 text-[#0F9D58]" />
+                      <span className="text-[#0F9D58]">تم نسخ المبلغ!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-3.5 h-3.5 text-gray-500" />
+                      <span>نسخ المبلغ ({finalPayableAmount})</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-gray-600">{currentPayment.type}:</span>
               <span className="text-[10px] text-[#0F9D58] font-extrabold bg-[#0F9D58]/10 px-2.5 py-0.5 rounded-full border border-[#0F9D58]/20">
@@ -587,11 +645,12 @@ function CheckoutContent() {
           </div>
         </div>
 
+        {/* STEP 3: Phone Number Input */}
         <div className="bg-white rounded-3xl p-5 sm:p-7 border border-gray-200 space-y-4 shadow-sm text-[#0B1220]">
           <div className="flex items-center justify-between">
             <label className="block text-sm sm:text-base font-extrabold text-[#0B1220] flex items-center gap-2">
               <div className="w-7 h-7 rounded-lg bg-[#0F9D58]/10 text-[#0F9D58] flex items-center justify-center font-black text-xs border border-[#0F9D58]/20">3</div>
-              <span>أدخل رقم الهاتف / الحساب الذي قمت بالتحويل منه:</span>
+              <span>أدخل رقم الهاتف / الحساب الذي قمت بتحويل مبلغ ({finalPayableAmount} ج) منه:</span>
             </label>
             <span className="text-xs text-gray-400">خطوة 3 من 4</span>
           </div>
@@ -608,11 +667,12 @@ function CheckoutContent() {
           </div>
         </div>
 
+        {/* STEP 4: Direct Cloudflare R2 Receipt Image Upload */}
         <div className="bg-white rounded-3xl p-5 sm:p-7 border border-gray-200 space-y-4 shadow-sm text-[#0B1220]">
           <div className="flex items-center justify-between">
             <label className="block text-sm sm:text-base font-extrabold text-[#0B1220] flex items-center gap-2">
               <div className="w-7 h-7 rounded-lg bg-[#0F9D58]/10 text-[#0F9D58] flex items-center justify-center font-black text-xs border border-[#0F9D58]/20">4</div>
-              <span>إرفاق لقطة شاشة لإثبات التحويل:</span>
+              <span>إرفاق لقطة شاشة لإثبات تحويل ({finalPayableAmount} ج):</span>
             </label>
             <span className="text-xs text-[#0F9D58] font-bold bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md">
               مستحسن للتفعيل الفوري
@@ -717,7 +777,22 @@ function CheckoutContent() {
             </div>
           )}
 
-          <div className="space-y-2.5 pt-2">
+          {/* Final Summary Card before submission */}
+          <div className="p-4 bg-gray-50 border border-gray-200 rounded-2xl flex items-center justify-between text-xs font-bold">
+            <span className="text-gray-700">إجمالي المبلغ المطلوب تأكيده:</span>
+            <div className="flex items-baseline gap-2">
+              {appliedCoupon && (
+                <span className="text-gray-400 line-through text-xs font-normal">
+                  {packagePriceNum} ج
+                </span>
+              )}
+              <span className="text-lg font-black text-[#0F9D58]">
+                {finalPayableAmount} {currentPkg.currency}
+              </span>
+            </div>
+          </div>
+
+          <div className="space-y-2.5 pt-1">
             <button
               type="button"
               disabled={isSubmittingOrder}
@@ -728,12 +803,12 @@ function CheckoutContent() {
               <span>
                 {isSubmittingOrder
                   ? uploadStatusText || 'جاري تأكيد الطلب...'
-                  : 'تأكيد وإرسال الطلب الآن'}
+                  : `تأكيد وإرسال الطلب الآن (${finalPayableAmount} ج)`}
               </span>
             </button>
 
             <p className="text-xs text-gray-500 text-center font-medium leading-relaxed">
-              بمجرد تأكيد الطلب، سيتم تسجيل عملية الدفع والتحقق من صحتها وتفعيل حسابك تلقائياً وبشكل فوري.
+              بمجرد تأكيد الطلب، سيتم مطابقة تحويل الـ ({finalPayableAmount} ج) وتفعيل حسابك تلقائياً وبشكل فوري.
             </p>
           </div>
         </div>
@@ -751,8 +826,8 @@ function CheckoutContent() {
             </div>
 
             <div className="p-4 bg-white rounded-2xl border border-emerald-100 shadow-2xs space-y-1">
-              <span className="text-[#0F9D58] font-black block">2. المطابقة المالية</span>
-              <p className="text-gray-600 text-xs leading-relaxed">يقوم فريق الدعم بمراجعة وتأكيد إيصال التحويل مع حساب البنك.</p>
+              <span className="text-[#0F9D58] font-black block">2. المطابقة الذكية</span>
+              <p className="text-gray-600 text-xs leading-relaxed">مطابقة فورية وتأكيد إشعار التحويل من البنك أو المحفظة مع طلبك.</p>
             </div>
 
             <div className="p-4 bg-white rounded-2xl border border-emerald-100 shadow-2xs space-y-1">
@@ -764,8 +839,47 @@ function CheckoutContent() {
 
       </main>
 
+      {/* 🚀 STICKY FLOATING SUMMARY BAR (Always visible on Mobile & Desktop) */}
+      <div className="fixed bottom-0 left-0 right-0 z-40 bg-[#0B1220]/95 backdrop-blur-md border-t border-white/10 px-4 py-3 text-white shadow-2xl">
+        <div className="max-w-4xl mx-auto flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-9 h-9 rounded-xl bg-[#0F9D58] text-white flex items-center justify-center font-black text-xs shrink-0 shadow-sm">
+              ✓
+            </div>
+            <div className="min-w-0">
+              <span className="text-[11px] text-gray-300 block truncate max-w-[140px] sm:max-w-xs">{currentPkg.name}</span>
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-sm sm:text-lg font-black text-[#2ECC8F]">
+                  {finalPayableAmount} {currentPkg.currency}
+                </span>
+                {appliedCoupon ? (
+                  <span className="text-[10px] bg-emerald-500/20 text-emerald-300 px-1.5 py-0.5 rounded border border-emerald-500/30 font-bold">
+                    خصم {appliedCoupon.discountPercent}% ({appliedCoupon.code})
+                  </span>
+                ) : (
+                  <span className="text-[10px] text-gray-400 line-through">
+                    {currentPkg.originalPrice}
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            disabled={isSubmittingOrder}
+            onClick={handleOrderSubmit}
+            className="px-4 sm:px-6 py-2.5 bg-[#0F9D58] hover:bg-[#0D8B4E] text-white text-xs sm:text-sm font-black rounded-xl transition-all shrink-0 cursor-pointer shadow-md shadow-[#0F9D58]/20 flex items-center gap-1.5 active:scale-95 disabled:opacity-50"
+          >
+            <span>
+              {isSubmittingOrder ? 'جاري التأكيد...' : `تأكيد الطلب (${finalPayableAmount} ج)`}
+            </span>
+          </button>
+        </div>
+      </div>
+
       {/* Distraction-Free Minimal Light Footer */}
-      <footer className="py-6 border-t border-gray-200 text-center text-xs text-gray-500 bg-white">
+      <footer className="py-6 pb-24 border-t border-gray-200 text-center text-xs text-gray-500 bg-white">
         <p suppressHydrationWarning>© {new Date().getFullYear()} GROWIX — جميع الحقوق محفوظة | عملية دفع وتأكيد مشفرة 100%</p>
       </footer>
     </div>
