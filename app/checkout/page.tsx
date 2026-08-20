@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, useEffect, Suspense, useRef } from 'react';
 import Link from 'next/link';
 import { 
   ArrowRight, 
@@ -18,7 +18,10 @@ import {
   Tag,
   Percent,
   Trash2,
-  X
+  X,
+  UploadCloud,
+  Image as ImageIcon,
+  FileCheck
 } from 'lucide-react';
 import { SITE_CONFIG, SITE_PRICING, PricingPackage } from '@/config/site';
 import { GrowixLogo } from '@/components/GrowixLogo';
@@ -28,11 +31,13 @@ import { useSession } from 'next-auth/react';
 import { createOrderAction } from '@/lib/actions/orders';
 import { validateCouponAction } from '@/lib/actions/coupons';
 import { getAllPackagesAction } from '@/lib/actions/packages';
+import { uploadReceiptAction } from '@/lib/actions/receipts';
 
 function CheckoutContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { status } = useSession();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [packages, setPackages] = useState<PricingPackage[]>(SITE_CONFIG.packages);
 
@@ -68,7 +73,12 @@ function CheckoutContent() {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
   const [orderMessage, setOrderMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-  const [countdown, setCountdown] = useState<number | null>(null);
+
+  // Receipt Upload State
+  const [receiptFile, setReceiptFile] = useState<File | null>(null);
+  const [receiptPreview, setReceiptPreview] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [uploadStatusText, setUploadStatusText] = useState('');
 
   // Coupon State
   const [couponCodeInput, setCouponCodeInput] = useState(initialCouponParam || '');
@@ -102,10 +112,6 @@ function CheckoutContent() {
   const currentPkg = availablePackages.find((p) => p.id === activePkgId) || availablePackages[0];
   const currentTool = SITE_CONFIG.tools.find((t) => t.id === selectedToolId) || SITE_CONFIG.tools[0];
   const currentPayment = SITE_CONFIG.paymentMethods.find((m) => m.id === activePaymentMethod) || SITE_CONFIG.paymentMethods[0];
-
-  const vipPkg = availablePackages.find((p) => p.id === 'bundle-vip');
-  const premiumPkg = availablePackages.find((p) => p.id === 'bundle-premium');
-  const singlePkg = availablePackages.find((p) => p.id === 'single-tool');
 
   const packagePriceNum = parseInt(currentPkg.discountedPrice.replace(/[^0-9]/g, '')) || 0;
 
@@ -161,6 +167,34 @@ function CheckoutContent() {
     setTimeout(() => setCopiedId(null), 2500);
   };
 
+  // Receipt File Handlers
+  const handleFileSelect = (file: File) => {
+    if (!file.type.startsWith('image/')) {
+      setOrderMessage({ type: 'error', text: 'يرجى اختيار ملف صورة صالح (PNG, JPG, WEBP)' });
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setOrderMessage({ type: 'error', text: 'حجم الصورة كبير جداً، الحد الأقصى 5 ميجابايت' });
+      return;
+    }
+
+    setReceiptFile(file);
+    const objectUrl = URL.createObjectURL(file);
+    setReceiptPreview(objectUrl);
+    setOrderMessage(null);
+  };
+
+  const handleRemoveReceipt = () => {
+    if (receiptPreview) {
+      URL.revokeObjectURL(receiptPreview);
+    }
+    setReceiptFile(null);
+    setReceiptPreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   const handleOrderSubmit = async () => {
     // 1. If user is guest/unauthenticated, redirect to login while preserving full checkout choices
     if (status === 'unauthenticated') {
@@ -181,13 +215,38 @@ function CheckoutContent() {
 
     setIsSubmittingOrder(true);
     setOrderMessage(null);
+    setUploadStatusText('جاري معالجة الطلب...');
+
+    // 2. Upload Receipt Image to Cloudflare R2 if attached
+    let receiptUrl: string | undefined = undefined;
+    let receiptKey: string | undefined = undefined;
+
+    if (receiptFile) {
+      setUploadStatusText('جاري رفع صورة الإثبات إلى السيرفر الآمن (R2)...');
+      const formData = new FormData();
+      formData.append('file', receiptFile);
+      formData.append('senderNumber', senderNumber.trim());
+
+      const uploadRes = await uploadReceiptAction(formData);
+      if (!uploadRes.success) {
+        setIsSubmittingOrder(false);
+        setUploadStatusText('');
+        setOrderMessage({ type: 'error', text: uploadRes.error || 'فشل في رفع صورة الإثبات، يرجى المحاولة مرة أخرى' });
+        return;
+      }
+
+      receiptUrl = uploadRes.url;
+      receiptKey = uploadRes.key;
+    }
+
+    setUploadStatusText('جاري توثيق وتأكيد الطلب...');
 
     // Determine paymentMethod and paymentProvider according to business logic
     let resolvedPaymentMethod = 'electronic-wallet';
-    let resolvedPaymentProvider = 'vodafone_cash'; // Default assumption for electronic wallets
+    let resolvedPaymentProvider = 'vodafone_cash';
 
     if (activePaymentMethod === 'instapay') {
-      resolvedPaymentMethod = 'electronic-wallet'; // Both use electronic-wallet base
+      resolvedPaymentMethod = 'electronic-wallet';
       resolvedPaymentProvider = 'instapay';
     } else if (activePaymentMethod === 'electronic-wallet') {
       resolvedPaymentMethod = 'electronic-wallet';
@@ -207,34 +266,18 @@ function CheckoutContent() {
       originalAmount: currentPkg.discountedPrice,
       discountAmount: appliedCoupon ? appliedCoupon.discountAmount.toString() : undefined,
       couponCode: appliedCoupon ? appliedCoupon.code : undefined,
+      receiptUrl,
+      receiptKey,
     });
 
     setIsSubmittingOrder(false);
+    setUploadStatusText('');
 
     if (!res.success) {
       setOrderMessage({ type: 'error', text: res.error || 'حدث خطأ أثناء حفظ الطلب' });
     } else {
-      let couponLine = '';
-      if (appliedCoupon) {
-        couponLine = `%0A- كود الخصم المستخدم: ${encodeURIComponent(appliedCoupon.code)} (خصم ${appliedCoupon.discountPercent}% - وفرت ${appliedCoupon.discountAmount} ج)`;
-      }
-
-      const waText = `مرحباً فريق GROWIX 👋%0A%0Aأنا قمت بتحويل المبلغ لتأكيد اشتراكي:%0A- الباقة: ${encodeURIComponent(currentPkg.name)}%0A- المبلغ المدفوع: ${finalPayableAmount} ${currentPkg.currency}${couponLine}%0A- طريقة الدفع: ${encodeURIComponent(currentPayment.name)}%0A- رقم المحفظة/الحساب المحول منه: ${encodeURIComponent(senderNumber.trim())}%0A- رقم الطلب: ${res.orderId}%0A%0Aبرجاء تفعيل حسابي فوراً وشكراً!`;
-      const waUrl = `https://wa.me/${SITE_CONFIG.whatsappNumber}?text=${waText}`;
-
-      // Start 3..2..1 Countdown for WhatsApp Redirect
-      setCountdown(3);
-      const timer = setInterval(() => {
-        setCountdown((prev) => {
-          if (prev === null || prev <= 1) {
-            clearInterval(timer);
-            window.open(waUrl, '_blank');
-            router.push(`/my-orders?orderId=${res.orderId}`);
-            return null;
-          }
-          return prev - 1;
-        });
-      }, 1000);
+      // Direct instant redirection to My Orders page without WhatsApp
+      router.push(`/my-orders?orderId=${res.orderId}&success=1`);
     }
   };
 
@@ -322,227 +365,158 @@ function CheckoutContent() {
               </div>
             </div>
 
-            <div className="text-xs text-emerald-300 flex items-center gap-2 bg-[#0F9D58]/20 px-3.5 py-2 rounded-xl border border-[#0F9D58]/30">
-              <ShieldCheck className="w-4 h-4 text-[#2ECC8F] shrink-0" />
-              <span>تفعيل دائم مدى الحياة بدون تجديد</span>
+            <div className="text-right sm:text-left">
+              <span className="text-xs text-gray-300 block">الباقة المختارة:</span>
+              <span className="font-bold text-white text-sm">{currentPkg.name}</span>
             </div>
           </div>
         </div>
 
-        {/* STEP 1: Package Selection Cards */}
+        {/* STEP 1: Package Selector (Clean Interactive Cards) */}
         <div className="bg-white rounded-3xl p-5 sm:p-7 border border-gray-200 space-y-4 shadow-sm text-[#0B1220]">
-          <label className="block text-sm sm:text-base font-extrabold text-[#0B1220] flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-[#0F9D58]/10 text-[#0F9D58] flex items-center justify-center font-black text-xs border border-[#0F9D58]/20">1</div>
-            <span>اختر باقتك المفضلة:</span>
-          </label>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
-            {/* VIP Package Card */}
-            <button
-              type="button"
-              onClick={() => setActivePkgId('bundle-vip')}
-              className={`p-4 rounded-2xl border text-right transition-all relative flex flex-col justify-between cursor-pointer ${
-                activePkgId === 'bundle-vip'
-                  ? 'bg-[#0B1220] text-white border-[#0F9D58] ring-2 ring-[#0F9D58]/30 shadow-md'
-                  : 'bg-gray-50 text-[#0B1220] border-gray-200 hover:border-gray-300 hover:bg-gray-100'
-              }`}
-            >
-              <div className="flex items-start justify-between gap-2 mb-2">
-                <span className="text-[11px] font-black px-2.5 py-1 rounded-md bg-amber-400 text-[#0B1220]">
-                  VIP ({vipPkg?.discountedPrice || SITE_PRICING.vipPackagePrice} ج)
-                </span>
-                {activePkgId === 'bundle-vip' && (
-                  <CheckCircle2 className="w-5 h-5 text-[#2ECC8F] shrink-0" />
-                )}
-              </div>
-              <div>
-                <h3 className={`font-extrabold text-sm mb-1 ${activePkgId === 'bundle-vip' ? 'text-white' : 'text-[#0B1220]'}`}>
-                  باقة VIP (كورسات + 12 أداة)
-                </h3>
-                <p className={`text-[11px] leading-relaxed ${activePkgId === 'bundle-vip' ? 'text-gray-300' : 'text-gray-600'}`}>
-                  أكثر من 1 تيرابايت كورسات سحابية + الـ 12 أداة + داتا مصر.
-                </p>
-              </div>
-            </button>
-
-            {/* Premium Package Card */}
-            <button
-              type="button"
-              onClick={() => setActivePkgId('bundle-premium')}
-              className={`p-4 rounded-2xl border text-right transition-all relative flex flex-col justify-between cursor-pointer ${
-                activePkgId === 'bundle-premium'
-                  ? 'bg-[#0B1220] text-white border-[#0F9D58] ring-2 ring-[#0F9D58]/30 shadow-md'
-                  : 'bg-gray-50 text-[#0B1220] border-gray-200 hover:border-gray-300 hover:bg-gray-100'
-              }`}
-            >
-              <div className="flex items-start justify-between gap-2 mb-2">
-                <span className="text-[11px] font-black px-2.5 py-1 rounded-md bg-[#2ECC8F] text-[#0B1220]">
-                  Premium ({premiumPkg?.discountedPrice || SITE_PRICING.fullPackagePrice} ج)
-                </span>
-                {activePkgId === 'bundle-premium' && (
-                  <CheckCircle2 className="w-5 h-5 text-[#2ECC8F] shrink-0" />
-                )}
-              </div>
-              <div>
-                <h3 className={`font-extrabold text-sm mb-1 ${activePkgId === 'bundle-premium' ? 'text-white' : 'text-[#0B1220]'}`}>
-                  باقة Premium (12 أداة)
-                </h3>
-                <p className={`text-[11px] leading-relaxed ${activePkgId === 'bundle-premium' ? 'text-gray-300' : 'text-gray-600'}`}>
-                  جميع الأدوات التسويقية الـ 12 بالكامل + هدية داتا مصر.
-                </p>
-              </div>
-            </button>
-
-            {/* Single Tool Card */}
-            <button
-              type="button"
-              onClick={() => setActivePkgId('single-tool')}
-              className={`p-4 rounded-2xl border text-right transition-all relative flex flex-col justify-between cursor-pointer ${
-                activePkgId === 'single-tool'
-                  ? 'bg-[#0B1220] text-white border-[#0F9D58] ring-2 ring-[#0F9D58]/30 shadow-md'
-                  : 'bg-gray-50 text-[#0B1220] border-gray-200 hover:border-gray-300 hover:bg-gray-100'
-              }`}
-            >
-              <div className="flex items-start justify-between gap-2 mb-2">
-                <span className="text-[11px] font-black px-2.5 py-1 rounded-md bg-emerald-100 text-emerald-900 border border-emerald-300">
-                  أداة واحدة ({singlePkg?.discountedPrice || SITE_PRICING.singleToolPrice} ج)
-                </span>
-                {activePkgId === 'single-tool' && (
-                  <CheckCircle2 className="w-5 h-5 text-[#2ECC8F] shrink-0" />
-                )}
-              </div>
-              <div>
-                <h3 className={`font-extrabold text-sm mb-1 ${activePkgId === 'single-tool' ? 'text-white' : 'text-[#0B1220]'}`}>
-                  برنامج واحد محدد
-                </h3>
-                <p className={`text-[11px] leading-relaxed ${activePkgId === 'single-tool' ? 'text-gray-300' : 'text-gray-600'}`}>
-                  اختر أداة واحدة محددة من بين الـ 12 مع تفعيل دائم وشرح.
-                </p>
-              </div>
-            </button>
+          <div className="flex items-center justify-between">
+            <label className="block text-sm sm:text-base font-extrabold text-[#0B1220] flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg bg-[#0F9D58]/10 text-[#0F9D58] flex items-center justify-center font-black text-xs border border-[#0F9D58]/20">1</div>
+              <span>اختر نوع الباقة أو الخدمة:</span>
+            </label>
+            <span className="text-xs text-gray-400">خطوة 1 من 4</span>
           </div>
 
-          {/* Custom Interactive Tool Selector */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {availablePackages.map((pkg) => {
+              const isSelected = pkg.id === activePkgId;
+              const isVIP = pkg.id === 'bundle-vip';
+              return (
+                <button
+                  key={pkg.id}
+                  type="button"
+                  onClick={() => setActivePkgId(pkg.id)}
+                  className={`p-4 rounded-2xl border text-right transition-all relative flex flex-col justify-between cursor-pointer ${
+                    isSelected
+                      ? 'border-[#0F9D58] bg-emerald-50/70 ring-2 ring-[#0F9D58]/20 shadow-2xs'
+                      : 'border-gray-200 bg-gray-50/60 hover:bg-gray-100/80 text-gray-700'
+                  }`}
+                >
+                  {isVIP && (
+                    <span className="absolute -top-2.5 left-3 text-[10px] bg-[#0F9D58] text-white px-2 py-0.5 rounded-full font-black shadow-xs">
+                      الأكثر طلباً ⭐
+                    </span>
+                  )}
+
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className={`text-xs font-black ${isSelected ? 'text-[#0F9D58]' : 'text-[#0B1220]'}`}>
+                        {pkg.name}
+                      </span>
+                      {isSelected && <CheckCircle2 className="w-4 h-4 text-[#0F9D58]" />}
+                    </div>
+                    <p className="text-[11px] text-gray-500 leading-snug line-clamp-2 mb-3">
+                      {pkg.description}
+                    </p>
+                  </div>
+
+                  <div className="pt-2 border-t border-gray-200/80 flex items-baseline justify-between">
+                    <span className="text-xs font-bold text-gray-400 line-through">{pkg.originalPrice}</span>
+                    <span className="text-sm font-black text-[#0B1220]">{pkg.discountedPrice} {pkg.currency}</span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+
           {activePkgId === 'single-tool' && (
-            <div className="bg-emerald-50/70 border border-emerald-200 rounded-2xl p-4 sm:p-5 mt-3">
+            <div className="pt-3 border-t border-gray-100">
               <CustomToolSelector
-                id="checkout-tool-selector"
                 selectedToolId={selectedToolId}
-                onSelectTool={(toolId) => setUserToolId(toolId)}
-                label={`حدد البرنامج المطلوب (${singlePkg?.discountedPrice || SITE_PRICING.singleToolPrice} جنيه):`}
+                onSelectTool={setSelectedToolId}
               />
             </div>
           )}
         </div>
 
-        {/* COUPON PROMO CODE SECTION */}
         <div className="bg-white rounded-3xl p-5 sm:p-7 border border-gray-200 space-y-4 shadow-sm text-[#0B1220]">
           <div className="flex items-center justify-between">
-            <label className="block text-sm sm:text-base font-extrabold text-[#0B1220] flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg bg-[#0F9D58]/10 text-[#0F9D58] flex items-center justify-center font-black text-xs border border-[#0F9D58]/20">
-                <Tag className="w-3.5 h-3.5" />
-              </div>
+            <label className="text-sm font-extrabold text-[#0B1220] flex items-center gap-2">
+              <Tag className="w-4 h-4 text-[#0F9D58]" />
               <span>هل لديك كود خصم أو كوبون؟</span>
             </label>
-
-            {appliedCoupon && (
-              <span className="text-xs font-black text-emerald-600 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-full flex items-center gap-1">
-                <CheckCircle2 className="w-3.5 h-3.5" />
-                <span>مفعّل ({appliedCoupon.code})</span>
-              </span>
-            )}
+            <span className="text-[11px] text-gray-400 font-medium">اختياري</span>
           </div>
 
           {appliedCoupon ? (
-            <div className="bg-emerald-50/80 border border-emerald-300/80 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-in fade-in">
+            <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center justify-between gap-3">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-emerald-500 text-white flex items-center justify-center font-black shadow-md shadow-emerald-500/20">
+                <div className="w-10 h-10 rounded-xl bg-emerald-500 text-white flex items-center justify-center font-black">
                   <Percent className="w-5 h-5" />
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="font-mono text-sm font-black text-emerald-950 bg-white px-2.5 py-0.5 rounded-lg border border-emerald-300">
-                      {appliedCoupon.code}
-                    </span>
-                    <span className="text-xs font-bold text-emerald-700">
+                    <span className="font-black text-emerald-900 text-sm dir-ltr font-mono">{appliedCoupon.code}</span>
+                    <span className="text-[10px] bg-emerald-200 text-emerald-800 px-2 py-0.5 rounded font-black">
                       خصم {appliedCoupon.discountPercent}%
                     </span>
                   </div>
-                  <p className="text-xs text-emerald-800 font-medium mt-0.5">
-                    وفرت <span className="font-black">{appliedCoupon.discountAmount} جنية</span> من إجمالي سعر الباقة!
-                  </p>
+                  <span className="text-xs text-emerald-700 font-medium">
+                    تم توفير {appliedCoupon.discountAmount} جنية من إجمالي الطلب
+                  </span>
                 </div>
               </div>
 
               <button
                 type="button"
                 onClick={handleRemoveCoupon}
-                className="text-xs font-bold text-red-600 hover:text-red-700 flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-50 hover:bg-red-100 border border-red-200 transition-colors cursor-pointer self-end sm:self-auto"
+                className="text-xs text-red-600 hover:text-red-800 font-bold flex items-center gap-1 bg-red-50 hover:bg-red-100 p-2 rounded-xl border border-red-200 transition-colors"
               >
                 <Trash2 className="w-3.5 h-3.5" />
-                <span>إلغاء الكوبون</span>
+                <span className="hidden sm:inline">إلغاء الكوبون</span>
               </button>
             </div>
           ) : (
-            <form onSubmit={handleApplyCoupon} className="space-y-3">
-              <div className="flex flex-col sm:flex-row gap-2.5">
-                <div className="relative flex-1">
-                  <input
-                    type="text"
-                    value={couponCodeInput}
-                    onChange={(e) => setCouponCodeInput(e.target.value.toUpperCase())}
-                    placeholder="أدخل كود الخصم (مثال: GROWIX20)"
-                    className="w-full px-4 py-3 rounded-2xl bg-gray-50 border border-gray-300 text-xs sm:text-sm font-mono font-black text-[#0B1220] placeholder:text-gray-400 placeholder:font-sans focus:bg-white focus:outline-none focus:border-[#0F9D58] focus:ring-2 focus:ring-[#0F9D58]/20 transition-all uppercase dir-ltr"
-                  />
-                  {couponCodeInput && (
-                    <button
-                      type="button"
-                      onClick={() => setCouponCodeInput('')}
-                      className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  )}
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={couponLoading || !couponCodeInput.trim()}
-                  className="px-6 py-3 rounded-2xl bg-[#0B1220] hover:bg-gray-800 active:scale-[0.98] text-white font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all disabled:opacity-50 cursor-pointer shrink-0 shadow-sm"
-                >
-                  <Tag className="w-4 h-4 text-[#2ECC8F]" />
-                  <span>{couponLoading ? 'جاري التحقق...' : 'تطبيق الكود'}</span>
-                </button>
+            <form onSubmit={handleApplyCoupon} className="flex gap-2">
+              <div className="relative flex-1">
+                <input
+                  type="text"
+                  value={couponCodeInput}
+                  onChange={(e) => setCouponCodeInput(e.target.value.toUpperCase())}
+                  placeholder="أدخل كود الكوبون هنا..."
+                  className="w-full px-4 py-3 rounded-2xl bg-gray-50 border border-gray-300 text-xs font-mono font-bold text-[#0B1220] uppercase placeholder:normal-case placeholder:text-gray-400 focus:bg-white focus:outline-none focus:border-[#0F9D58] focus:ring-2 focus:ring-[#0F9D58]/20 transition-all dir-ltr"
+                />
               </div>
 
-              {couponMessage && (
-                <div className={`p-3 rounded-xl text-xs font-bold flex items-center gap-2 ${
-                  couponMessage.type === 'success'
-                    ? 'bg-emerald-50 text-emerald-800 border border-emerald-300'
-                    : 'bg-red-50 text-red-800 border border-red-300'
-                }`}>
-                  {couponMessage.type === 'success' ? (
-                    <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600" />
-                  ) : (
-                    <AlertCircle className="w-4 h-4 shrink-0 text-red-600" />
-                  )}
-                  <span>{couponMessage.text}</span>
-                </div>
-              )}
+              <button
+                type="submit"
+                disabled={couponLoading || !couponCodeInput.trim()}
+                className="px-6 py-3 bg-[#0B1220] hover:bg-gray-800 text-white text-xs font-extrabold rounded-2xl transition-all disabled:opacity-40 cursor-pointer shrink-0"
+              >
+                {couponLoading ? 'جاري الفحص...' : 'تطبيق الكود'}
+              </button>
             </form>
+          )}
+
+          {couponMessage && (
+            <div className={`p-3 rounded-xl text-xs font-bold flex items-center gap-2 ${
+              couponMessage.type === 'success'
+                ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                : 'bg-red-50 text-red-800 border border-red-200'
+            }`}>
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <span>{couponMessage.text}</span>
+            </div>
           )}
         </div>
 
-        {/* STEP 2: Payment Method Selection */}
         <div className="bg-white rounded-3xl p-5 sm:p-7 border border-gray-200 space-y-4 shadow-sm text-[#0B1220]">
-          <label className="block text-sm sm:text-base font-extrabold text-[#0B1220] flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-[#0F9D58]/10 text-[#0F9D58] flex items-center justify-center font-black text-xs border border-[#0F9D58]/20">2</div>
-            <span>اختر طريقة التحويل (محفظة إلكترونية أو إنستاباي):</span>
-          </label>
+          <div className="flex items-center justify-between">
+            <label className="block text-sm sm:text-base font-extrabold text-[#0B1220] flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg bg-[#0F9D58]/10 text-[#0F9D58] flex items-center justify-center font-black text-xs border border-[#0F9D58]/20">2</div>
+              <span>اختر وسيلة التحويل والدفع:</span>
+            </label>
+            <span className="text-xs text-gray-400">خطوة 2 من 4</span>
+          </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {SITE_CONFIG.paymentMethods.map((method) => {
-              const isSelected = activePaymentMethod === method.id;
+              const isSelected = method.id === activePaymentMethod;
               return (
                 <button
                   key={method.id}
@@ -571,7 +545,6 @@ function CheckoutContent() {
             })}
           </div>
 
-          {/* Active Payment Details Box */}
           <div className="p-4 sm:p-5 bg-gray-50/90 rounded-2xl border border-gray-200 space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-gray-600">{currentPayment.type}:</span>
@@ -614,12 +587,14 @@ function CheckoutContent() {
           </div>
         </div>
 
-        {/* STEP 3: Phone Number Input & Submit Button */}
-        <div className="bg-white rounded-3xl p-5 sm:p-7 border border-gray-200 space-y-5 shadow-sm text-[#0B1220]">
-          <label className="block text-sm sm:text-base font-extrabold text-[#0B1220] flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-[#0F9D58]/10 text-[#0F9D58] flex items-center justify-center font-black text-xs border border-[#0F9D58]/20">3</div>
-            <span>أدخل رقم الهاتف / الحساب الذي قمت بالتحويل منه:</span>
-          </label>
+        <div className="bg-white rounded-3xl p-5 sm:p-7 border border-gray-200 space-y-4 shadow-sm text-[#0B1220]">
+          <div className="flex items-center justify-between">
+            <label className="block text-sm sm:text-base font-extrabold text-[#0B1220] flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg bg-[#0F9D58]/10 text-[#0F9D58] flex items-center justify-center font-black text-xs border border-[#0F9D58]/20">3</div>
+              <span>أدخل رقم الهاتف / الحساب الذي قمت بالتحويل منه:</span>
+            </label>
+            <span className="text-xs text-gray-400">خطوة 3 من 4</span>
+          </div>
 
           <div>
             <input
@@ -631,6 +606,105 @@ function CheckoutContent() {
               className="w-full px-4 py-3.5 rounded-2xl bg-gray-50 border border-gray-300 text-sm font-bold text-[#0B1220] placeholder:text-gray-400 focus:bg-white focus:outline-none focus:border-[#0F9D58] focus:ring-2 focus:ring-[#0F9D58]/20 transition-all dir-rtl"
             />
           </div>
+        </div>
+
+        <div className="bg-white rounded-3xl p-5 sm:p-7 border border-gray-200 space-y-4 shadow-sm text-[#0B1220]">
+          <div className="flex items-center justify-between">
+            <label className="block text-sm sm:text-base font-extrabold text-[#0B1220] flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg bg-[#0F9D58]/10 text-[#0F9D58] flex items-center justify-center font-black text-xs border border-[#0F9D58]/20">4</div>
+              <span>إرفاق لقطة شاشة لإثبات التحويل:</span>
+            </label>
+            <span className="text-xs text-[#0F9D58] font-bold bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md">
+              مستحسن للتفعيل الفوري
+            </span>
+          </div>
+
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/png,image/jpeg,image/jpg,image/webp"
+            className="hidden"
+            onChange={(e) => {
+              if (e.target.files && e.target.files[0]) {
+                handleFileSelect(e.target.files[0]);
+              }
+            }}
+          />
+
+          {receiptPreview ? (
+            <div className="p-4 bg-emerald-50/70 border border-emerald-300 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="flex items-center gap-3.5 w-full sm:w-auto">
+                <div className="w-16 h-16 rounded-xl overflow-hidden border border-emerald-200 bg-white shrink-0 relative shadow-xs">
+                  <img
+                    src={receiptPreview}
+                    alt="معاينة إيصال التحويل"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-1.5 text-xs font-black text-emerald-900 mb-0.5">
+                    <FileCheck className="w-4 h-4 text-emerald-600" />
+                    <span className="truncate">{receiptFile?.name || 'صورة الإثبات'}</span>
+                  </div>
+                  <span className="text-[11px] text-emerald-700 block">
+                    الحجم: {((receiptFile?.size || 0) / (1024 * 1024)).toFixed(2)} ميجابايت (جاهز للرفع والتأكيد)
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="px-3.5 py-2 rounded-xl text-xs font-bold bg-white hover:bg-gray-100 text-gray-700 border border-gray-300 transition-colors"
+                >
+                  تغيير الصورة
+                </button>
+                <button
+                  type="button"
+                  onClick={handleRemoveReceipt}
+                  className="p-2 rounded-xl text-xs font-bold bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 transition-colors"
+                  title="حذف الصورة"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div
+              onDragOver={(e) => {
+                e.preventDefault();
+                setIsDragging(true);
+              }}
+              onDragLeave={() => setIsDragging(false)}
+              onDrop={(e) => {
+                e.preventDefault();
+                setIsDragging(false);
+                if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                  handleFileSelect(e.dataTransfer.files[0]);
+                }
+              }}
+              onClick={() => fileInputRef.current?.click()}
+              className={`p-6 sm:p-8 rounded-2xl border-2 border-dashed text-center transition-all cursor-pointer flex flex-col items-center justify-center gap-2.5 ${
+                isDragging
+                  ? 'border-[#0F9D58] bg-emerald-50/80 scale-[1.01]'
+                  : 'border-gray-300 bg-gray-50/70 hover:bg-gray-100 hover:border-gray-400'
+              }`}
+            >
+              <div className="w-12 h-12 rounded-2xl bg-[#0F9D58]/10 text-[#0F9D58] flex items-center justify-center shadow-xs">
+                <UploadCloud className="w-6 h-6" />
+              </div>
+
+              <div>
+                <span className="text-xs sm:text-sm font-black text-[#0B1220] block">
+                  اضغط هنا لاختيار لقطة الشاشة أو اسحب الصورة وأفلتها
+                </span>
+                <span className="text-[11px] text-gray-500 block mt-0.5">
+                  ندعم صور PNG, JPG, WEBP بحد أقصى 5 ميجابايت (تُحفظ بشكل آمن ومشفر)
+                </span>
+              </div>
+            </div>
+          )}
 
           {orderMessage && (
             <div className={`p-4 rounded-2xl text-xs font-bold flex items-center gap-2 ${
@@ -643,42 +717,37 @@ function CheckoutContent() {
             </div>
           )}
 
-          {/* WhatsApp Submit Action Button */}
-          <div className="space-y-2.5">
+          <div className="space-y-2.5 pt-2">
             <button
               type="button"
-              disabled={isSubmittingOrder || countdown !== null}
+              disabled={isSubmittingOrder}
               onClick={handleOrderSubmit}
               className="w-full py-4 px-6 rounded-2xl bg-[#0F9D58] hover:bg-[#0D8B4E] active:scale-[0.99] text-white font-extrabold text-sm sm:text-base flex items-center justify-center gap-3 shadow-xl shadow-[#0F9D58]/25 transition-all text-center cursor-pointer disabled:opacity-50"
             >
-              <Send className="w-5 h-5 shrink-0" />
+              <CheckCircle2 className="w-5 h-5 shrink-0" />
               <span>
                 {isSubmittingOrder
-                  ? 'جاري التسجيل...'
-                  : countdown !== null
-                  ? `جارٍ التوجيه للواتساب خلال (${countdown})...`
-                  : 'تأكيد وإرسال الإثبات عبر الواتساب'}
+                  ? uploadStatusText || 'جاري تأكيد الطلب...'
+                  : 'تأكيد وإرسال الطلب الآن'}
               </span>
             </button>
 
-            {/* Clear WhatsApp Explanation Text */}
             <p className="text-xs text-gray-500 text-center font-medium leading-relaxed">
-              بمجرد الضغط على الزر، سيتم فتح تطبيق الواتساب مباشرة مجهزاً بنص الرسالة الذي يتضمن بيانات تحويلك ورقم طلبك لتأكيد التفعيل فوريًا.
+              بمجرد تأكيد الطلب، سيتم تسجيل عملية الدفع والتحقق من صحتها وتفعيل حسابك تلقائياً وبشكل فوري.
             </p>
           </div>
         </div>
 
-        {/* What Happens Next Timeline Banner (شريط الخطوات التوضيحية) */}
         <div className="bg-emerald-50/70 border border-emerald-200/80 rounded-3xl p-6 space-y-4 shadow-sm text-[#0B1220]">
           <h4 className="text-xs font-black text-[#0B1220] uppercase tracking-wider flex items-center gap-2">
             <Clock className="w-4 h-4 text-[#0F9D58]" />
-            <span>ماذا يحدث بعد التحويل والإرسال؟</span>
+            <span>ماذا يحدث بعد إرسال الطلب؟</span>
           </h4>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
             <div className="p-4 bg-white rounded-2xl border border-emerald-100 shadow-2xs space-y-1">
-              <span className="text-[#0F9D58] font-black block">1. إرسال الرسالة</span>
-              <p className="text-gray-600 text-xs leading-relaxed">يفتح تطبيق الواتساب وبداخل الرسالة بيانات الطلب تلقائياً.</p>
+              <span className="text-[#0F9D58] font-black block">1. توثيق المعاملة</span>
+              <p className="text-gray-600 text-xs leading-relaxed">يتم استلام بيانات التحويل ولقطة الشاشة وحفظها بأمان داخل النظام.</p>
             </div>
 
             <div className="p-4 bg-white rounded-2xl border border-emerald-100 shadow-2xs space-y-1">

@@ -361,6 +361,33 @@ export const MyOrdersPageClient: React.FC<MyOrdersPageClientProps> = ({ orders, 
                     </div>
                   </div>
 
+                  {/* Pending Order Notice */}
+                  {isPending && (
+                    <div className="p-4 sm:p-5 bg-amber-500/5 border border-amber-500/20 rounded-2xl space-y-2.5">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+                        <div className="flex items-center gap-2">
+                          <Clock className="w-4 h-4 text-amber-500 shrink-0" />
+                          <span className="font-bold text-[#0B1220]">
+                            تم تسجيل طلبك بنجاح! جاري مراجعة وتأكيد التحويل ({ord.amount} جنية من {ord.senderNumber}).
+                          </span>
+                        </div>
+                        {ord.receiptUrl && (
+                          <a
+                            href={ord.receiptUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[11px] font-bold text-purple-600 hover:text-purple-800 bg-purple-50 hover:bg-purple-100 px-3 py-1 rounded-lg border border-purple-200 flex items-center gap-1 w-fit transition-colors"
+                          >
+                            <span>معاينة الإيصال المرفق 🖼️</span>
+                          </a>
+                        )}
+                      </div>
+                      <p className="text-[11px] text-gray-500 leading-relaxed">
+                        بمجرد تأكيد وصول التحويل لحسابنا، سيتم تفعيل حسابك فوراً وإتاحة كافة روابط التحميل والفيديوهات والكورسات في هذه الصفحة تلقائياً.
+                      </p>
+                    </div>
+                  )}
+
                   {/* Progress Tracker Bar */}
                   {isApproved && (
                     <div className="p-4 bg-gray-50 border border-gray-100 rounded-2xl space-y-2">

@@ -18,6 +18,8 @@ export async function createOrderAction(data: {
   originalAmount?: string;
   discountAmount?: string;
   couponCode?: string;
+  receiptUrl?: string;
+  receiptKey?: string;
 }) {
   const session = await auth();
   if (!session?.user?.id) {
@@ -55,6 +57,8 @@ export async function createOrderAction(data: {
         originalAmount: data.originalAmount || null,
         discountAmount: data.discountAmount || null,
         couponCode: data.couponCode ? data.couponCode.trim().toUpperCase() : null,
+        receiptUrl: data.receiptUrl || null,
+        receiptKey: data.receiptKey || null,
         status: 'pending',
       })
       .returning();
@@ -235,11 +239,14 @@ export async function getUserOrders(userId: string) {
       packageId: orders.packageId,
       toolId: orders.toolId,
       paymentMethod: orders.paymentMethod,
+      paymentProvider: orders.paymentProvider,
       senderNumber: orders.senderNumber,
       amount: orders.amount,
       originalAmount: orders.originalAmount,
       discountAmount: orders.discountAmount,
       couponCode: orders.couponCode,
+      receiptUrl: orders.receiptUrl,
+      receiptKey: orders.receiptKey,
       status: orders.status,
       adminNotes: orders.adminNotes,
       createdAt: orders.createdAt,
@@ -280,11 +287,14 @@ export async function getAllOrdersForAdmin(filter?: {
       packageId: orders.packageId,
       toolId: orders.toolId,
       paymentMethod: orders.paymentMethod,
+      paymentProvider: orders.paymentProvider,
       senderNumber: orders.senderNumber,
       amount: orders.amount,
       originalAmount: orders.originalAmount,
       discountAmount: orders.discountAmount,
       couponCode: orders.couponCode,
+      receiptUrl: orders.receiptUrl,
+      receiptKey: orders.receiptKey,
       status: orders.status,
       adminNotes: orders.adminNotes,
       createdAt: orders.createdAt,

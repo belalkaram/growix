@@ -1,8 +1,9 @@
 import React from 'react';
 import { getAllOrdersForAdmin } from '@/lib/actions/orders';
 import { OrderStatusButtons } from './OrderStatusButtons';
+import { OrderReceiptViewer } from './OrderReceiptViewer';
 import Link from 'next/link';
-import { PackageCheck, Clock, CheckCircle2, XCircle, User, Phone, CreditCard, Radio } from 'lucide-react';
+import { PackageCheck, Clock, CheckCircle2, XCircle, User, Phone, CreditCard, Radio, Image as ImageIcon } from 'lucide-react';
 
 export default async function AdminOrdersPage() {
   const ordersList = await getAllOrdersForAdmin();
@@ -43,6 +44,7 @@ export default async function AdminOrdersPage() {
                   <th className="p-4">المبلغ</th>
                   <th className="p-4">تاريخ الطلب</th>
                   <th className="p-4">الحالة الحالية</th>
+                  <th className="p-4">إثبات الدفع (R2)</th>
                   <th className="p-4">التحكم والقبول</th>
                 </tr>
               </thead>
@@ -142,6 +144,18 @@ export default async function AdminOrdersPage() {
                             <span>مرفوض</span>
                           </span>
                         )}
+                      </td>
+
+                      {/* Payment Proof Receipt Image */}
+                      <td className="p-4">
+                        <OrderReceiptViewer
+                          orderId={ord.id}
+                          receiptUrl={ord.receiptUrl}
+                          receiptKey={ord.receiptKey}
+                          customerName={ord.userName}
+                          customerPhone={ord.userPhone || ord.senderNumber}
+                          amount={ord.amount}
+                        />
                       </td>
 
                       {/* Action Buttons */}

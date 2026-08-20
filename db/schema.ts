@@ -137,6 +137,8 @@ export const orders = pgTable('orders', {
   status: varchar('status', { length: 20 }).default('pending').notNull(), // 'pending' | 'approved' | 'rejected'
   approvalType: varchar('approval_type', { length: 20 }).default('manual'), // 'manual' | 'auto'
   matchedTransactionId: varchar('matched_transaction_id', { length: 100 }),
+  receiptUrl: varchar('receipt_url', { length: 1000 }), // Cloudflare R2 public URL for payment proof
+  receiptKey: varchar('receipt_key', { length: 500 }), // Cloudflare R2 object key for deletion/cleanup
   adminNotes: text('admin_notes'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
