@@ -109,7 +109,7 @@ export const MyOrdersPageClient: React.FC<MyOrdersPageClientProps> = ({ orders, 
 
         {/* ─── IMPORTANT SOFTWARE USAGE INSTRUCTIONS & RULES BANNER ─── */}
         <div className="bg-gradient-to-br from-amber-50 via-white to-emerald-50 border-2 border-amber-300/80 rounded-3xl p-6 sm:p-8 shadow-lg space-y-6 relative overflow-hidden text-[#0B1220]">
-          
+
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-amber-200/80">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-2xl bg-amber-500 text-white flex items-center justify-center shadow-md shadow-amber-500/25 shrink-0">
@@ -132,7 +132,7 @@ export const MyOrdersPageClient: React.FC<MyOrdersPageClientProps> = ({ orders, 
 
           {/* The 5 Key Instructions Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            
+
             {/* Rule 1: No sharing (Ban warning) */}
             <div className="p-4 sm:p-5 bg-red-50/70 border border-red-200 rounded-2xl space-y-2 shadow-2xs relative">
               <div className="flex items-center gap-2.5">
@@ -378,7 +378,7 @@ export const MyOrdersPageClient: React.FC<MyOrdersPageClientProps> = ({ orders, 
                             rel="noopener noreferrer"
                             className="text-[11px] font-bold text-purple-600 hover:text-purple-800 bg-purple-50 hover:bg-purple-100 px-3 py-1 rounded-lg border border-purple-200 flex items-center gap-1 w-fit transition-colors"
                           >
-                            <span>معاينة الإيصال المرفق 🖼️</span>
+                            <span>معاينة الإيصال المرفق </span>
                           </a>
                         )}
                       </div>
@@ -588,8 +588,8 @@ export const MyOrdersPageClient: React.FC<MyOrdersPageClientProps> = ({ orders, 
                               type="button"
                               onClick={() => setSelectedCategory(cat.id)}
                               className={`px-3.5 py-1.5 rounded-xl font-bold whitespace-nowrap transition-colors cursor-pointer ${selectedCategory === cat.id
-                                  ? 'bg-[#0B1220] text-white'
-                                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                ? 'bg-[#0B1220] text-white'
+                                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                                 }`}
                             >
                               {cat.label}
@@ -606,8 +606,8 @@ export const MyOrdersPageClient: React.FC<MyOrdersPageClientProps> = ({ orders, 
                               >
                                 <div className="flex items-center gap-3">
                                   <div className={`w-11 h-11 rounded-xl border flex items-center justify-center shrink-0 font-extrabold text-[11px] ${f.fileType === 'apk'
-                                      ? 'bg-blue-500/10 border-blue-500/20 text-blue-600'
-                                      : 'bg-[#0F9D58]/10 border-[#0F9D58]/20 text-[#0F9D58]'
+                                    ? 'bg-blue-500/10 border-blue-500/20 text-blue-600'
+                                    : 'bg-[#0F9D58]/10 border-[#0F9D58]/20 text-[#0F9D58]'
                                     }`}>
                                     {f.fileType === 'apk' ? 'APK' : 'ZIP'}
                                   </div>

@@ -1,12 +1,13 @@
 'use server';
 
 import { db } from '@/db';
-import { orders, users, packages, tools, coupons, couponUsages } from '@/db/schema';
+import { orders, users, packages, tools, coupons, couponUsages, paymentTransactions } from '@/db/schema';
 import { eq, desc, sql, and, gte, lte } from 'drizzle-orm';
 import { auth } from '@/lib/auth';
 import { revalidatePath } from 'next/cache';
 import { sendTelegramOrderAlert } from '@/lib/telegram';
 import { checkRateLimit } from '@/lib/rate-limit';
+import { matchOrderWithRecentTransactions } from '@/lib/payments/matcher';
 
 export async function createOrderAction(data: {
   packageId: string;
@@ -51,10 +52,10 @@ export async function createOrderAction(data: {
         packageId: data.packageId,
         toolId: data.toolId || null,
         paymentMethod: data.paymentMethod,
-        paymentProvider: data.paymentProvider || null,
+        paymentProvider: data.paymentProvider || (data.paymentMethod === 'instapay' ? 'instapay' : 'vodafone_cash'),
         senderNumber: data.senderNumber.trim(),
         amount: data.amount,
-        originalAmount: data.originalAmount || null,
+        originalAmount: data.originalAmount || data.amount,
         discountAmount: data.discountAmount || null,
         couponCode: data.couponCode ? data.couponCode.trim().toUpperCase() : null,
         receiptUrl: data.receiptUrl || null,
@@ -71,9 +72,13 @@ export async function createOrderAction(data: {
       .limit(1);
 
     // Fetch package / tool names
-    let packageName = data.packageId === 'bundle-vip' ? 'باقة VIP الشاملة (كورسات + 12 أداة + داتا)' :
-      data.packageId === 'bundle-premium' ? 'باقة Premium (الـ 12 أداة + داتا مصر)' :
-      'باقة أداة تسويقية واحدة';
+    let packageName = 'باقة غير محددة';
+    if (data.packageId === 'bundle-vip') packageName = 'باقة VIP الشاملة (كورسات + 12 أداة + داتا)';
+    else if (data.packageId === 'bundle-premium') packageName = 'باقة Premium (الـ 12 أداة + داتا مصر)';
+    else {
+      const [customPkg] = await db.select().from(packages).where(eq(packages.id, data.packageId)).limit(1);
+      if (customPkg) packageName = customPkg.name;
+    }
 
     let toolName: string | undefined = undefined;
     if (data.toolId) {
@@ -84,7 +89,7 @@ export async function createOrderAction(data: {
     }
 
     // If coupon code was provided, record coupon usage and increment used_count
-    if (data.couponCode) {
+    if (data.couponCode && data.couponCode.trim()) {
       try {
         const cleanCode = data.couponCode.trim().toUpperCase();
         const matchedCoupon = await db
@@ -132,13 +137,52 @@ export async function createOrderAction(data: {
       createdAt: newOrder.createdAt,
     }).catch((err) => console.error('Telegram dispatch error in order action:', err));
 
+    // 🚀 Bidirectional Matching (Reverse Matching on checkout submit):
+    // If the customer transferred money before clicking submit, link the transaction and auto-approve instantly!
+    let isAutoApproved = false;
+    try {
+      const reverseMatch = await matchOrderWithRecentTransactions({
+        id: newOrder.id,
+        amount: newOrder.amount,
+        paymentProvider: newOrder.paymentProvider || 'vodafone_cash',
+        senderNumber: newOrder.senderNumber,
+        createdAt: newOrder.createdAt,
+      });
+
+      if (reverseMatch.match && reverseMatch.transaction) {
+        // 1. Link transaction in database
+        await db
+          .update(paymentTransactions)
+          .set({
+            status: 'AUTO_APPROVED',
+            matchedOrderId: newOrder.id,
+            isDryRun: false,
+            reviewReason: 'EXACT_REVERSE_MATCH_ON_ORDER_CREATION',
+            processedAt: new Date(),
+          })
+          .where(eq(paymentTransactions.id, reverseMatch.transaction.id));
+
+        // 2. Auto-approve the order and activate all tools/videos
+        await approveOrderCore({
+          orderId: newOrder.id,
+          approvalType: 'auto',
+          matchedTransactionId: reverseMatch.transaction.transactionId,
+          adminNotes: 'تم التفعيل التلقائي الفوري لمطابقة تحويل مالي سابق من الـ Webhook',
+        });
+
+        isAutoApproved = true;
+      }
+    } catch (matchErr) {
+      console.error('Error during reverse auto-matching in createOrderAction:', matchErr);
+    }
+
     revalidatePath('/checkout');
     revalidatePath('/my-orders');
     revalidatePath('/admin/orders');
     revalidatePath('/admin/coupons');
     revalidatePath('/admin');
 
-    return { success: true, orderId: newOrder.id };
+    return { success: true, orderId: newOrder.id, isAutoApproved };
   } catch (error) {
     console.error('Error creating order:', error);
     return { success: false, error: 'حدث خطأ أثناء حفظ الطلب، يرجى المحاولة مرة أخرى' };

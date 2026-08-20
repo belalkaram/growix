@@ -57,13 +57,13 @@ export const OrderReceiptViewer: React.FC<OrderReceiptViewerProps> = ({
         className="px-2.5 py-1.5 rounded-xl bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 border border-purple-500/30 text-[11px] font-bold flex items-center gap-1.5 transition-all shadow-xs cursor-pointer"
       >
         <ImageIcon className="w-3.5 h-3.5 text-purple-400" />
-        <span>عرض الإثبات 🖼️</span>
+        <span>عرض الإثبات</span>
       </button>
 
       {isOpen && (
         <div className="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 flex items-center justify-center p-4 dir-rtl">
           <div className="bg-[#0F172A] border border-white/15 rounded-3xl max-w-2xl w-full p-6 space-y-4 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
-            
+
             {/* Modal Header */}
             <div className="flex items-center justify-between pb-3 border-b border-white/10">
               <div className="flex items-center gap-2.5">

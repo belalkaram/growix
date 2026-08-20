@@ -4,6 +4,7 @@ import { paymentTransactions } from '@/db/schema';
 import { parseVodafoneCashMessage } from '@/lib/payments/vodafone-cash-parser';
 import { parseInstaPayMessage } from '@/lib/payments/instapay-parser';
 import { matchPayment } from '@/lib/payments/matcher';
+import { approveOrderCore } from '@/lib/actions/orders';
 import { checkRateLimit } from '@/lib/rate-limit';
 import crypto from 'crypto';
 
@@ -134,6 +135,7 @@ export async function POST(req: NextRequest) {
     // 7. DB Persistence & Idempotency
     const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
     const userAgent = req.headers.get('user-agent') || 'unknown';
+    const isLiveApproved = statusStr === 'AUTO_APPROVED' && !!matchResultDetails?.matchedOrderId;
 
     try {
       await db.insert(paymentTransactions).values({
@@ -153,16 +155,26 @@ export async function POST(req: NextRequest) {
         reviewReason,
         metadata: {
           candidates: matchResultDetails?.candidateCount || 0,
-          isDryRun: true,
+          isDryRun: !isLiveApproved,
           reasons: matchResultDetails?.matchReasons || [],
           device,
           ip,
           userAgent,
           receivedAt: new Date().toISOString()
         },
-        isDryRun: true, // DRY RUN only
+        isDryRun: !isLiveApproved,
         processedAt: new Date()
       });
+
+      // 8. 🚀 LIVE AUTO-APPROVAL SIDE-EFFECT
+      if (isLiveApproved && matchResultDetails?.matchedOrderId) {
+        await approveOrderCore({
+          orderId: matchResultDetails.matchedOrderId,
+          approvalType: 'auto',
+          matchedTransactionId: transactionId,
+          adminNotes: `تم التفعيل التلقائي الفوري بواسطة الـ Webhook (${detectedProvider})`,
+        });
+      }
     } catch (dbErr: any) {
       // Check for PostgreSQL unique constraint violation on transaction_id
       const errCode = dbErr.code || dbErr.cause?.code;
