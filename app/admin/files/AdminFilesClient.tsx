@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { addPackageFileAction, updatePackageFileAction, deletePackageFileAction, seedInitialDefaultFilesAction, deleteDummyFilesAction } from '@/lib/actions/files';
-import { FolderDown, Plus, Trash2, Database, FileArchive, CheckCircle2, AlertCircle, Sparkles, RefreshCw, Eraser, Edit2, X } from 'lucide-react';
+import { FolderDown, Plus, Trash2, Database, FileArchive, CheckCircle2, AlertCircle, Sparkles, RefreshCw, Eraser, Edit2, X, Crown, Wrench, Globe, GraduationCap } from 'lucide-react';
 import { SITE_CONFIG } from '@/config/site';
 
 interface AdminFilesClientProps {
@@ -237,9 +237,9 @@ export const AdminFilesClient: React.FC<AdminFilesClientProps> = ({ filesList })
                 onChange={(e) => setPackageId(e.target.value)}
                 className="w-full bg-[#0B1220] border border-white/10 rounded-xl px-3 py-2 text-white focus:border-[#2ECC8F] outline-none"
               >
-                <option value="bundle-vip">👑 الباقة الكاملة (bundle-vip)</option>
-                <option value="single-tool">🛠️ باقة برنامج واحد (single-tool)</option>
-                <option value="all">🌐 جميع الباقات بدون استثناء (all)</option>
+                <option value="bundle-vip">الباقة الكاملة (bundle-vip)</option>
+                <option value="single-tool">باقة برنامج واحد (single-tool)</option>
+                <option value="all">جميع الباقات بدون استثناء (all)</option>
               </select>
             </div>
 
@@ -266,10 +266,10 @@ export const AdminFilesClient: React.FC<AdminFilesClientProps> = ({ filesList })
                 onChange={(e) => setCategory(e.target.value)}
                 className="w-full bg-[#0B1220] border border-white/10 rounded-xl px-3 py-2 text-white focus:border-[#2ECC8F] outline-none"
               >
-                <option value="tool">🛠️ أداة تسويقية (tool)</option>
-                <option value="course">🎓 كورس تعليمي (course)</option>
-                <option value="data">📊 داتا تسويقية (data)</option>
-                <option value="bonus">🎁 هدية خاصة (bonus)</option>
+                <option value="tool">أداة تسويقية (tool)</option>
+                <option value="course">كورس تعليمي (course)</option>
+                <option value="data">داتا تسويقية (data)</option>
+                <option value="bonus">هدية خاصة (bonus)</option>
               </select>
             </div>
           </div>
@@ -346,17 +346,43 @@ export const AdminFilesClient: React.FC<AdminFilesClientProps> = ({ filesList })
 
                     <td className="p-4 text-gray-300">
                       <span className="font-bold block text-white">
-                        {f.packageId === 'bundle-vip'
-                          ? '👑 الباقة الكاملة VIP'
-                          : f.packageId === 'single-tool'
-                          ? '🛠️ باقة برنامج واحد'
-                          : '🌐 جميع الباقات'}
+                        {f.packageId === 'bundle-vip' ? (
+                          <span className="flex items-center gap-1.5">
+                            <Crown className="w-3.5 h-3.5 text-amber-400" />
+                            <span>الباقة الكاملة VIP</span>
+                          </span>
+                        ) : f.packageId === 'single-tool' ? (
+                          <span className="flex items-center gap-1.5">
+                            <Wrench className="w-3.5 h-3.5 text-blue-400" />
+                            <span>باقة برنامج واحد</span>
+                          </span>
+                        ) : (
+                          <span className="flex items-center gap-1.5">
+                            <Globe className="w-3.5 h-3.5 text-emerald-400" />
+                            <span>جميع الباقات</span>
+                          </span>
+                        )}
                       </span>
                     </td>
 
                     <td className="p-4 text-gray-300">
-                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 inline-block mb-1">
-                        {f.category === 'data' ? '📊 داتا' : f.category === 'course' ? '🎓 كورس' : '🛠️ أداة'}
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 inline-flex items-center gap-1 mb-1">
+                        {f.category === 'data' ? (
+                          <>
+                            <Database className="w-3 h-3" />
+                            <span>داتا</span>
+                          </>
+                        ) : f.category === 'course' ? (
+                          <>
+                            <GraduationCap className="w-3 h-3" />
+                            <span>كورس</span>
+                          </>
+                        ) : (
+                          <>
+                            <Wrench className="w-3 h-3" />
+                            <span>أداة</span>
+                          </>
+                        )}
                       </span>
                       {f.fileSize && <span className="block text-[11px] text-gray-400">{f.fileSize}</span>}
                     </td>
@@ -472,9 +498,9 @@ export const AdminFilesClient: React.FC<AdminFilesClientProps> = ({ filesList })
                     onChange={(e) => setEditingFile({ ...editingFile, category: e.target.value })}
                     className="w-full px-3 py-2 rounded-xl bg-[#0F172A] border border-white/10 text-white font-bold focus:outline-none focus:border-blue-400"
                   >
-                    <option value="tool">🛠️ برنامج / أداة</option>
-                    <option value="data">📊 داتا تسويقية</option>
-                    <option value="course">🎓 كورس تدريبي</option>
+                    <option value="tool">برنامج / أداة</option>
+                    <option value="data">داتا تسويقية</option>
+                    <option value="course">كورس تدريبي</option>
                   </select>
                 </div>
               </div>

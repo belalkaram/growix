@@ -149,7 +149,7 @@ export const CreateUserModal: React.FC<CreateUserModalProps> = ({ isOpen, onClos
               }`}
             >
               <Sparkles className="w-4 h-4" />
-              <span>الطريقة 2: توليد تلقائي ⚡</span>
+              <span>الطريقة 2: توليد تلقائي</span>
             </button>
           </div>
         )}
@@ -228,9 +228,9 @@ export const CreateUserModal: React.FC<CreateUserModalProps> = ({ isOpen, onClos
                 onChange={(e) => setRole(e.target.value as 'user' | 'admin' | 'test')}
                 className="w-full px-4 py-2.5 rounded-xl bg-[#0F172A] border border-white/10 text-sm font-bold text-white focus:outline-none focus:border-[#2ECC8F]"
               >
-                <option value="user">👤 مستخدم عادي (User)</option>
-                <option value="admin">👑 مدير نظام (Admin)</option>
-                <option value="test">🧪 مستخدم تجريبي (Test Account)</option>
+                <option value="user">مستخدم عادي (User)</option>
+                <option value="admin">مدير نظام (Admin)</option>
+                <option value="test">مستخدم تجريبي (Test Account)</option>
               </select>
             </div>
 
@@ -264,7 +264,7 @@ export const CreateUserModal: React.FC<CreateUserModalProps> = ({ isOpen, onClos
               className="w-full py-4 rounded-xl bg-[#00FF87] hover:bg-[#00E676] text-[#0A1128] font-black text-sm flex items-center justify-center gap-2 shadow-lg shadow-[#00FF87]/25 hover:scale-[1.01] active:scale-95 transition-all disabled:opacity-50 cursor-pointer"
             >
               <Sparkles className="w-4 h-4" />
-              {loading ? <span>جاري التوليد التلقائي...</span> : <span>توليد وإنشاء الحساب الآن ⚡</span>}
+              {loading ? <span>جاري التوليد التلقائي...</span> : <span>توليد وإنشاء الحساب الآن</span>}
             </button>
           </div>
         )}

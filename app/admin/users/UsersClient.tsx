@@ -19,7 +19,9 @@ import {
   RefreshCw,
   Phone,
   Mail,
-  Calendar
+  Calendar,
+  Beaker,
+  User
 } from 'lucide-react';
 
 interface UserRecord {
@@ -127,9 +129,9 @@ export const UsersClient: React.FC<{ initialUsers: UserRecord[] }> = ({ initialU
             className="px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-xs font-bold text-white focus:outline-none focus:border-[#2ECC8F] cursor-pointer"
           >
             <option value="all" className="bg-[#0F172A] text-white">جميع الأدوار ({usersList.length})</option>
-            <option value="user" className="bg-[#0F172A] text-white">👤 مستخدمين حقيقيين ({usersList.filter(u => u.role === 'user').length})</option>
-            <option value="test" className="bg-[#0F172A] text-white">🧪 مستخدمين تجريبيين ({usersList.filter(u => u.role === 'test').length})</option>
-            <option value="admin" className="bg-[#0F172A] text-white">👑 المدراء فقط ({usersList.filter(u => u.role === 'admin').length})</option>
+            <option value="user" className="bg-[#0F172A] text-white">مستخدمين حقيقيين ({usersList.filter(u => u.role === 'user').length})</option>
+            <option value="test" className="bg-[#0F172A] text-white">مستخدمين تجريبيين ({usersList.filter(u => u.role === 'test').length})</option>
+            <option value="admin" className="bg-[#0F172A] text-white">المدراء فقط ({usersList.filter(u => u.role === 'admin').length})</option>
           </select>
         </div>
       </div>
@@ -166,7 +168,7 @@ export const UsersClient: React.FC<{ initialUsers: UserRecord[] }> = ({ initialU
                             ? 'bg-purple-500/20 text-purple-400'
                             : 'bg-[#0F9D58]/20 text-[#2ECC8F]'
                       }`}>
-                        {u.role === 'test' ? '🧪' : u.name.charAt(0)}
+                        {u.role === 'test' ? <Beaker className="w-4 h-4" /> : u.name.charAt(0)}
                       </div>
                       <div>
                         <span className="block font-black text-white">{u.name}</span>
@@ -184,7 +186,7 @@ export const UsersClient: React.FC<{ initialUsers: UserRecord[] }> = ({ initialU
                       <button
                         onClick={() => handleToggleRole(u.id, u.role)}
                         title="انقر للتبديل السريع بين (مستخدم / تجريبي / مدير)"
-                        className={`px-3 py-1 rounded-full text-[10px] font-black transition-all cursor-pointer ${
+                        className={`px-3 py-1 rounded-full text-[10px] font-black transition-all cursor-pointer inline-flex items-center gap-1.5 ${
                           u.role === 'admin'
                             ? 'bg-amber-500/20 text-amber-400 border border-amber-500/40 hover:bg-amber-500/30'
                             : u.role === 'test'
@@ -192,7 +194,22 @@ export const UsersClient: React.FC<{ initialUsers: UserRecord[] }> = ({ initialU
                               : 'bg-blue-500/20 text-blue-400 border border-blue-500/40 hover:bg-blue-500/30'
                         }`}
                       >
-                        {u.role === 'admin' ? '👑 مدير (Admin)' : u.role === 'test' ? '🧪 تجريبي (Test)' : '👤 مستخدم (User)'}
+                        {u.role === 'admin' ? (
+                          <>
+                            <Shield className="w-3 h-3" />
+                            <span>مدير (Admin)</span>
+                          </>
+                        ) : u.role === 'test' ? (
+                          <>
+                            <Beaker className="w-3 h-3" />
+                            <span>تجريبي (Test)</span>
+                          </>
+                        ) : (
+                          <>
+                            <User className="w-3 h-3" />
+                            <span>مستخدم (User)</span>
+                          </>
+                        )}
                       </button>
                     </td>
 

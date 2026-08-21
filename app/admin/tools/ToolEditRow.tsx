@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { updateToolAction, deleteToolAction } from '@/lib/actions/tools';
-import { Save, CheckCircle2, AlertCircle, Edit2, ChevronDown, ChevronUp, Plus, Trash2, X } from 'lucide-react';
+import { Save, CheckCircle2, AlertCircle, Edit2, ChevronDown, ChevronUp, Plus, Trash2, X, Check } from 'lucide-react';
 
 export const ToolEditRow: React.FC<{ tool: any }> = ({ tool }) => {
   const router = useRouter();
@@ -217,7 +217,7 @@ export const ToolEditRow: React.FC<{ tool: any }> = ({ tool }) => {
             {features.map((feat, i) => (
               <div key={i} className="flex items-center gap-2">
                 <span className="w-5 h-5 rounded-full bg-[#0F9D58]/20 text-[#2ECC8F] flex items-center justify-center shrink-0 text-[10px] font-black">
-                  ✓
+                  <Check className="w-3 h-3 stroke-[3]" />
                 </span>
                 <input
                   type="text"

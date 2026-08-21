@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { toggleOrderTestAction } from '@/lib/actions/orders';
-import { Beaker } from 'lucide-react';
+import { Beaker, CheckCircle } from 'lucide-react';
 
 export const OrderTestToggle: React.FC<{ orderId: string; initialIsTest: boolean }> = ({
   orderId,
@@ -37,8 +37,17 @@ export const OrderTestToggle: React.FC<{ orderId: string; initialIsTest: boolean
           : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20'
       }`}
     >
-      <Beaker className="w-3 h-3" />
-      <span>{isTest ? '🧪 تجريبي (Test)' : '🟢 حقيقي (Live)'}</span>
+      {isTest ? (
+        <>
+          <Beaker className="w-3 h-3 text-purple-300" />
+          <span>تجريبي (Test)</span>
+        </>
+      ) : (
+        <>
+          <CheckCircle className="w-3 h-3 text-emerald-400" />
+          <span>حقيقي (Live)</span>
+        </>
+      )}
     </button>
   );
 };

@@ -4,7 +4,7 @@ import { OrderStatusButtons } from './OrderStatusButtons';
 import { OrderReceiptViewer } from './OrderReceiptViewer';
 import { OrderTestToggle } from './OrderTestToggle';
 import Link from 'next/link';
-import { PackageCheck, Clock, CheckCircle2, XCircle, User, Phone, CreditCard, Radio, Image as ImageIcon } from 'lucide-react';
+import { PackageCheck, Clock, CheckCircle2, XCircle, User, Phone, CreditCard, Radio, Image as ImageIcon, Tag } from 'lucide-react';
 
 export default async function AdminOrdersPage() {
   const ordersList = await getAllOrdersForAdmin();
@@ -106,7 +106,8 @@ export default async function AdminOrdersPage() {
                         {ord.couponCode && (
                           <div className="mt-1 space-y-0.5">
                             <span className="inline-flex items-center gap-1 text-[10px] font-black bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 px-1.5 py-0.5 rounded dir-ltr">
-                              🏷️ {ord.couponCode}
+                              <Tag className="w-3 h-3 text-emerald-400" />
+                              <span>{ord.couponCode}</span>
                             </span>
                             {ord.originalAmount && (
                               <span className="block text-[10px] text-gray-500 line-through">

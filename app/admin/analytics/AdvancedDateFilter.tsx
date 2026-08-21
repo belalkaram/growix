@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Filter, Calendar, Clock, RotateCcw, Smartphone, Globe } from 'lucide-react';
+import { Filter, Calendar, Clock, RotateCcw, Smartphone, Globe, Sparkles } from 'lucide-react';
 
 interface AdvancedDateFilterProps {
   availablePaths?: string[];
@@ -120,7 +120,7 @@ export const AdvancedDateFilter: React.FC<AdvancedDateFilterProps> = ({ availabl
             <option value="30days" className="bg-[#0F172A]">آخر 30 يوماً (Last 30 Days)</option>
             <option value="month" className="bg-[#0F172A]">الشهر الحالي (This Month)</option>
             <option value="year" className="bg-[#0F172A]">السنة الحالية (This Year)</option>
-            <option value="custom" className="bg-[#0F172A]">نطاق تاريخ ووقت مخصص ⚙️ (Custom Range)</option>
+            <option value="custom" className="bg-[#0F172A]">نطاق تاريخ ووقت مخصص (Custom Range)</option>
           </select>
         </div>
 
@@ -222,9 +222,10 @@ export const AdvancedDateFilter: React.FC<AdvancedDateFilterProps> = ({ availabl
             <button
               type="button"
               onClick={() => applyFilters({ range: 'custom' })}
-              className="px-6 py-2.5 rounded-xl bg-[#00FF87] hover:bg-[#00E676] text-[#0A1128] font-black text-xs shadow-md cursor-pointer transition-transform active:scale-95"
+              className="px-6 py-2.5 rounded-xl bg-[#00FF87] hover:bg-[#00E676] text-[#0A1128] font-black text-xs shadow-md cursor-pointer transition-transform active:scale-95 flex items-center gap-1.5"
             >
-              تطبيق النطاق المخصص الآن ⚡
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>تطبيق النطاق المخصص الآن</span>
             </button>
           </div>
         </div>

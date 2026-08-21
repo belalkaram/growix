@@ -140,9 +140,9 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({ isOpen, onClose, u
                 onChange={(e) => setRole(e.target.value as 'user' | 'admin' | 'test')}
                 className="w-full px-4 py-2.5 rounded-xl bg-[#0F172A] border border-white/10 text-sm font-bold text-white focus:outline-none focus:border-blue-400"
               >
-                <option value="user">👤 مستخدم عادي (User)</option>
-                <option value="admin">👑 مدير نظام (Admin)</option>
-                <option value="test">🧪 مستخدم تجريبي (Test Account)</option>
+                <option value="user">مستخدم عادي (User)</option>
+                <option value="admin">مدير نظام (Admin)</option>
+                <option value="test">مستخدم تجريبي (Test Account)</option>
               </select>
             </div>
           </div>

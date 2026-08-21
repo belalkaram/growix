@@ -20,7 +20,12 @@ import {
   AlertTriangle,
   Flame,
   Layers,
-  Sparkles
+  Sparkles,
+  Laptop,
+  Target,
+  Ban,
+  Beaker,
+  Check
 } from 'lucide-react';
 
 function formatDuration(seconds: number): string {
@@ -118,14 +123,14 @@ export default async function AdminAnalyticsPage({
         <AdvancedDateFilter availablePaths={analytics.availablePaths} />
       </Suspense>
 
-      {/* 🛡️ Realtime Exclusion & Privacy Filter Banner */}
+      {/* Realtime Exclusion & Privacy Filter Banner */}
       <div className="p-4 rounded-2xl bg-gradient-to-r from-emerald-500/10 via-white/5 to-purple-500/10 border border-white/10 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs shadow-lg">
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-xl bg-[#2ECC8F]/20 text-[#2ECC8F] flex items-center justify-center font-bold shrink-0">
             <CheckCircle2 className="w-4 h-4" />
           </div>
           <div>
-            <span className="font-bold text-white block">فلتر عزل ترافيك الأدمن والطلبات التجريبية نشط ومُفعّل 🛡️</span>
+            <span className="font-bold text-white block">فلتر عزل ترافيك الأدمن والطلبات التجريبية نشط ومُفعّل</span>
             <span className="text-[11px] text-gray-400">
               يتم استبعاد زيارات المطور وحسابات الإدارة والطلبات التجريبية (Test) تلقائياً لعرض الأرباح والزوار الحقيقيين فقط.
             </span>
@@ -133,16 +138,18 @@ export default async function AdminAnalyticsPage({
         </div>
 
         <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
-          <span className="px-3 py-1 rounded-xl bg-white/5 text-gray-300 font-mono text-[11px] border border-white/10">
-            🚫 زيارات أدمن مستبعدة: <b className="text-amber-400">{analytics.excludedAdminViews}</b>
+          <span className="px-3 py-1 rounded-xl bg-white/5 text-gray-300 font-mono text-[11px] border border-white/10 flex items-center gap-1.5">
+            <Ban className="w-3 h-3 text-amber-400" />
+            <span>زيارات أدمن مستبعدة:</span> <b className="text-amber-400">{analytics.excludedAdminViews}</b>
           </span>
-          <span className="px-3 py-1 rounded-xl bg-white/5 text-gray-300 font-mono text-[11px] border border-white/10">
-            🧪 طلبات تجريبية مستبعدة: <b className="text-purple-400">{analytics.excludedTestOrders}</b>
+          <span className="px-3 py-1 rounded-xl bg-white/5 text-gray-300 font-mono text-[11px] border border-white/10 flex items-center gap-1.5">
+            <Beaker className="w-3 h-3 text-purple-400" />
+            <span>طلبات تجريبية مستبعدة:</span> <b className="text-purple-400">{analytics.excludedTestOrders}</b>
           </span>
         </div>
       </div>
 
-      {/* 🚀 TOP 5 SHOPIFY-STYLE KPI CARDS */}
+      {/* TOP 5 SHOPIFY-STYLE KPI CARDS */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         
         {/* 1. Unique Visitors */}
@@ -217,7 +224,7 @@ export default async function AdminAnalyticsPage({
 
       </div>
 
-      {/* 🎯 CONVERSION FUNNEL & CHECKOUT ABANDONMENT ANALYSIS (Shopify Funnel) */}
+      {/* CONVERSION FUNNEL & CHECKOUT ABANDONMENT ANALYSIS (Shopify Funnel) */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
         {/* Full Store Conversion Funnel (2 Cols) */}
@@ -287,7 +294,9 @@ export default async function AdminAnalyticsPage({
             <div className="space-y-1.5">
               <div className="flex items-center justify-between text-xs font-bold">
                 <span className="flex items-center gap-2 text-[#2ECC8F]">
-                  <span className="w-5 h-5 rounded-full bg-[#2ECC8F]/20 text-[#2ECC8F] flex items-center justify-center text-[10px] font-black">✓</span>
+                  <span className="w-5 h-5 rounded-full bg-[#2ECC8F]/20 text-[#2ECC8F] flex items-center justify-center text-[10px] font-black">
+                    <Check className="w-3 h-3 stroke-[3]" />
+                  </span>
                   <span>أتموا الطلب والدفع (Completed Purchase)</span>
                 </span>
                 <span className="text-[#2ECC8F] font-black">
@@ -386,7 +395,7 @@ export default async function AdminAnalyticsPage({
         </div>
       </div>
 
-      {/* 📊 TRAFFIC SOURCES, DEVICE BREAKDOWN & TOP PAGES */}
+      {/* TRAFFIC SOURCES, DEVICE BREAKDOWN & TOP PAGES */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
         {/* 1. Traffic Sources & UTM Campaigns */}
@@ -424,7 +433,10 @@ export default async function AdminAnalyticsPage({
 
           <div className="space-y-4 py-2">
             <div className="flex items-center justify-between text-xs">
-              <span className="text-gray-300 font-bold flex items-center gap-2">📱 الموبايل (Mobile):</span>
+              <span className="text-gray-300 font-bold flex items-center gap-1.5">
+                <Smartphone className="w-3.5 h-3.5 text-blue-400" />
+                <span>الموبايل (Mobile):</span>
+              </span>
               <span className="font-black text-white">{mobilePct}% ({mobileCount} مشاهدة)</span>
             </div>
             <div className="w-full h-3 bg-white/5 rounded-full overflow-hidden">
@@ -432,7 +444,10 @@ export default async function AdminAnalyticsPage({
             </div>
 
             <div className="flex items-center justify-between text-xs pt-2">
-              <span className="text-gray-300 font-bold flex items-center gap-2">💻 الكمبيوتر (Desktop):</span>
+              <span className="text-gray-300 font-bold flex items-center gap-1.5">
+                <Laptop className="w-3.5 h-3.5 text-purple-400" />
+                <span>الكمبيوتر (Desktop):</span>
+              </span>
               <span className="font-black text-white">{desktopPct}% ({desktopCount} مشاهدة)</span>
             </div>
             <div className="w-full h-3 bg-white/5 rounded-full overflow-hidden">
@@ -469,7 +484,7 @@ export default async function AdminAnalyticsPage({
 
       </div>
 
-      {/* 📋 REALTIME VISITOR LOG (Live Feed) */}
+      {/* REALTIME VISITOR LOG (Live Feed) */}
       <div className="p-6 sm:p-7 rounded-3xl bg-[#0F172A] border border-white/10 space-y-4 shadow-xl">
         <div className="flex items-center justify-between">
           <h2 className="text-base font-black text-white flex items-center gap-2">
@@ -511,19 +526,38 @@ export default async function AdminAnalyticsPage({
                       {view.path}
                     </td>
                     <td className="py-3 px-3 whitespace-nowrap">
-                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold flex items-center gap-1 w-fit ${
                         view.deviceType === 'mobile'
                           ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
                           : 'bg-purple-500/10 text-purple-400 border border-purple-500/20'
                       }`}>
-                        {view.deviceType === 'mobile' ? '📱 موبايل' : '💻 كمبيوتر'}
+                        {view.deviceType === 'mobile' ? (
+                          <>
+                            <Smartphone className="w-3 h-3" />
+                            <span>موبايل</span>
+                          </>
+                        ) : (
+                          <>
+                            <Laptop className="w-3 h-3" />
+                            <span>كمبيوتر</span>
+                          </>
+                        )}
                       </span>
                     </td>
                     <td className="py-3 px-3 font-mono text-amber-400 whitespace-nowrap font-bold">
                       {formatDuration(view.durationSeconds || 0)}
                     </td>
                     <td className="py-3 px-3 text-gray-400 text-[11px] truncate max-w-xs">
-                      {view.utmSource ? `🎯 ${view.utmSource}` : view.referrer ? view.referrer : 'مباشر (Direct)'}
+                      {view.utmSource ? (
+                        <span className="flex items-center gap-1">
+                          <Target className="w-3 h-3 text-[#2ECC8F]" />
+                          <span>{view.utmSource}</span>
+                        </span>
+                      ) : view.referrer ? (
+                        view.referrer
+                      ) : (
+                        'مباشر (Direct)'
+                      )}
                     </td>
                   </tr>
                 ))}

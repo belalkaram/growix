@@ -83,8 +83,8 @@ export const AnalyticsFilterBar: React.FC<AnalyticsFilterBarProps> = ({ availabl
             className="w-full px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-xs font-bold text-white focus:outline-none focus:border-[#2ECC8F]"
           >
             <option value="all" className="bg-[#0F172A] text-white">جميع الأجهزة (Mobile & Desktop)</option>
-            <option value="desktop" className="bg-[#0F172A] text-white">💻 كمبيوتر / ديسكتوب (Desktop)</option>
-            <option value="mobile" className="bg-[#0F172A] text-white">📱 هاتف محمول / موبايل (Mobile)</option>
+            <option value="desktop" className="bg-[#0F172A] text-white">كمبيوتر / ديسكتوب (Desktop)</option>
+            <option value="mobile" className="bg-[#0F172A] text-white">هاتف محمول / موبايل (Mobile)</option>
           </select>
         </div>
 

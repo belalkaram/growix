@@ -87,8 +87,9 @@ export const SystemHealthLive: React.FC = () => {
               <Database className="w-4 h-4 text-blue-400" />
               <span>قاعدة البيانات</span>
             </span>
-            <span className="text-xs font-extrabold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-              متصل 🟢
+            <span className="text-xs font-extrabold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
+              <CheckCircle2 className="w-3 h-3" />
+              <span>متصل</span>
             </span>
           </div>
           <div className="text-lg font-black text-white font-mono">
@@ -106,12 +107,19 @@ export const SystemHealthLive: React.FC = () => {
               <HardDrive className="w-4 h-4 text-amber-400" />
               <span>تخزين الملفات (R2)</span>
             </span>
-            <span className={`text-xs font-extrabold px-2 py-0.5 rounded-full ${
+            <span className={`text-xs font-extrabold px-2 py-0.5 rounded-full flex items-center gap-1 ${
               health?.r2Storage.connected
                 ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
                 : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
             }`}>
-              {health?.r2Storage.connected ? 'نشط 🟢' : 'جاهز'}
+              {health?.r2Storage.connected ? (
+                <>
+                  <CheckCircle2 className="w-3 h-3" />
+                  <span>نشط</span>
+                </>
+              ) : (
+                <span>جاهز</span>
+              )}
             </span>
           </div>
           <div className="text-lg font-black text-white font-mono">
@@ -129,14 +137,26 @@ export const SystemHealthLive: React.FC = () => {
               <Send className="w-4 h-4 text-[#2ECC8F]" />
               <span>بوت تليجرام</span>
             </span>
-            <span className={`text-xs font-extrabold px-2 py-0.5 rounded-full ${
+            <span className={`text-xs font-extrabold px-2 py-0.5 rounded-full flex items-center gap-1 ${
               health?.telegramBot.status === 'connected'
                 ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
                 : health?.telegramBot.status === 'not_configured'
                 ? 'bg-gray-500/20 text-gray-400 border border-gray-500/30'
                 : 'bg-red-500/20 text-red-400 border border-red-500/30'
             }`}>
-              {health?.telegramBot.status === 'connected' ? 'متصل 🟢' : health?.telegramBot.status === 'not_configured' ? 'غير مهيأ' : 'خطأ ⚠️'}
+              {health?.telegramBot.status === 'connected' ? (
+                <>
+                  <CheckCircle2 className="w-3 h-3" />
+                  <span>متصل</span>
+                </>
+              ) : health?.telegramBot.status === 'not_configured' ? (
+                <span>غير مهيأ</span>
+              ) : (
+                <>
+                  <AlertTriangle className="w-3 h-3" />
+                  <span>خطأ</span>
+                </>
+              )}
             </span>
           </div>
           <div className="text-sm font-black text-white">

@@ -76,7 +76,7 @@ export default function AdminMegaPage() {
     setSubmitting(true);
     const res = await createMegaLinkAction(form);
     if (res.success) {
-      setMessage({ type: 'success', text: 'تم إضافة رابط MEGA بنجاح ✅' });
+      setMessage({ type: 'success', text: 'تم إضافة رابط MEGA بنجاح' });
       setShowForm(false);
       setForm({ packageId: 'bundle-vip', title: '', description: '', megaUrl: '', sizeLabel: '', contentCount: '', sortOrder: 0 });
       await fetchLinks();

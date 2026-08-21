@@ -9,7 +9,7 @@ import {
   deleteVideoAction, 
   toggleVideoActiveAction 
 } from '@/lib/actions/videos';
-import { Video, Plus, Trash2, ExternalLink, Eye, EyeOff, Loader2, Sparkles, Edit2, X, Save } from 'lucide-react';
+import { Video, Plus, Trash2, ExternalLink, Eye, EyeOff, Loader2, Sparkles, Edit2, X, Save, GraduationCap } from 'lucide-react';
 
 export default function AdminVideosPage() {
   const [videos, setVideos] = useState<any[]>([]);
@@ -181,7 +181,7 @@ export default function AdminVideosPage() {
                 onChange={(e) => setFormData({ ...formData, toolId: e.target.value })}
                 className="w-full px-4 py-2.5 rounded-xl bg-[#0F172A] border border-white/10 text-xs font-bold text-white focus:outline-none focus:border-[#2ECC8F]"
               >
-                <option value="">🎓 فيديو عام / كورس التسويق (يظهر لجميع المشتركين)</option>
+                <option value="">فيديو عام / كورس التسويق (يظهر لجميع المشتركين)</option>
                 {SITE_CONFIG.tools.map((t) => (
                   <option key={t.id} value={t.id}>
                     {t.name}
@@ -285,8 +285,15 @@ export default function AdminVideosPage() {
                   <div className="space-y-1 max-w-xl">
                     <div className="flex items-center gap-2">
                       <span className="font-black text-white text-sm">{vid.title}</span>
-                      <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-[#2ECC8F]/10 text-[#2ECC8F] border border-[#2ECC8F]/30">
-                        {matchedTool ? matchedTool.name : '🎓 شرح عام / كورس'}
+                      <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-[#2ECC8F]/10 text-[#2ECC8F] border border-[#2ECC8F]/30 flex items-center gap-1">
+                        {matchedTool ? (
+                          matchedTool.name
+                        ) : (
+                          <>
+                            <GraduationCap className="w-3 h-3 text-[#2ECC8F]" />
+                            <span>شرح عام / كورس</span>
+                          </>
+                        )}
                       </span>
                       {!vid.isActive && (
                         <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-red-500/10 text-red-400 border border-red-500/30">
@@ -382,7 +389,7 @@ export default function AdminVideosPage() {
                   onChange={(e) => setEditingVideo({ ...editingVideo, toolId: e.target.value || null })}
                   className="w-full px-3 py-2 rounded-xl bg-[#0F172A] border border-white/10 text-xs font-bold text-white focus:outline-none focus:border-blue-400"
                 >
-                  <option value="">🎓 فيديو عام / كورس التسويق</option>
+                  <option value="">فيديو عام / كورس التسويق</option>
                   {SITE_CONFIG.tools.map((t) => (
                     <option key={t.id} value={t.id}>
                       {t.name}

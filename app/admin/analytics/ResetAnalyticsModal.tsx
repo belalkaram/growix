@@ -14,7 +14,9 @@ import {
   Clock, 
   Calendar,
   Layers,
-  Radio
+  Radio,
+  Ban,
+  Beaker
 } from 'lucide-react';
 
 export const ResetAnalyticsModal: React.FC = () => {
@@ -135,8 +137,9 @@ export const ResetAnalyticsModal: React.FC = () => {
                     className="mt-0.5 w-4 h-4 rounded text-[#2ECC8F] focus:ring-0 bg-white/10 border-white/20"
                   />
                   <div>
-                    <span className="font-black text-xs text-white block flex items-center gap-1.5">
-                      <span>🚫 مسح زيارات وتجارب المطور والأدمن (موصى به)</span>
+                    <span className="font-black text-xs text-white flex items-center gap-1.5">
+                      <Ban className="w-3.5 h-3.5 text-[#2ECC8F]" />
+                      <span>مسح زيارات وتجارب المطور والأدمن (موصى به)</span>
                     </span>
                     <p className="text-[11px] text-gray-400 mt-0.5 leading-relaxed">
                       يمسح كافة سجلات التصفح التي تمت من حسابك أو أجهزتك الخاصة أثناء تطوير واختبار الموقع.
@@ -155,7 +158,10 @@ export const ResetAnalyticsModal: React.FC = () => {
                     className="mt-0.5 w-4 h-4 rounded text-purple-500 focus:ring-0 bg-white/10 border-white/20"
                   />
                   <div>
-                    <span className="font-black text-xs text-white block">🧪 مسح الطلبات والاشتراكات التجريبية (Test Orders)</span>
+                    <span className="font-black text-xs text-white flex items-center gap-1.5">
+                      <Beaker className="w-3.5 h-3.5 text-purple-400" />
+                      <span>مسح الطلبات والاشتراكات التجريبية (Test Orders)</span>
+                    </span>
                     <p className="text-[11px] text-gray-400 mt-0.5 leading-relaxed">
                       يحذف كافة طلبات الاختبار الموسومة كـ Test بحيث تظل قائمة الطلبات تحتوي على العملاء الحقيقيين فقط.
                     </p>
@@ -173,7 +179,10 @@ export const ResetAnalyticsModal: React.FC = () => {
                     className="mt-0.5 w-4 h-4 rounded text-blue-500 focus:ring-0 bg-white/10 border-white/20"
                   />
                   <div>
-                    <span className="font-black text-xs text-white block">📡 مسح رسائل الـ Webhook التجريبية (Dry-Run SMS)</span>
+                    <span className="font-black text-xs text-white flex items-center gap-1.5">
+                      <Radio className="w-3.5 h-3.5 text-blue-400" />
+                      <span>مسح رسائل الـ Webhook التجريبية (Dry-Run SMS)</span>
+                    </span>
                     <p className="text-[11px] text-gray-400 mt-0.5 leading-relaxed">
                       ينظف سجل المعاملات ورسائل التحويل التجريبية في صفحة الـ Webhook Transactions.
                     </p>
@@ -191,7 +200,10 @@ export const ResetAnalyticsModal: React.FC = () => {
                     className="mt-0.5 w-4 h-4 rounded text-red-500 focus:ring-0 bg-white/10 border-white/20"
                   />
                   <div>
-                    <span className="font-black text-xs text-red-400 block">💥 تصفير شامل لكافة المشاهدات والزيارات (Full Reset)</span>
+                    <span className="font-black text-xs text-red-400 flex items-center gap-1.5">
+                      <Trash2 className="w-3.5 h-3.5 text-red-400" />
+                      <span>تصفير شامل لكافة المشاهدات والزيارات (Full Reset)</span>
+                    </span>
                     <p className="text-[11px] text-gray-400 mt-0.5 leading-relaxed">
                       يحذف كافة زيارات الموقع لتبدأ الإحصائيات من الصفر تماماً (لا يحذف حسابات المستخدمين الحقيقيين).
                     </p>

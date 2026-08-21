@@ -16,35 +16,52 @@ import {
   ShieldAlert,
   Bot,
   Zap,
-  CreditCard
+  CreditCard,
+  Sparkles
 } from 'lucide-react';
 
 export const SettingsEditForm: React.FC<{ initialSettings: Record<string, string> }> = ({ initialSettings }) => {
   const router = useRouter();
   const [maintenanceMode, setMaintenanceMode] = useState(initialSettings.maintenance_mode === 'true');
   const [maintenanceMessage, setMaintenanceMessage] = useState(
-    initialSettings.maintenance_message || 'الموقع حالياً قيد الصيانة والتحديثات الدورية لتوفير أفضل تجربة لكم. سنعود للعمل قريباً جداً!'
+    initialSettings.maintenance_message ||
+      'الموقع حالياً خاضع للصيانة والتحديثات الدورية لتقديم أفضل تجربة. سنعود للعمل قريباً جداً!'
   );
-  const [whatsappNumber, setWhatsappNumber] = useState(initialSettings.whatsapp_number || '201019033661');
-  const [whatsappDisplayNumber, setWhatsappDisplayNumber] = useState(initialSettings.whatsapp_display_number || '01019033661');
+  const [vodafoneNumber, setVodafoneNumber] = useState(initialSettings.vodafone_number || '01009149021');
+  const [instapayId, setInstapayId] = useState(initialSettings.instapay_id || 'growix@instapay');
+  const [whatsappNumber, setWhatsappNumber] = useState(initialSettings.whatsapp_number || '201009149021');
+  const [whatsappDisplayNumber, setWhatsappDisplayNumber] = useState(initialSettings.whatsapp_display_number || '01009149021');
   const [telegramUsername, setTelegramUsername] = useState(initialSettings.telegram_username || 'growix_official');
+  const [supportPhone, setSupportPhone] = useState(initialSettings.support_phone || '01009149021');
   const [supportEmail, setSupportEmail] = useState(initialSettings.support_email || 'growix@belalkaram.dev');
-  const [workingHours, setWorkingHours] = useState(initialSettings.working_hours || 'تفعيل فوري خلال أقل من ساعة | دعم فني على مدار 24/7');
-  const [heroTitle, setHeroTitle] = useState(initialSettings.hero_title || '');
-  const [heroSubtitle, setHeroSubtitle] = useState(initialSettings.hero_subtitle || '');
+  const [workingHours, setWorkingHours] = useState(initialSettings.working_hours || 'دعم فني وتفعيل فوري على مدار 24/7');
+  const [heroNotice, setHeroNotice] = useState(initialSettings.hero_notice || 'خصم 65% لفترة محدودة');
+  const [heroHeading, setHeroHeading] = useState(
+    initialSettings.hero_heading || 'الحل المتكامل للنمو ومضاعفة المبيعات بأقوى أدوات التسويق الذكي'
+  );
+  const [heroTitle, setHeroTitle] = useState(initialSettings.hero_title || 'أقوى أدوات التسويق الرقمي وإدارة الحملات');
 
-  // Telegram Bot Settings
+  // Telegram Alert Settings
   const [telegramBotToken, setTelegramBotToken] = useState(initialSettings.telegram_bot_token || '');
-  const [telegramChatId, setTelegramChatId] = useState(initialSettings.telegram_bot_token ? initialSettings.telegram_chat_id || '' : '');
-  const [testingTelegram, setTestingTelegram] = useState(false);
-  const [telegramTestResult, setTelegramTestResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [telegramChatId, setTelegramChatId] = useState(initialSettings.telegram_chat_id || '');
+  const [telegramAlertsEnabled, setTelegramAlertsEnabled] = useState(initialSettings.telegram_alerts_enabled !== 'false');
 
-  // Facebook Meta Pixel Settings
+  // Facebook Pixel Settings
   const [facebookPixelId, setFacebookPixelId] = useState(initialSettings.facebook_pixel_id || '');
-  const [facebookPixelEnabled, setFacebookPixelEnabled] = useState(initialSettings.facebook_pixel_enabled !== 'false');
+  const [facebookPixelEnabled, setFacebookPixelEnabled] = useState(initialSettings.facebook_pixel_enabled === 'true');
 
   const [loading, setLoading] = useState(false);
+  const [testingTelegram, setTestingTelegram] = useState(false);
+  const [telegramTestResult, setTelegramTestResult] = useState<{ success: boolean; message: string } | null>(null);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  const handleTestTelegram = async () => {
+    setTestingTelegram(true);
+    setTelegramTestResult(null);
+    const res = await testTelegramConnectionAction(telegramBotToken, telegramChatId);
+    setTestingTelegram(false);
+    setTelegramTestResult(res);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,38 +69,34 @@ export const SettingsEditForm: React.FC<{ initialSettings: Record<string, string
     setMessage(null);
 
     const res = await updateSiteSettingsAction({
-      maintenance_mode: maintenanceMode ? 'true' : 'false',
+      maintenance_mode: String(maintenanceMode),
       maintenance_message: maintenanceMessage,
+      vodafone_number: vodafoneNumber,
+      instapay_id: instapayId,
       whatsapp_number: whatsappNumber,
       whatsapp_display_number: whatsappDisplayNumber,
       telegram_username: telegramUsername,
+      support_phone: supportPhone,
       support_email: supportEmail,
       working_hours: workingHours,
+      hero_notice: heroNotice,
+      hero_heading: heroHeading,
       hero_title: heroTitle,
-      hero_subtitle: heroSubtitle,
       telegram_bot_token: telegramBotToken,
       telegram_chat_id: telegramChatId,
-      facebook_pixel_id: facebookPixelId.trim(),
-      facebook_pixel_enabled: facebookPixelEnabled ? 'true' : 'false',
+      telegram_alerts_enabled: String(telegramAlertsEnabled),
+      facebook_pixel_id: facebookPixelId,
+      facebook_pixel_enabled: String(facebookPixelEnabled),
     });
 
     setLoading(false);
 
     if (res.success) {
-      setMessage({ type: 'success', text: 'تم تحديث إعدادات الموقع وبوت تليجرام بنجاح!' });
+      setMessage({ type: 'success', text: 'تم حفظ الإعدادات بنجاح وتحديث المتجر بالكامل!' });
       router.refresh();
     } else {
       setMessage({ type: 'error', text: res.error || 'حدث خطأ أثناء الحفظ' });
     }
-  };
-
-  const handleTestTelegram = async () => {
-    setTestingTelegram(true);
-    setTelegramTestResult(null);
-
-    const res = await testTelegramConnectionAction(telegramBotToken, telegramChatId);
-    setTestingTelegram(false);
-    setTelegramTestResult(res);
   };
 
   return (
@@ -95,7 +108,7 @@ export const SettingsEditForm: React.FC<{ initialSettings: Record<string, string
         </div>
       )}
 
-      {/* 🛑 Maintenance Mode Control Card */}
+      {/* Maintenance Mode Control Card */}
       <div className={`p-6 rounded-2xl border transition-colors space-y-4 ${
         maintenanceMode
           ? 'bg-amber-500/10 border-amber-500/40 text-amber-200'
@@ -110,8 +123,9 @@ export const SettingsEditForm: React.FC<{ initialSettings: Record<string, string
               <h3 className="text-sm font-black text-white flex items-center gap-2">
                 <span>وضع الصيانة (Maintenance Mode)</span>
                 {maintenanceMode && (
-                  <span className="text-[10px] bg-amber-500 text-black px-2 py-0.5 rounded-full font-black animate-pulse">
-                    مُفعل حالياً 🛑
+                  <span className="text-[10px] bg-amber-500 text-black px-2 py-0.5 rounded-full font-black animate-pulse flex items-center gap-1">
+                    <ShieldAlert className="w-3 h-3 text-black" />
+                    <span>مُفعل حالياً</span>
                   </span>
                 )}
               </h3>
@@ -147,7 +161,7 @@ export const SettingsEditForm: React.FC<{ initialSettings: Record<string, string
         </div>
       </div>
 
-      {/* 🤖 Telegram Bot Auto-Alerts Configuration */}
+      {/* Telegram Bot Auto-Alerts Configuration */}
       <div className="p-6 rounded-2xl bg-white/5 border border-white/10 space-y-4">
         <div className="flex items-center justify-between gap-4 pb-2 border-b border-white/10">
           <div className="flex items-center gap-2.5">
@@ -167,7 +181,7 @@ export const SettingsEditForm: React.FC<{ initialSettings: Record<string, string
             className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-xs font-bold text-white flex items-center gap-1.5 transition-colors disabled:opacity-50 cursor-pointer"
           >
             <Send className={`w-3.5 h-3.5 ${testingTelegram ? 'animate-bounce text-[#2ECC8F]' : ''}`} />
-            <span>{testingTelegram ? 'جاري الفحص...' : 'تجربة إرسال رسالة للبوت ⚡'}</span>
+            <span>{testingTelegram ? 'جاري الفحص...' : 'تجربة إرسال رسالة للبوت'}</span>
           </button>
         </div>
 
@@ -276,7 +290,7 @@ export const SettingsEditForm: React.FC<{ initialSettings: Record<string, string
         </div>
       </div>
 
-      {/* 🎯 Facebook Meta Pixel Tracking Settings */}
+      {/* Facebook Meta Pixel Tracking Settings */}
       <div className="space-y-4 pt-2 border-t border-white/10">
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-black text-[#2ECC8F] flex items-center gap-2">
@@ -315,7 +329,10 @@ export const SettingsEditForm: React.FC<{ initialSettings: Record<string, string
           </div>
 
           <div className="text-[11px] text-gray-400 bg-white/5 p-3 rounded-xl border border-white/5 space-y-1">
-            <p className="font-bold text-gray-300">💡 الأحداث التي يتم تتبعها تلقائياً عند وضع الـ Pixel ID:</p>
+            <p className="font-bold text-gray-300 flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-[#2ECC8F]" />
+              <span>الأحداث التي يتم تتبعها تلقائياً عند وضع الـ Pixel ID:</span>
+            </p>
             <ul className="list-disc list-inside space-y-0.5 text-[10px] text-gray-400">
               <li><b>PageView:</b> يتم تتبع كل زيارة لكافة صفحات المتجر.</li>
               <li><b>ViewContent:</b> تتبع مشاهدة تفاصيل باقة معينة أو أداة تسويقية.</li>
