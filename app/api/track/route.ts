@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db';
 import { pageViews } from '@/db/schema';
 import { eq, and, desc } from 'drizzle-orm';
+import { auth } from '@/lib/auth';
 
 export async function POST(req: NextRequest) {
   try {
@@ -28,25 +29,33 @@ export async function POST(req: NextRequest) {
       utmMedium, 
       utmCampaign, 
       durationSeconds = 0,
-      isAdmin = false,
-      isTest = false
     } = body;
 
-    if (!sessionId) {
+    // Sanitize and validate sessionId (prevent injection)
+    if (!sessionId || typeof sessionId !== 'string' || sessionId.length > 100) {
       return NextResponse.json({ ok: false }, { status: 400 });
     }
 
+    const cleanSessionId = sessionId.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 80);
+    const cleanPath = typeof path === 'string' ? path.slice(0, 300) : '';
+
+    // Check server session to accurately determine isAdmin and isTest
+    const session = await auth();
+    const userRole = (session?.user as { role?: string })?.role;
+    const isServerAdmin = userRole === 'admin';
+    const isServerTest = userRole === 'test' || body.isTest === true;
+
     // Handle duration update on unload / beacon ping
     if (type === 'ping' || type === 'duration') {
-      if (durationSeconds > 0) {
-        // Find most recent pageview for this session and path
+      const safeDuration = typeof durationSeconds === 'number' ? Math.max(0, Math.min(3600, durationSeconds)) : 0;
+      if (safeDuration > 0) {
         const [recentView] = await db
           .select({ id: pageViews.id, durationSeconds: pageViews.durationSeconds })
           .from(pageViews)
           .where(
             and(
-              eq(pageViews.sessionId, sessionId),
-              path ? eq(pageViews.path, path) : undefined
+              eq(pageViews.sessionId, cleanSessionId),
+              cleanPath ? eq(pageViews.path, cleanPath) : undefined
             )
           )
           .orderBy(desc(pageViews.createdAt))
@@ -56,9 +65,9 @@ export async function POST(req: NextRequest) {
           await db
             .update(pageViews)
             .set({ 
-              durationSeconds: Math.max(recentView.durationSeconds || 0, Math.min(3600, durationSeconds)),
-              isAdmin: isAdmin || false,
-              isTest: isTest || false,
+              durationSeconds: Math.max(recentView.durationSeconds || 0, safeDuration),
+              isAdmin: isServerAdmin,
+              isTest: isServerTest,
             })
             .where(eq(pageViews.id, recentView.id));
         }
@@ -67,29 +76,35 @@ export async function POST(req: NextRequest) {
     }
 
     // Default: Record PageView
-    if (!path) {
+    if (!cleanPath) {
       return NextResponse.json({ ok: false }, { status: 400 });
     }
 
     const userAgent = req.headers.get('user-agent') || '';
     const deviceType = /mobile|android|iphone|ipad/i.test(userAgent) ? 'mobile' : 'desktop';
-    const country = req.headers.get('x-vercel-ip-country') || 'EG';
+    const country = (req.headers.get('x-vercel-ip-country') || 'EG').slice(0, 10);
 
-    // Insert lightweight page view record
+    const safeReferrer = typeof referrer === 'string' ? referrer.slice(0, 400) : null;
+    const safeUtmSource = typeof utmSource === 'string' ? utmSource.slice(0, 100) : null;
+    const safeUtmMedium = typeof utmMedium === 'string' ? utmMedium.slice(0, 100) : null;
+    const safeUtmCampaign = typeof utmCampaign === 'string' ? utmCampaign.slice(0, 100) : null;
+    const safeDuration = typeof durationSeconds === 'number' ? Math.max(0, Math.min(3600, durationSeconds)) : 0;
+
+    // Insert sanitized page view record
     const [newView] = await db
       .insert(pageViews)
       .values({
-        sessionId,
-        path: path.slice(0, 500),
-        referrer: referrer ? referrer.slice(0, 500) : null,
-        utmSource: utmSource || null,
-        utmMedium: utmMedium || null,
-        utmCampaign: utmCampaign || null,
+        sessionId: cleanSessionId,
+        path: cleanPath,
+        referrer: safeReferrer,
+        utmSource: safeUtmSource,
+        utmMedium: safeUtmMedium,
+        utmCampaign: safeUtmCampaign,
         country,
         deviceType,
-        durationSeconds: durationSeconds || 0,
-        isAdmin: isAdmin || false,
-        isTest: isTest || false,
+        durationSeconds: safeDuration,
+        isAdmin: isServerAdmin,
+        isTest: isServerTest,
       })
       .returning({ id: pageViews.id });
 

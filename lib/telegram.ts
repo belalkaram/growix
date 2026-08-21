@@ -1,6 +1,7 @@
 import { db } from '@/db';
 import { siteSettings } from '@/db/schema';
 import { inArray } from 'drizzle-orm';
+import { decryptSensitiveData } from '@/lib/encryption';
 
 interface TelegramOrderPayload {
   orderId: string;
@@ -29,8 +30,12 @@ export async function getTelegramCredentials() {
       .where(inArray(siteSettings.key, ['telegram_bot_token', 'telegram_chat_id']));
 
     for (const s of settings) {
-      if (s.key === 'telegram_bot_token' && s.value) token = s.value.trim();
-      if (s.key === 'telegram_chat_id' && s.value) chatId = s.value.trim();
+      if (s.key === 'telegram_bot_token' && s.value) {
+        token = decryptSensitiveData(s.value.trim());
+      }
+      if (s.key === 'telegram_chat_id' && s.value) {
+        chatId = decryptSensitiveData(s.value.trim());
+      }
     }
   } catch (err) {
     console.error('Error fetching telegram credentials from db:', err);
@@ -125,6 +130,9 @@ export async function testTelegramConnectionAction(token?: string, chatId?: stri
   if (!targetToken || !targetChatId) {
     return { success: false, message: 'يرجى إدخال توكن البوت ومعرّف الشات (Token & Chat ID) أولاً.' };
   }
+
+  targetToken = decryptSensitiveData(targetToken);
+  targetChatId = decryptSensitiveData(targetChatId);
 
   try {
     const nowStr = new Date().toLocaleString('ar-EG', { timeZone: 'Africa/Cairo' });

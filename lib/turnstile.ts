@@ -10,9 +10,11 @@ export async function verifyTurnstileToken(token: string, remoteIp?: string): Pr
     return { success: false, error: 'يرجى إكمال التحقق الأمني (أنا لست روبوت)' };
   }
 
-  // Handle Cloudflare official dummy testing keys or dev environment
-  if (token.startsWith('1x000000') || token.startsWith('2x000000') || token === 'XXXX.DUMMY.TOKEN.XXXX') {
-    return { success: true };
+  // Handle Cloudflare official dummy testing keys strictly in non-production environments
+  if (process.env.NODE_ENV !== 'production') {
+    if (token.startsWith('1x000000') || token.startsWith('2x000000') || token === 'XXXX.DUMMY.TOKEN.XXXX') {
+      return { success: true };
+    }
   }
 
   try {
@@ -44,7 +46,12 @@ export async function verifyTurnstileToken(token: string, remoteIp?: string): Pr
     }
   } catch (error: any) {
     console.error('Turnstile fetch error:', error);
-    // Fallback: If Cloudflare endpoint is unreachable during dev, log warning
-    return { success: true };
+    if (process.env.NODE_ENV !== 'production') {
+      return { success: true };
+    }
+    return {
+      success: false,
+      error: 'تعذر التحقق من اختبار الأمان في الوقت الحالي. يرجى إعادة المحاولة.',
+    };
   }
 }

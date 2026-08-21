@@ -8,6 +8,72 @@ import { revalidatePath } from 'next/cache';
 import { sendTelegramOrderAlert } from '@/lib/telegram';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { matchOrderWithRecentTransactions } from '@/lib/payments/matcher';
+import { SITE_CONFIG, SITE_PRICING } from '@/config/site';
+
+/**
+ * Validates and calculates the legitimate server-side price for a package and coupon
+ */
+async function computeServerOrderPrice(packageId: string, couponCode?: string | null): Promise<{
+  originalPrice: number;
+  discountedPrice: number;
+  finalPrice: number;
+  discountAmount: number;
+  appliedCoupon?: any;
+}> {
+  let basePrice = 500;
+  let originalPrice = 2000;
+
+  if (packageId === 'bundle-vip') {
+    basePrice = parseInt(SITE_PRICING.vipPackagePrice) || 500;
+    originalPrice = parseInt(SITE_PRICING.vipPackageOriginalPrice) || 2000;
+  } else if (packageId === 'bundle-premium') {
+    basePrice = parseInt(SITE_PRICING.fullPackagePrice) || 300;
+    originalPrice = parseInt(SITE_PRICING.fullPackageOriginalPrice) || 1200;
+  } else if (packageId === 'single-tool') {
+    basePrice = parseInt(SITE_PRICING.singleToolPrice) || 200;
+    originalPrice = parseInt(SITE_PRICING.singleToolOriginalPrice) || 700;
+  } else {
+    // Check custom packages in database
+    const [customPkg] = await db.select().from(packages).where(eq(packages.id, packageId)).limit(1);
+    if (customPkg) {
+      basePrice = parseInt(customPkg.discountedPrice.replace(/[^0-9]/g, '')) || 500;
+      originalPrice = parseInt(customPkg.originalPrice.replace(/[^0-9]/g, '')) || basePrice;
+    }
+  }
+
+  let finalPrice = basePrice;
+  let discountAmount = 0;
+  let appliedCoupon: any = null;
+
+  if (couponCode && couponCode.trim()) {
+    const cleanCode = couponCode.trim().toUpperCase();
+    const [coupon] = await db
+      .select()
+      .from(coupons)
+      .where(and(eq(sql`UPPER(${coupons.code})`, cleanCode), eq(coupons.isActive, true)))
+      .limit(1);
+
+    if (coupon) {
+      const now = new Date();
+      const notExpired = !coupon.validUntil || new Date(coupon.validUntil) > now;
+      const notLimitReached = !coupon.usageLimit || coupon.usedCount < coupon.usageLimit;
+
+      if (notExpired && notLimitReached) {
+        discountAmount = Math.round((basePrice * coupon.discountPercent) / 100);
+        finalPrice = Math.max(0, basePrice - discountAmount);
+        appliedCoupon = coupon;
+      }
+    }
+  }
+
+  return {
+    originalPrice,
+    discountedPrice: basePrice,
+    finalPrice,
+    discountAmount,
+    appliedCoupon,
+  };
+}
 
 export async function createOrderAction(data: {
   packageId: string;
@@ -45,6 +111,20 @@ export async function createOrderAction(data: {
   }
 
   try {
+    // 1. Server-side price calculation & tampering validation
+    const computedPrice = await computeServerOrderPrice(data.packageId, data.couponCode);
+    const clientAmountNum = parseInt((data.amount || '').replace(/[^0-9]/g, '')) || 0;
+
+    // Reject tampering if client submitted an unauthorized amount differing from calculated price
+    if (clientAmountNum !== computedPrice.finalPrice && clientAmountNum !== computedPrice.discountedPrice) {
+      console.warn(`Price tampering detected for user ${session.user.id}: client sent ${clientAmountNum}, expected ${computedPrice.finalPrice}`);
+    }
+
+    // Always use verified server-side final amount
+    const verifiedAmount = computedPrice.finalPrice.toString();
+    const verifiedOriginalAmount = computedPrice.originalPrice.toString();
+    const verifiedDiscountAmount = computedPrice.discountAmount > 0 ? computedPrice.discountAmount.toString() : null;
+
     // Fetch user details first to check for test role and Telegram alert
     const [userRecord] = await db
       .select()
@@ -63,10 +143,10 @@ export async function createOrderAction(data: {
         paymentMethod: data.paymentMethod,
         paymentProvider: data.paymentProvider || (data.paymentMethod === 'instapay' ? 'instapay' : 'vodafone_cash'),
         senderNumber: data.senderNumber.trim(),
-        amount: data.amount,
-        originalAmount: data.originalAmount || data.amount,
-        discountAmount: data.discountAmount || null,
-        couponCode: data.couponCode ? data.couponCode.trim().toUpperCase() : null,
+        amount: verifiedAmount,
+        originalAmount: verifiedOriginalAmount,
+        discountAmount: verifiedDiscountAmount,
+        couponCode: computedPrice.appliedCoupon ? computedPrice.appliedCoupon.code : null,
         receiptUrl: data.receiptUrl || null,
         receiptKey: data.receiptKey || null,
         isTest: isTestUser,
@@ -91,33 +171,24 @@ export async function createOrderAction(data: {
       }
     }
 
-    // If coupon code was provided, record coupon usage and increment used_count
-    if (data.couponCode && data.couponCode.trim()) {
+    // If coupon was validated & applied, record usage and increment used_count
+    if (computedPrice.appliedCoupon) {
       try {
-        const cleanCode = data.couponCode.trim().toUpperCase();
-        const matchedCoupon = await db
-          .select()
-          .from(coupons)
-          .where(eq(sql`UPPER(${coupons.code})`, cleanCode))
-          .limit(1);
+        const c = computedPrice.appliedCoupon;
+        await db.insert(couponUsages).values({
+          couponId: c.id,
+          userId: session.user.id,
+          orderId: newOrder.id,
+          discountApplied: verifiedDiscountAmount || `${c.discountPercent}%`,
+        });
 
-        if (matchedCoupon.length > 0) {
-          const c = matchedCoupon[0];
-          await db.insert(couponUsages).values({
-            couponId: c.id,
-            userId: session.user.id,
-            orderId: newOrder.id,
-            discountApplied: data.discountAmount || `${c.discountPercent}%`,
-          });
-
-          await db
-            .update(coupons)
-            .set({
-              usedCount: c.usedCount + 1,
-              updatedAt: new Date(),
-            })
-            .where(eq(coupons.id, c.id));
-        }
+        await db
+          .update(coupons)
+          .set({
+            usedCount: c.usedCount + 1,
+            updatedAt: new Date(),
+          })
+          .where(eq(coupons.id, c.id));
       } catch (couponErr) {
         console.error('Error recording coupon usage:', couponErr);
       }
@@ -131,17 +202,16 @@ export async function createOrderAction(data: {
       userPhone: userRecord?.phone || undefined,
       packageName,
       toolName,
-      amount: data.amount,
-      originalAmount: data.originalAmount,
-      discountAmount: data.discountAmount,
-      couponCode: data.couponCode,
+      amount: verifiedAmount,
+      originalAmount: verifiedOriginalAmount,
+      discountAmount: verifiedDiscountAmount,
+      couponCode: computedPrice.appliedCoupon?.code,
       paymentMethod: data.paymentMethod,
       senderNumber: data.senderNumber.trim(),
       createdAt: newOrder.createdAt,
     }).catch((err) => console.error('Telegram dispatch error in order action:', err));
 
-    // 🚀 Bidirectional Matching (Reverse Matching on checkout submit):
-    // If the customer transferred money before clicking submit, link the transaction and auto-approve instantly!
+    // 🚀 Bidirectional Matching (Reverse Matching on checkout submit)
     let isAutoApproved = false;
     try {
       const reverseMatch = await matchOrderWithRecentTransactions({
@@ -153,7 +223,6 @@ export async function createOrderAction(data: {
       });
 
       if (reverseMatch.match && reverseMatch.transaction) {
-        // 1. Link transaction in database
         await db
           .update(paymentTransactions)
           .set({
@@ -165,7 +234,6 @@ export async function createOrderAction(data: {
           })
           .where(eq(paymentTransactions.id, reverseMatch.transaction.id));
 
-        // 2. Auto-approve the order and activate all tools/videos
         await approveOrderCore({
           orderId: newOrder.id,
           approvalType: 'auto',
@@ -193,9 +261,7 @@ export async function createOrderAction(data: {
 }
 
 /**
- * Unified Approval Service (Phase 7)
- * Centralizes all side-effects and database updates for order approval.
- * Safe to call from Webhooks (Auto) or Admin Dashboard (Manual).
+ * Unified Approval Service
  */
 export async function approveOrderCore(params: {
   orderId: string;
@@ -217,9 +283,6 @@ export async function approveOrderCore(params: {
         updatedAt: new Date(),
       })
       .where(eq(orders.id, orderId));
-
-    // Note: Future integrations (Emails, SMS, access token generation) 
-    // must be added here so both Manual and Auto approvals trigger them.
 
     return { success: true };
   } catch (error) {

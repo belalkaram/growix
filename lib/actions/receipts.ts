@@ -6,12 +6,73 @@ import { orders } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { auth } from '@/lib/auth';
 import { revalidatePath } from 'next/cache';
+import { checkRateLimit } from '@/lib/rate-limit';
 
 /**
- * Server action to upload payment receipt to Cloudflare R2
+ * Validates image buffer magic bytes to ensure file is genuinely an image (PNG, JPEG, WEBP)
+ * and not an executable / script masked with an image extension.
+ */
+function isValidImageSignature(buffer: Buffer): boolean {
+  if (!buffer || buffer.length < 12) return false;
+
+  // PNG signature: 89 50 4E 47 0D 0A 1A 0A
+  const isPng =
+    buffer[0] === 0x89 &&
+    buffer[1] === 0x50 &&
+    buffer[2] === 0x4e &&
+    buffer[3] === 0x47 &&
+    buffer[4] === 0x0d &&
+    buffer[5] === 0x0a &&
+    buffer[6] === 0x1a &&
+    buffer[7] === 0x0a;
+
+  if (isPng) return true;
+
+  // JPEG / JPG signature: FF D8 FF
+  const isJpg = buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff;
+  if (isJpg) return true;
+
+  // WEBP signature: 'RIFF' .... 'WEBP'
+  const isRiff =
+    buffer[0] === 0x52 &&
+    buffer[1] === 0x49 &&
+    buffer[2] === 0x46 &&
+    buffer[3] === 0x46;
+  const isWebp =
+    buffer[8] === 0x57 &&
+    buffer[9] === 0x45 &&
+    buffer[10] === 0x42 &&
+    buffer[11] === 0x50;
+
+  if (isRiff && isWebp) return true;
+
+  return false;
+}
+
+/**
+ * Server action to securely upload payment receipt to Cloudflare R2
  */
 export async function uploadReceiptAction(formData: FormData) {
   try {
+    // 1. Mandatory Session Authentication
+    const session = await auth();
+    if (!session?.user?.id) {
+      return { success: false, error: 'يجب تسجيل الدخول أولاً لإرفاق إيصال التحويل' };
+    }
+
+    // 2. Rate Limiting (Max 5 receipt uploads per 10 mins per user)
+    const rateLimit = await checkRateLimit({
+      action: 'api',
+      maxRequests: 5,
+      windowMs: 10 * 60 * 1000,
+      customIdentifier: `receipt:${session.user.id}`,
+      errorMessage: 'تم إرفاق عدة ملفات مؤخراً. يرجى الانتظار قليلاً أو التواصل مع الدعم الفني.',
+    });
+
+    if (!rateLimit.allowed) {
+      return { success: false, error: rateLimit.error };
+    }
+
     const file = formData.get('file') as File | null;
     const senderNumber = (formData.get('senderNumber') as string) || 'unknown';
 
@@ -19,24 +80,34 @@ export async function uploadReceiptAction(formData: FormData) {
       return { success: false, error: 'لم يتم اختيار ملف الصورة' };
     }
 
-    // Validate size (max 5MB)
+    // 3. Size Validation (Max 5MB)
     if (file.size > 5 * 1024 * 1024) {
-      return { success: false, error: 'حجم الصورة كبير جداً، الحد الأقصى 5 ميجابايت' };
+      return { success: false, error: 'حجم الصورة كبير جداً، الحد الأقصى المسموح به هو 5 ميجابايت' };
     }
 
-    // Validate mime type
-    const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
-    if (!validTypes.includes(file.type.toLowerCase())) {
-      return { success: false, error: 'صيغة الملف غير مدعومة. يرجى رفع صورة (PNG, JPG, WEBP)' };
+    // 4. Mime Type Validation
+    const validMimes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
+    if (!validMimes.includes(file.type.toLowerCase())) {
+      return { success: false, error: 'صيغة الملف غير مدعومة. يرجى رفع صورة بصيغة (PNG, JPG, WEBP)' };
     }
-
-    // Sanitize sender phone for file name
-    const sanitizedPhone = senderNumber.replace(/[^0-9a-zA-Z]/g, '') || 'customer';
-    const ext = file.name.split('.').pop()?.toLowerCase() || 'png';
-    const fileKey = `receipts/${sanitizedPhone}_${Date.now()}.${ext}`;
 
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
+
+    // 5. Deep Magic-Bytes Validation to prevent masked files
+    if (!isValidImageSignature(buffer)) {
+      return {
+        success: false,
+        error: 'الملف المرفق تالف أو ليس صورة صالحة. يرجى التأكد من اختيار صورة صحيحة.',
+      };
+    }
+
+    // 6. Sanitize sender phone for file name and prevent path traversal
+    const sanitizedPhone = senderNumber.replace(/[^0-9a-zA-Z]/g, '') || 'customer';
+    const ext = file.name.split('.').pop()?.toLowerCase() || 'png';
+    const allowedExts = ['png', 'jpg', 'jpeg', 'webp'];
+    const safeExt = allowedExts.includes(ext) ? ext : 'png';
+    const fileKey = `receipts/${sanitizedPhone}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}.${safeExt}`;
 
     const uploadResult = await uploadReceiptToR2(buffer, fileKey, file.type);
 
@@ -64,10 +135,16 @@ export async function deleteReceiptAction(orderId: string, fileKey: string) {
     return { success: false, error: 'غير مصرح بالوصول' };
   }
 
+  // Prevent path traversal on deletion
+  const safeFileKey = (fileKey || '').trim().replace(/\.\./g, '');
+  if (!safeFileKey.startsWith('receipts/')) {
+    return { success: false, error: 'مسار الملف غير صالح' };
+  }
+
   try {
     // 1. Delete from R2 bucket
-    if (fileKey) {
-      await deleteReceiptFromR2(fileKey);
+    if (safeFileKey) {
+      await deleteReceiptFromR2(safeFileKey);
     }
 
     // 2. Remove receipt reference from database order record

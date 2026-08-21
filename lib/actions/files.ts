@@ -175,7 +175,12 @@ export async function deleteDummyFilesAction() {
   try {
     const deleted = await db
       .delete(packageFiles)
-      .where(sql`file_size = '45 MB' OR file_size LIKE '%45 MB%' OR file_key LIKE '%.zip' AND file_key NOT LIKE '%_%' AND file_key NOT LIKE '% %'`)
+      .where(
+        or(
+          eq(packageFiles.fileSize, '45 MB'),
+          sql`${packageFiles.fileSize} LIKE '%45 MB%'`
+        )
+      )
       .returning();
 
     revalidatePath('/admin/files');

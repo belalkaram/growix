@@ -8,6 +8,20 @@ import { approveOrderCore } from '@/lib/actions/orders';
 import { checkRateLimit } from '@/lib/rate-limit';
 import crypto from 'crypto';
 
+/**
+ * Timing-safe constant-time string comparison to prevent timing-attack vulnerability on auth tokens.
+ */
+function timingSafeEqualStr(a: string, b: string): boolean {
+  try {
+    const bufA = Buffer.from(a, 'utf8');
+    const bufB = Buffer.from(b, 'utf8');
+    if (bufA.length !== bufB.length) return false;
+    return crypto.timingSafeEqual(bufA, bufB);
+  } catch {
+    return false;
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
     // 1. HTTPS only validation (if in production)
@@ -15,8 +29,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, status: 'SECURE_CONNECTION_REQUIRED' }, { status: 400 });
     }
 
-    // 2. Authentication
-    const authHeader = req.headers.get('authorization');
+    // 2. Authentication with Timing-Safe Token Check
+    const authHeader = req.headers.get('authorization') || '';
     const expectedSecret = process.env.PAYMENT_WEBHOOK_SECRET || process.env.VODAFONE_CASH_WEBHOOK_SECRET;
     
     if (!expectedSecret) {
@@ -24,7 +38,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, status: 'SERVER_CONFIGURATION_ERROR' }, { status: 500 });
     }
     
-    if (!authHeader || authHeader !== `Bearer ${expectedSecret}`) {
+    const expectedHeader = `Bearer ${expectedSecret}`;
+    if (!authHeader || !timingSafeEqualStr(authHeader, expectedHeader)) {
       return NextResponse.json({ success: false, status: 'UNAUTHORIZED' }, { status: 401 });
     }
 
@@ -119,7 +134,7 @@ export async function POST(req: NextRequest) {
       senderPhone = parsedMsg.senderPhone || 'unknown';
       walletPhone = parsedMsg.walletPhone || 'unknown';
       
-      // PHASE 6: DRY RUN Matching Engine (No Order Mutation)
+      // Matching Engine
       try {
         const matchResult = await matchPayment(parsedMsg);
         statusStr = matchResult.status;
@@ -149,7 +164,7 @@ export async function POST(req: NextRequest) {
         rawTransactionDate: parsedMsg?.rawTransactionDate || null,
         rawTransactionTime: parsedMsg?.rawTransactionTime || null,
         referenceId: parsedMsg?.provider === 'instapay' ? parsedMsg.transactionId : null,
-        rawMessage: rawMessage, // Kept original as received
+        rawMessage: rawMessage,
         status: statusStr,
         matchedOrderId: matchResultDetails?.matchedOrderId || null,
         reviewReason,
@@ -188,10 +203,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, status: 'INTERNAL_DB_ERROR' }, { status: 500 });
     }
 
-    // Safe logging (No secrets, no full raw SMS)
     console.log(`Webhook processed ${detectedProvider}: txId=${transactionId} status=${statusStr} matchedOrderId=${matchResultDetails?.matchedOrderId || 'none'} candidates=${matchResultDetails?.candidateCount || 0}`);
 
-    // Return safe external response
     return NextResponse.json({ success: true, status: statusStr });
     
   } catch (err) {

@@ -9,6 +9,7 @@ import { auth } from '@/lib/auth';
 import { revalidatePath } from 'next/cache';
 import { verifyTurnstileToken } from '@/lib/turnstile';
 import { checkRateLimit } from '@/lib/rate-limit';
+import { isProtectedSuperAdmin } from '@/lib/super-admins';
 import crypto from 'crypto';
 
 const registerSchema = z.object({
@@ -208,6 +209,11 @@ export async function updateUserAction(data: {
     return { success: false, error: 'غير مصرح بالوصول' };
   }
 
+  // Prevent demoting protected Super Admins
+  if (isProtectedSuperAdmin(data.id) && data.role !== 'admin') {
+    return { success: false, error: 'لا يمكن تغيير رتبة حساب Super Admin الأساسي' };
+  }
+
   try {
     const normalizedEmail = data.email.toLowerCase().trim();
     const updatePayload: Record<string, any> = {
@@ -238,6 +244,11 @@ export async function deleteUserAction(userId: string) {
     return { success: false, error: 'غير مصرح بالوصول' };
   }
 
+  // Prevent deleting protected Super Admins
+  if (isProtectedSuperAdmin(userId)) {
+    return { success: false, error: 'لا يمكن حذف حساب Super Admin المحمي' };
+  }
+
   try {
     // Prevent admin from deleting themselves
     if ((session.user as { id?: string }).id === userId) {
@@ -258,6 +269,11 @@ export async function updateUserRole(userId: string, newRole: 'admin' | 'user' |
   const session = await auth();
   if (!session?.user || (session.user as { role?: string }).role !== 'admin') {
     return { success: false, error: 'غير مصرح بالوصول' };
+  }
+
+  // Prevent demoting protected Super Admins
+  if (isProtectedSuperAdmin(userId) && newRole !== 'admin') {
+    return { success: false, error: 'لا يمكن تخفيض صلاحيات Super Admin الأساسي' };
   }
 
   await db

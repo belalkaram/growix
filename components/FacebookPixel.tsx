@@ -37,7 +37,13 @@ export const FacebookPixel: React.FC<FacebookPixelProps> = ({ pixelId, enabled =
     return null;
   }
 
-  const cleanPixelId = pixelId.trim();
+  // Strict sanitization: Meta Pixel IDs are purely numeric strings (10-20 digits).
+  // Stripping anything that is not a digit prevents any potential inline injection.
+  const cleanPixelId = pixelId.trim().replace(/[^0-9]/g, '');
+
+  if (!cleanPixelId || cleanPixelId.length < 5) {
+    return null;
+  }
 
   return (
     <>
@@ -64,7 +70,7 @@ export const FacebookPixel: React.FC<FacebookPixelProps> = ({ pixelId, enabled =
           height="1"
           width="1"
           style={{ display: 'none' }}
-          src={`https://www.facebook.com/tr?id=${cleanPixelId}&ev=PageView&noscript=1`}
+          src={`https://www.facebook.com/tr?id=${encodeURIComponent(cleanPixelId)}&ev=PageView&noscript=1`}
           alt=""
         />
       </noscript>
