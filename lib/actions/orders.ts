@@ -5,7 +5,7 @@ import { orders, users, packages, tools, coupons, couponUsages, paymentTransacti
 import { eq, desc, sql, and, gte, lte } from 'drizzle-orm';
 import { auth } from '@/lib/auth';
 import { revalidatePath } from 'next/cache';
-import { sendTelegramOrderAlert } from '@/lib/telegram';
+import { sendTelegramOrderAlert, sendTelegramOrderStatusAlert } from '@/lib/telegram';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { matchOrderWithRecentTransactions } from '@/lib/payments/matcher';
 import { SITE_CONFIG, SITE_PRICING } from '@/config/site';
@@ -284,6 +284,14 @@ export async function approveOrderCore(params: {
       })
       .where(eq(orders.id, orderId));
 
+    // 🚀 Send Instant Telegram Bot Alert for Order Approval (Non-blocking / Background safe)
+    sendTelegramOrderStatusAlert({
+      orderId,
+      status: 'approved',
+      approvalType,
+      adminNotes,
+    }).catch((err) => console.error('Telegram dispatch error on order approval:', err));
+
     return { success: true };
   } catch (error) {
     console.error('Error in approveOrderCore:', error);
@@ -313,6 +321,13 @@ export async function updateOrderStatusAction(orderId: string, newStatus: 'appro
           updatedAt: new Date(),
         })
         .where(eq(orders.id, orderId));
+
+      // 🚀 Send Instant Telegram Bot Alert for Order Rejection (Non-blocking / Background safe)
+      sendTelegramOrderStatusAlert({
+        orderId,
+        status: 'rejected',
+        adminNotes,
+      }).catch((err) => console.error('Telegram dispatch error on order rejection:', err));
     }
 
     revalidatePath('/admin/orders');
@@ -442,3 +457,144 @@ export async function toggleOrderTestAction(orderId: string, isTest: boolean) {
     return { success: false, error: 'حدث خطأ أثناء تعديل حالة الطلب التجريبي' };
   }
 }
+
+/**
+ * 👑 Admin Manual Order & Subscription Creation for any registered user
+ */
+export async function createAdminManualOrderAction(data: {
+  userId: string;
+  packageId: string;
+  toolId?: string;
+  amount: string;
+  originalAmount?: string;
+  discountAmount?: string;
+  couponCode?: string;
+  paymentMethod?: string;
+  paymentProvider?: string;
+  senderNumber?: string;
+  status: 'pending' | 'approved';
+  isTest?: boolean;
+  adminNotes?: string;
+}) {
+  const session = await auth();
+  if (!session?.user || (session.user as { role?: string }).role !== 'admin') {
+    return { success: false, error: 'غير مصرح بالوصول - يجب تسجيل الدخول كمدير نظام' };
+  }
+
+  if (!data.userId) {
+    return { success: false, error: 'يرجى اختيار المستخدم المسجل أولاً' };
+  }
+
+  if (!data.packageId) {
+    return { success: false, error: 'يرجى تحديد الباقة أو الأداة المطلوبة' };
+  }
+
+  try {
+    // 1. Verify target user exists
+    const [userRecord] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, data.userId))
+      .limit(1);
+
+    if (!userRecord) {
+      return { success: false, error: 'المستخدم المحدد غير موجود في قاعدة البيانات' };
+    }
+
+    // 2. Resolve package and tool names
+    let packageName = 'باقة غير محددة';
+    if (data.packageId === 'bundle-vip') packageName = 'باقة VIP الشاملة (12 أداة + كورس)';
+    else if (data.packageId === 'bundle-premium') packageName = 'باقة Premium (12 أداة + داتا)';
+    else if (data.packageId === 'single-tool') packageName = 'باقة أداة فردية';
+    else {
+      const [customPkg] = await db.select().from(packages).where(eq(packages.id, data.packageId)).limit(1);
+      if (customPkg) packageName = customPkg.name;
+    }
+
+    let toolName: string | undefined = undefined;
+    if (data.toolId) {
+      const [matchedTool] = await db.select().from(tools).where(eq(tools.id, data.toolId)).limit(1);
+      if (matchedTool) {
+        toolName = matchedTool.name;
+      }
+    }
+
+    const isTestOrder = Boolean(data.isTest || userRecord.role === 'test');
+    const finalStatus = data.status || 'approved';
+    const finalPaymentMethod = data.paymentMethod || 'تحويل يدوي / أدمن';
+    const finalSenderNumber = (data.senderNumber && data.senderNumber.trim()) 
+      ? data.senderNumber.trim() 
+      : (userRecord.phone || 'لوحة تحكم الأدمن');
+    const finalNotes = data.adminNotes || (finalStatus === 'approved' ? 'تم إضافة وتفعيل الاشتراك يدوياً بواسطة الأدمن' : 'طلب يدوي مسجل من لوحة الأدمن');
+
+    // 3. Insert order into DB
+    const [newOrder] = await db
+      .insert(orders)
+      .values({
+        userId: userRecord.id,
+        packageId: data.packageId,
+        toolId: data.toolId || null,
+        paymentMethod: finalPaymentMethod,
+        paymentProvider: data.paymentProvider || 'manual',
+        senderNumber: finalSenderNumber,
+        amount: data.amount || '0',
+        originalAmount: data.originalAmount || data.amount || '0',
+        discountAmount: data.discountAmount || null,
+        couponCode: data.couponCode || null,
+        status: finalStatus,
+        approvalType: 'manual',
+        isTest: isTestOrder,
+        adminNotes: finalNotes,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .returning();
+
+    // 4. Send Instant Telegram Bot Alert (Non-blocking)
+    if (finalStatus === 'approved') {
+      sendTelegramOrderStatusAlert({
+        orderId: newOrder.id,
+        status: 'approved',
+        approvalType: 'manual',
+        adminNotes: finalNotes,
+        userName: userRecord.name,
+        userEmail: userRecord.email,
+        userPhone: userRecord.phone,
+        packageName,
+        toolName,
+        amount: newOrder.amount,
+        paymentMethod: finalPaymentMethod,
+        senderNumber: finalSenderNumber,
+        updatedAt: newOrder.updatedAt,
+      }).catch((err) => console.error('Telegram dispatch error on admin manual order approval alert:', err));
+    } else {
+      sendTelegramOrderAlert({
+        orderId: newOrder.id,
+        userName: userRecord.name,
+        userEmail: userRecord.email,
+        userPhone: userRecord.phone,
+        packageName,
+        toolName,
+        amount: newOrder.amount,
+        originalAmount: data.originalAmount,
+        discountAmount: data.discountAmount,
+        couponCode: data.couponCode,
+        paymentMethod: finalPaymentMethod,
+        senderNumber: finalSenderNumber,
+        createdAt: newOrder.createdAt,
+      }).catch((err) => console.error('Telegram dispatch error on admin manual order alert:', err));
+    }
+
+    revalidatePath('/admin/orders');
+    revalidatePath('/admin/users');
+    revalidatePath('/admin/analytics');
+    revalidatePath('/admin');
+    revalidatePath('/my-orders');
+
+    return { success: true, orderId: newOrder.id };
+  } catch (error: any) {
+    console.error('Error in createAdminManualOrderAction:', error);
+    return { success: false, error: 'حدث خطأ أثناء إضافة طلب الاشتراك للمستخدم' };
+  }
+}
+

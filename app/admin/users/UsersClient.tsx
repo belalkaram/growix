@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { deleteUserAction, updateUserRole } from '@/lib/actions/users';
 import { CreateUserModal } from './CreateUserModal';
 import { EditUserModal } from './EditUserModal';
+import { CreateOrderModal, PackageOption, ToolOption } from '@/app/admin/orders/CreateOrderModal';
 import { 
   Users, 
   UserPlus, 
@@ -21,7 +22,8 @@ import {
   Mail,
   Calendar,
   Beaker,
-  User
+  User,
+  PackagePlus
 } from 'lucide-react';
 
 interface UserRecord {
@@ -34,7 +36,17 @@ interface UserRecord {
   lastLoginAt: Date | null;
 }
 
-export const UsersClient: React.FC<{ initialUsers: UserRecord[] }> = ({ initialUsers }) => {
+interface UsersClientProps {
+  initialUsers: UserRecord[];
+  toolsList?: ToolOption[];
+  packagesList?: PackageOption[];
+}
+
+export const UsersClient: React.FC<UsersClientProps> = ({ 
+  initialUsers,
+  toolsList = [],
+  packagesList = [],
+}) => {
   const router = useRouter();
   const [usersList, setUsersList] = useState<UserRecord[]>(initialUsers);
   const [searchQuery, setSearchQuery] = useState('');
@@ -42,6 +54,7 @@ export const UsersClient: React.FC<{ initialUsers: UserRecord[] }> = ({ initialU
   
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<UserRecord | null>(null);
+  const [orderModalUser, setOrderModalUser] = useState<UserRecord | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const filteredUsers = usersList.filter((u) => {
@@ -218,11 +231,21 @@ export const UsersClient: React.FC<{ initialUsers: UserRecord[] }> = ({ initialU
                     </td>
 
                     <td className="p-4">
-                      <div className="flex items-center justify-center gap-2">
+                      <div className="flex items-center justify-center gap-1.5 flex-wrap">
+                        {/* Add Subscription Order Button */}
+                        <button
+                          onClick={() => setOrderModalUser(u)}
+                          className="px-2.5 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-[#2ECC8F] border border-emerald-500/30 text-[11px] font-bold flex items-center gap-1 transition-all shadow-sm hover:scale-[1.02] active:scale-95 cursor-pointer"
+                          title="إضافة وتفعيل اشتراك لهذا المستخدم"
+                        >
+                          <PackagePlus className="w-3.5 h-3.5" />
+                          <span>+ اشتراك</span>
+                        </button>
+
                         {/* Edit Button */}
                         <button
                           onClick={() => setEditingUser(u)}
-                          className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-blue-400 hover:text-blue-300 transition-colors cursor-pointer"
+                          className="p-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-blue-400 hover:text-blue-300 transition-colors cursor-pointer"
                           title="تعديل بيانات المستخدم وكلمة المرور"
                         >
                           <Edit className="w-4 h-4" />
@@ -232,7 +255,7 @@ export const UsersClient: React.FC<{ initialUsers: UserRecord[] }> = ({ initialU
                         <button
                           onClick={() => handleDelete(u.id, u.name)}
                           disabled={deletingId === u.id}
-                          className="p-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 transition-colors disabled:opacity-50 cursor-pointer"
+                          className="p-1.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 transition-colors disabled:opacity-50 cursor-pointer"
                           title="حذف المستخدم نهائياً"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -261,6 +284,21 @@ export const UsersClient: React.FC<{ initialUsers: UserRecord[] }> = ({ initialU
           user={editingUser}
           onClose={() => setEditingUser(null)}
           onUserUpdated={() => router.refresh()}
+        />
+      )}
+
+      {/* CREATE ORDER / SUBSCRIPTION FOR USER MODAL */}
+      {orderModalUser && (
+        <CreateOrderModal
+          isOpen={Boolean(orderModalUser)}
+          onClose={() => setOrderModalUser(null)}
+          onOrderCreated={() => {
+            router.refresh();
+          }}
+          users={usersList}
+          packages={packagesList}
+          tools={toolsList}
+          initialUserId={orderModalUser.id}
         />
       )}
     </div>

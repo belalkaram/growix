@@ -1,9 +1,9 @@
 import { db } from '@/db';
-import { siteSettings } from '@/db/schema';
-import { inArray } from 'drizzle-orm';
+import { siteSettings, orders, users, packages, tools } from '@/db/schema';
+import { inArray, eq } from 'drizzle-orm';
 import { decryptSensitiveData } from '@/lib/encryption';
 
-interface TelegramOrderPayload {
+export interface TelegramOrderPayload {
   orderId: string;
   userName: string;
   userEmail: string;
@@ -19,15 +19,35 @@ interface TelegramOrderPayload {
   createdAt?: Date;
 }
 
+export interface TelegramOrderStatusPayload {
+  orderId: string;
+  status: 'approved' | 'rejected';
+  approvalType?: 'manual' | 'auto';
+  adminNotes?: string | null;
+  userName?: string;
+  userEmail?: string;
+  userPhone?: string | null;
+  packageName?: string;
+  toolName?: string | null;
+  amount?: string;
+  originalAmount?: string | null;
+  discountAmount?: string | null;
+  couponCode?: string | null;
+  paymentMethod?: string;
+  senderNumber?: string;
+  updatedAt?: Date;
+}
+
 export async function getTelegramCredentials() {
   let token = process.env.TELEGRAM_BOT_TOKEN || '';
   let chatId = process.env.TELEGRAM_CHAT_ID || '';
+  let alertsEnabled = true;
 
   try {
     const settings = await db
       .select()
       .from(siteSettings)
-      .where(inArray(siteSettings.key, ['telegram_bot_token', 'telegram_chat_id']));
+      .where(inArray(siteSettings.key, ['telegram_bot_token', 'telegram_chat_id', 'telegram_alerts_enabled']));
 
     for (const s of settings) {
       if (s.key === 'telegram_bot_token' && s.value) {
@@ -36,16 +56,24 @@ export async function getTelegramCredentials() {
       if (s.key === 'telegram_chat_id' && s.value) {
         chatId = decryptSensitiveData(s.value.trim());
       }
+      if (s.key === 'telegram_alerts_enabled') {
+        alertsEnabled = s.value !== 'false';
+      }
     }
   } catch (err) {
     console.error('Error fetching telegram credentials from db:', err);
   }
 
-  return { token, chatId };
+  return { token, chatId, alertsEnabled };
 }
 
 export async function sendTelegramOrderAlert(payload: TelegramOrderPayload): Promise<{ success: boolean; error?: string }> {
-  const { token, chatId } = await getTelegramCredentials();
+  const { token, chatId, alertsEnabled } = await getTelegramCredentials();
+
+  if (!alertsEnabled) {
+    console.log('ℹ️ Telegram alerts are disabled in site settings. Skipping alert.');
+    return { success: true };
+  }
 
   if (!token || !chatId) {
     console.log('⚠️ Telegram bot credentials not configured. Skipping alert.');
@@ -117,6 +145,156 @@ export async function sendTelegramOrderAlert(payload: TelegramOrderPayload): Pro
   }
 }
 
+export async function sendTelegramOrderStatusAlert(payload: TelegramOrderStatusPayload): Promise<{ success: boolean; error?: string }> {
+  const { token, chatId, alertsEnabled } = await getTelegramCredentials();
+
+  if (!alertsEnabled) {
+    console.log('ℹ️ Telegram alerts are disabled in site settings. Skipping status alert.');
+    return { success: true };
+  }
+
+  if (!token || !chatId) {
+    console.log('⚠️ Telegram bot credentials not configured. Skipping status alert.');
+    return { success: false, error: 'Telegram credentials not configured' };
+  }
+
+  try {
+    let userName = payload.userName;
+    let userEmail = payload.userEmail;
+    let userPhone = payload.userPhone;
+    let packageName = payload.packageName;
+    let toolName = payload.toolName;
+    let amount = payload.amount;
+    let paymentMethod = payload.paymentMethod;
+    let senderNumber = payload.senderNumber;
+    let couponCode = payload.couponCode;
+
+    // If details are missing, fetch complete order and user details from DB
+    if (!userName || !amount || !packageName) {
+      try {
+        const [ord] = await db
+          .select({
+            order: orders,
+            user: users,
+          })
+          .from(orders)
+          .leftJoin(users, eq(orders.userId, users.id))
+          .where(eq(orders.id, payload.orderId))
+          .limit(1);
+
+        if (ord) {
+          userName = userName || ord.user?.name || 'عميل GROWIX';
+          userEmail = userEmail || ord.user?.email || '—';
+          userPhone = userPhone || ord.user?.phone || null;
+          amount = amount || ord.order.amount;
+          paymentMethod = paymentMethod || (ord.order.paymentMethod === 'instapay' ? 'إنستاباي (InstaPay)' : 'محفظة إلكترونية');
+          senderNumber = senderNumber || ord.order.senderNumber;
+          couponCode = couponCode || ord.order.couponCode;
+
+          if (!packageName) {
+            if (ord.order.packageId === 'bundle-vip') packageName = 'باقة VIP الشاملة (12 أداة + كورس)';
+            else if (ord.order.packageId === 'bundle-premium') packageName = 'باقة Premium (12 أداة + داتا)';
+            else if (ord.order.packageId === 'single-tool') packageName = 'باقة أداة فردية';
+            else {
+              const [customPkg] = await db.select().from(packages).where(eq(packages.id, ord.order.packageId)).limit(1);
+              packageName = customPkg ? customPkg.name : ord.order.packageId;
+            }
+          }
+
+          if (ord.order.toolId && !toolName) {
+            const [matchedTool] = await db.select().from(tools).where(eq(tools.id, ord.order.toolId)).limit(1);
+            if (matchedTool) {
+              toolName = matchedTool.name;
+            }
+          }
+        }
+      } catch (dbErr) {
+        console.error('Error fetching order details for telegram status alert:', dbErr);
+      }
+    }
+
+    const dateStr = (payload.updatedAt ? new Date(payload.updatedAt) : new Date()).toLocaleString('ar-EG', {
+      timeZone: 'Africa/Cairo',
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    });
+
+    const isApproved = payload.status === 'approved';
+    const isAuto = payload.approvalType === 'auto';
+
+    const toolLine = toolName ? `\n🛠 <b>البرنامج المختار:</b> ${toolName}` : '';
+    const phoneLine = userPhone ? `\n📱 <b>هاتف الحساب:</b> <code>${userPhone}</code>` : '';
+    const couponLine = couponCode ? `\n🎟 <b>الكوبون:</b> <code>${couponCode}</code>` : '';
+    const notesLine = payload.adminNotes ? `\n📝 <b>ملاحظات الإدارة:</b> <i>${payload.adminNotes}</i>` : '';
+
+    let message = '';
+    if (isApproved) {
+      message = `
+✅ <b>تم قبول وتفعيل طلب الاشتراك في GROWIX!</b>
+━━━━━━━━━━━━━━━━━━━━
+🆔 <b>رقم الطلب:</b> <code>${payload.orderId}</code>
+⏰ <b>وقت التفعيل:</b> ${dateStr}
+
+👤 <b>بيانات المشترك:</b>
+• <b>الاسم:</b> ${userName || 'عميل GROWIX'}
+• <b>البريد:</b> <code>${userEmail || '—'}</code>${phoneLine}
+
+📦 <b>تفاصيل الاشتراك المُفعل:</b>
+• <b>الباقة:</b> ${packageName || 'باقة غير محددة'}${toolLine}
+• <b>المبلغ:</b> <b>${amount || '0'} جنية</b>${couponLine}
+• <b>طريقة الدفع:</b> ${paymentMethod || 'تحويل إلكتروني'} (<code>${senderNumber || '—'}</code>)
+
+⚡ <b>طريقة التفعيل:</b> ${isAuto ? '🤖 تفعيل تلقائي فوري (Webhook / Auto-Match)' : '👤 تفعيل يدوي من لوحة التحكم (Admin)'}
+${notesLine}
+━━━━━━━━━━━━━━━━━━━━
+🎉 <i>تم تفعيل الحساب والصلاحيات بالكامل بنجاح للمشترك.</i>
+      `.trim();
+    } else {
+      message = `
+❌ <b>تم رفض طلب الاشتراك في GROWIX</b>
+━━━━━━━━━━━━━━━━━━━━
+🆔 <b>رقم الطلب:</b> <code>${payload.orderId}</code>
+⏰ <b>وقت الرفض:</b> ${dateStr}
+
+👤 <b>بيانات العميل:</b>
+• <b>الاسم:</b> ${userName || 'عميل GROWIX'}
+• <b>البريد:</b> <code>${userEmail || '—'}</code>${phoneLine}
+
+📦 <b>تفاصيل الطلب:</b>
+• <b>الباقة:</b> ${packageName || 'باقة غير محددة'}${toolLine}
+• <b>المبلغ:</b> <b>${amount || '0'} جنية</b>
+• <b>طريقة الدفع:</b> ${paymentMethod || 'تحويل إلكتروني'} (<code>${senderNumber || '—'}</code>)
+
+🚫 <b>الحالة الجديدة:</b> مرفوض (Rejected)
+${notesLine}
+━━━━━━━━━━━━━━━━━━━━
+⚠️ <i>تم رفض الطلب ولن يتم تفعيل الصلاحيات للحساب.</i>
+      `.trim();
+    }
+
+    const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text: message,
+        parse_mode: 'HTML',
+      }),
+    });
+
+    const data = await res.json();
+    if (!data.ok) {
+      console.error('Telegram API error (status alert):', data);
+      return { success: false, error: data.description || 'Telegram API error' };
+    }
+
+    return { success: true };
+  } catch (err: any) {
+    console.error('Failed to send Telegram status alert:', err);
+    return { success: false, error: err?.message || 'Network error' };
+  }
+}
+
 export async function testTelegramConnectionAction(token?: string, chatId?: string): Promise<{ success: boolean; message: string }> {
   let targetToken = token;
   let targetChatId = chatId;
@@ -156,3 +334,4 @@ export async function testTelegramConnectionAction(token?: string, chatId?: stri
     return { success: false, message: `خطأ في الاتصال: ${err.message}` };
   }
 }
+
