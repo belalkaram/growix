@@ -275,7 +275,7 @@ export const ToolsGridSection: React.FC<ToolsGridSectionProps> = ({
                   استكشف كل أدوات GROWIX الـ 12
                 </h3>
                 <p className="text-xs text-gray-300 mb-4 leading-relaxed font-medium">
-                  مجموعات المراسلات، أتمتة السوشيال، سحب الداتا، المونتاج بالذكاء الاصطناعي بديل كانفا والمزيد.
+                  مجموعات المراسلات، أتمتة السوشيال، سحب الداتا، المونتاج بالذكاء الاصطناعي، Socinator Dominator والمزيد.
                 </p>
                 <div className="space-y-2 text-xs text-emerald-300 font-semibold mb-6">
                   <div className="flex items-center gap-2">✓ البحث والتصفية حسب الفئة</div>

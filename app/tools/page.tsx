@@ -6,11 +6,11 @@ import { Footer } from '@/components/Footer';
 
 export const metadata: Metadata = {
   title: 'جميع أدوات التسويق الإلكتروني | 12 برنامج تسويق احترافي | GROWIX',
-  description: 'اكتشف الـ 12 أداة تسويقية الاحترافية من GROWIX — واتساب ماركتنج، تليجرام، فيسبوك بوت، انستجرام، Data Scraper، AI Video، بديل كانفا ومزيد. أدوات التسويق الإلكتروني الشاملة.',
+  description: 'اكتشف الـ 12 أداة تسويقية الاحترافية من GROWIX — واتساب ماركتنج، تليجرام، فيسبوك بوت، انستجرام، Data Scraper، Socinator Dominator، Keyword Researcher ومزيد. أدوات التسويق الإلكتروني الشاملة.',
   keywords: [
     'أدوات التسويق الإلكتروني', 'برامج التسويق الإلكتروني', 'أدوات تسويق رقمي',
     'واتساب ماركتنج', 'تليجرام ماركتنج', 'فيسبوك بوت', 'انستجرام بوت',
-    'سحب الداتا', 'Data Scraper', 'AI Marketing Tools', 'بديل كانفا',
+    'سحب الداتا', 'Data Scraper', 'AI Marketing Tools', 'Socinator Dominator', 'Keyword Researcher Pro',
     'مونتاج فيديو', 'أتمتة السوشيال ميديا', 'GROWIX tools',
     'Marketing Tools Egypt', 'أفضل أدوات التسويق',
   ],
@@ -97,7 +97,7 @@ export default async function ToolsIndexPage() {
               <span className="text-[#2ECC8F]">الـ 12 أداة الاحترافية</span>
             </h1>
             <p className="text-gray-300 text-base sm:text-lg leading-relaxed max-w-2xl mx-auto mb-8">
-              واتساب ماركتنج، تليجرام، فيسبوك، انستجرام، تيك توك، سحب داتا، بديل كانفا، مونتاج فيديو، AI وأكثر — كل ده في مكان واحد.
+              واتساب ماركتنج، تليجرام، فيسبوك، انستجرام، تيك توك، سحب داتا، Socinator Dominator، مونتاج فيديو، AI وأكثر — كل ده في مكان واحد.
             </p>
             <a
               href="/checkout?package=bundle-vip"

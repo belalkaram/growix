@@ -72,7 +72,7 @@ const FILE_RECORDS = [
   {
     packageId: 'bundle-vip',
     toolId: 'reach-booster',
-    fileName: 'أداة زيادة نسبة الوصول (Keyword Researcher Pro)',
+    fileName: 'Keyword Researcher Pro (باحث الكلمات المفتاحية)',
     fileKey: 'Keyword Researcher Pro v13.259 Full Activated - .zip',
     fileSize: '61.6 MB',
     fileType: 'zip',
@@ -84,7 +84,7 @@ const FILE_RECORDS = [
   {
     packageId: 'bundle-vip',
     toolId: 'canva-alternative',
-    fileName: 'بديل كانفا + أتمتة السوشيال ميديا (Socinator Dominator)',
+    fileName: 'Socinator Dominator Enterprise (أتمتة السوشيال ميديا الشاملة)',
     fileKey: 'Socinator Dominator Enterprise v1.0.0.172 Full Activated - .zip',
     fileSize: '222.6 MB',
     fileType: 'zip',

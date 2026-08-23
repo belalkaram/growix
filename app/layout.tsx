@@ -48,9 +48,9 @@ export const metadata: Metadata = {
     // AI
     'أدوات الذكاء الاصطناعي للتسويق', 'AI Marketing Tools', 'توليد فيديو بالذكاء الاصطناعي',
     // Design
-    'بديل كانفا', 'برنامج مونتاج فيديو', 'Canva Alternative',
+    'Socinator Dominator Enterprise', 'بديل كانفا', 'برنامج مونتاج فيديو', 'Canva Alternative',
     // Reach
-    'زيادة الريتش', 'Reach Booster', 'زيادة وصول المنشورات',
+    'زيادة الريتش', 'Keyword Researcher Pro', 'Reach Booster', 'زيادة وصول المنشورات',
   ],
   alternates: {
     canonical: '/',

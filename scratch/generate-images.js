@@ -133,15 +133,15 @@ const main = async () => {
     },
     {
       file: 'reach-booster.webp',
-      title: 'Reach Booster Tool',
+      title: 'Keyword Researcher Pro',
       sub: 'استخراج الكلمات المفتاحية والهاشتاجات لمضاعفة الريتش والوصول',
-      badge: 'أداة زيادة الريتش'
+      badge: 'باحث الكلمات المفتاحية'
     },
     {
       file: 'canva-alternative.webp',
-      title: 'Canva Pro Alternative',
-      sub: 'تصميم الإعلانات والبوستات وإزالة الخلفيات بدون اشتراك شهري',
-      badge: 'بديل كانفا برو'
+      title: 'Socinator Dominator Enterprise',
+      sub: 'أتمتة السوشيال ميديا الشاملة مع تصميم الإعلانات والمحتوى',
+      badge: 'أتمتة + تصميم'
     },
     {
       file: 'video-editor.webp',
