@@ -624,27 +624,48 @@ export const MyOrdersPageClient: React.FC<MyOrdersPageClientProps> = ({ orders, 
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs no-scrollbar">
-                          {[
-                            { id: 'all', label: 'الكل' },
-                            { id: 'whatsapp', label: 'واتساب' },
-                            { id: 'telegram', label: 'تليجرام' },
-                            { id: 'facebook', label: 'فيسبوك' },
-                            { id: 'design', label: 'تصميم ومونتاج' },
-                            { id: 'apk', label: 'تطبيقات أندرويد' },
-                          ].map((cat) => (
+                        <div className="flex items-center justify-between gap-2 overflow-x-auto pb-1 text-xs no-scrollbar">
+                          <div className="flex items-center gap-2">
+                            {[
+                              { id: 'all', label: 'الكل' },
+                              { id: 'whatsapp', label: 'واتساب' },
+                              { id: 'telegram', label: 'تليجرام' },
+                              { id: 'facebook', label: 'فيسبوك' },
+                              { id: 'design', label: 'تصميم ومونتاج' },
+                              { id: 'apk', label: 'تطبيقات أندرويد' },
+                            ].map((cat) => (
+                              <button
+                                key={cat.id}
+                                type="button"
+                                onClick={() => setSelectedCategory(cat.id)}
+                                className={`px-3.5 py-1.5 rounded-xl font-bold whitespace-nowrap transition-colors cursor-pointer ${selectedCategory === cat.id
+                                  ? 'bg-[#0B1220] text-white'
+                                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                  }`}
+                              >
+                                {cat.label}
+                              </button>
+                            ))}
+                          </div>
+
+                          {filteredTools.length > 0 && (
                             <button
-                              key={cat.id}
                               type="button"
-                              onClick={() => setSelectedCategory(cat.id)}
-                              className={`px-3.5 py-1.5 rounded-xl font-bold whitespace-nowrap transition-colors cursor-pointer ${selectedCategory === cat.id
-                                ? 'bg-[#0B1220] text-white'
-                                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                                }`}
+                              onClick={() => {
+                                filteredTools.forEach((f: any, idx: number) => {
+                                  setTimeout(() => {
+                                    handleFileDownload(f.fileKey);
+                                    window.open(`/api/download?orderId=${ord.id}&fileKey=${encodeURIComponent(f.fileKey)}`, '_blank');
+                                  }, idx * 600);
+                                });
+                              }}
+                              className="px-3.5 py-1.5 rounded-xl font-black text-[11px] bg-[#0F9D58]/10 text-[#0F9D58] hover:bg-[#0F9D58] hover:text-white border border-[#0F9D58]/20 transition-all flex items-center gap-1.5 shrink-0 cursor-pointer mr-auto"
+                              title="بدء تحميل جميع البرامج المعروضة في تبويبات منفصلة"
                             >
-                              {cat.label}
+                              <FolderDown className="w-3.5 h-3.5" />
+                              <span>تحميل المعروض ({filteredTools.length})</span>
                             </button>
-                          ))}
+                          )}
                         </div>
 
                         {filteredTools.length > 0 ? (

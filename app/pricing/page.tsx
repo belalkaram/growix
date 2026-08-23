@@ -7,6 +7,7 @@ import { MaintenanceScreen } from '@/components/MaintenanceScreen';
 import { HeaderNavbar } from '@/components/HeaderNavbar';
 import { Footer } from '@/components/Footer';
 import { PricingSection } from '@/components/PricingSection';
+import { FaqSection } from '@/components/FaqSection';
 import { FloatingElements } from '@/components/FloatingElements';
 import { Zap, ShieldCheck, Check, Sparkles } from 'lucide-react';
 
@@ -160,6 +161,9 @@ export default async function PricingPage() {
           </div>
         </div>
       </section>
+
+      {/* Pricing FAQs */}
+      <FaqSection />
 
       {/* Guarantee Section */}
       <section className="py-16 bg-[#0B1220] text-white text-center">
