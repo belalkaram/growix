@@ -254,4 +254,23 @@ export const securityLogs = pgTable('security_logs', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
+// 16. Abandoned Checkouts Table (Users who entered phone/started checkout but dropped off)
+export const abandonedCheckouts = pgTable('abandoned_checkouts', {
+  id: serial('id').primaryKey(),
+  sessionId: varchar('session_id', { length: 100 }).notNull(),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'set null' }),
+  phone: varchar('phone', { length: 50 }).notNull(),
+  packageId: varchar('package_id', { length: 100 }),
+  toolId: varchar('tool_id', { length: 100 }),
+  amount: varchar('amount', { length: 50 }),
+  couponCode: varchar('coupon_code', { length: 50 }),
+  ip: varchar('ip', { length: 100 }),
+  userAgent: text('user_agent'),
+  isCompleted: boolean('is_completed').default(false).notNull(), // Becomes true when an order is submitted
+  lastStep: integer('last_step').default(3).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+
 

@@ -23,7 +23,8 @@ import {
   Calendar,
   Beaker,
   User,
-  PackagePlus
+  PackagePlus,
+  Send
 } from 'lucide-react';
 
 interface UserRecord {
@@ -40,22 +41,27 @@ interface UsersClientProps {
   initialUsers: UserRecord[];
   toolsList?: ToolOption[];
   packagesList?: PackageOption[];
+  paidUserIds?: string[];
 }
 
 export const UsersClient: React.FC<UsersClientProps> = ({ 
   initialUsers,
   toolsList = [],
   packagesList = [],
+  paidUserIds = [],
 }) => {
   const router = useRouter();
   const [usersList, setUsersList] = useState<UserRecord[]>(initialUsers);
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState<'all' | 'admin' | 'user' | 'test'>('all');
+  const [purchaseFilter, setPurchaseFilter] = useState<'all' | 'paid' | 'unpaid'>('all');
   
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<UserRecord | null>(null);
   const [orderModalUser, setOrderModalUser] = useState<UserRecord | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const paidSet = new Set(paidUserIds);
 
   const filteredUsers = usersList.filter((u) => {
     const matchesSearch = 
@@ -64,7 +70,13 @@ export const UsersClient: React.FC<UsersClientProps> = ({
       (u.phone && u.phone.includes(searchQuery));
 
     const matchesRole = roleFilter === 'all' || u.role === roleFilter;
-    return matchesSearch && matchesRole;
+    const isPaid = paidSet.has(u.id);
+    const matchesPurchase = 
+      purchaseFilter === 'all' || 
+      (purchaseFilter === 'paid' && isPaid) || 
+      (purchaseFilter === 'unpaid' && !isPaid);
+
+    return matchesSearch && matchesRole && matchesPurchase;
   });
 
   const handleDelete = async (userId: string, userName: string) => {
@@ -134,18 +146,32 @@ export const UsersClient: React.FC<UsersClientProps> = ({
           />
         </div>
 
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          <Filter className="w-4 h-4 text-gray-400" />
-          <select
-            value={roleFilter}
-            onChange={(e) => setRoleFilter(e.target.value as any)}
-            className="px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-xs font-bold text-white focus:outline-none focus:border-[#2ECC8F] cursor-pointer"
-          >
-            <option value="all" className="bg-[#0F172A] text-white">جميع الأدوار ({usersList.length})</option>
-            <option value="user" className="bg-[#0F172A] text-white">مستخدمين حقيقيين ({usersList.filter(u => u.role === 'user').length})</option>
-            <option value="test" className="bg-[#0F172A] text-white">مستخدمين تجريبيين ({usersList.filter(u => u.role === 'test').length})</option>
-            <option value="admin" className="bg-[#0F172A] text-white">المدراء فقط ({usersList.filter(u => u.role === 'admin').length})</option>
-          </select>
+        <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap">
+          <div className="flex items-center gap-1.5 bg-white/5 px-2.5 py-1.5 rounded-xl border border-white/10">
+            <Filter className="w-3.5 h-3.5 text-gray-400" />
+            <select
+              value={roleFilter}
+              onChange={(e) => setRoleFilter(e.target.value as any)}
+              className="bg-transparent text-xs font-bold text-white focus:outline-none cursor-pointer"
+            >
+              <option value="all" className="bg-[#0F172A] text-white">الأدوار: الكل ({usersList.length})</option>
+              <option value="user" className="bg-[#0F172A] text-white">مستخدمين ({usersList.filter(u => u.role === 'user').length})</option>
+              <option value="test" className="bg-[#0F172A] text-white">تجريبيين ({usersList.filter(u => u.role === 'test').length})</option>
+              <option value="admin" className="bg-[#0F172A] text-white">المدراء ({usersList.filter(u => u.role === 'admin').length})</option>
+            </select>
+          </div>
+
+          <div className="flex items-center gap-1.5 bg-white/5 px-2.5 py-1.5 rounded-xl border border-white/10">
+            <select
+              value={purchaseFilter}
+              onChange={(e) => setPurchaseFilter(e.target.value as any)}
+              className="bg-transparent text-xs font-bold text-white focus:outline-none cursor-pointer"
+            >
+              <option value="all" className="bg-[#0F172A] text-white">الاشتراك: الكل</option>
+              <option value="paid" className="bg-[#0F172A] text-white">مشتركون بالفعل ({paidUserIds.length})</option>
+              <option value="unpaid" className="bg-[#0F172A] text-white">مسجلون بدون شراء ({usersList.filter(u => u.role === 'user' && !paidSet.has(u.id)).length})</option>
+            </select>
+          </div>
         </div>
       </div>
 
@@ -158,6 +184,7 @@ export const UsersClient: React.FC<UsersClientProps> = ({
                 <th className="p-4">الاسم والبيانات</th>
                 <th className="p-4">البريد الإلكتروني</th>
                 <th className="p-4">رقم الهاتف</th>
+                <th className="p-4 text-center">حالة الشراء</th>
                 <th className="p-4 text-center">الدور والصلاحية</th>
                 <th className="p-4">تاريخ التسجيل</th>
                 <th className="p-4 text-center">الإجراءات والتحكم</th>
@@ -192,7 +219,23 @@ export const UsersClient: React.FC<UsersClientProps> = ({
                     <td className="p-4 text-gray-300 font-mono">{u.email}</td>
                     
                     <td className="p-4 text-gray-300 font-mono">
-                      {u.phone ? u.phone : <span className="text-gray-500">—</span>}
+                      {u.phone ? (
+                        <span className="text-amber-300 font-bold">{u.phone}</span>
+                      ) : (
+                        <span className="text-gray-500">—</span>
+                      )}
+                    </td>
+
+                    <td className="p-4 text-center">
+                      {paidSet.has(u.id) ? (
+                        <span className="px-2.5 py-1 rounded-full text-[10px] font-black bg-emerald-500/20 text-[#2ECC8F] border border-emerald-500/30">
+                          ✓ مشترك
+                        </span>
+                      ) : (
+                        <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-gray-500/20 text-gray-400 border border-white/10">
+                          لم يشترك بعد
+                        </span>
+                      )}
                     </td>
 
                     <td className="p-4 text-center">
@@ -232,6 +275,19 @@ export const UsersClient: React.FC<UsersClientProps> = ({
 
                     <td className="p-4">
                       <div className="flex items-center justify-center gap-1.5 flex-wrap">
+                        {/* WhatsApp Direct Chat Button */}
+                        {u.phone && (
+                          <a
+                            href={`https://wa.me/${u.phone.replace(/[^0-9]/g, '').startsWith('01') ? '2' + u.phone.replace(/[^0-9]/g, '') : u.phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`مرحباً ${u.name}، أهلاً بك في منصة GROWIX! هل لديك أي استفسار حول البرامج أو العروض المتاحة؟`)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="p-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-[#2ECC8F] transition-colors"
+                            title="مراسلة على واتساب"
+                          >
+                            <Send className="w-4 h-4" />
+                          </a>
+                        )}
+
                         {/* Add Subscription Order Button */}
                         <button
                           onClick={() => setOrderModalUser(u)}

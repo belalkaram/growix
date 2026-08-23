@@ -2,6 +2,7 @@ import React, { Suspense } from 'react';
 import { getAnalyticsSummary } from '@/lib/queries/analytics';
 import { AdvancedDateFilter } from './AdvancedDateFilter';
 import { ResetAnalyticsModal } from './ResetAnalyticsModal';
+import { LeadRecoveryCenter } from './LeadRecoveryCenter';
 import { 
   BarChart3, 
   Eye, 
@@ -352,6 +353,13 @@ export default async function AdminAnalyticsPage({
         </div>
 
       </div>
+
+      {/* 🎯 LEAD RECOVERY & RETARGETING CENTER (ABANDONED CHECKOUTS + REGISTERED NON-BUYERS + PRICING DROP-OFFS) */}
+      <LeadRecoveryCenter 
+        abandonedCheckouts={analytics.abandonedCheckoutsList}
+        registeredNonBuyers={analytics.registeredNonBuyers}
+        pricingFunnel={analytics.pricingFunnel}
+      />
 
       {/* ⏰ HOURLY TRAFFIC & PEAK BUYING HOURS HEATMAP */}
       <div className="p-6 sm:p-7 rounded-3xl bg-[#0F172A] border border-white/10 space-y-6 shadow-xl">

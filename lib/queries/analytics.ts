@@ -1,6 +1,6 @@
 import { db } from '@/db';
-import { pageViews, orders, users } from '@/db/schema';
-import { desc, count, sql, and, gte, lte, eq, not } from 'drizzle-orm';
+import { pageViews, orders, users, abandonedCheckouts, packages, tools } from '@/db/schema';
+import { desc, count, sql, and, gte, lte, eq, not, isNull } from 'drizzle-orm';
 import { auth } from '@/lib/auth';
 
 export interface AnalyticsFilters {
@@ -13,6 +13,36 @@ export interface AnalyticsFilters {
   path?: string;
   includeAdminTraffic?: boolean;
   includeTestOrders?: boolean;
+}
+
+export interface AbandonedCheckoutLead {
+  id: number;
+  phone: string;
+  packageId: string | null;
+  packageName: string;
+  toolId: string | null;
+  amount: string | null;
+  couponCode: string | null;
+  lastStep: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface RegisteredNonBuyer {
+  id: string;
+  name: string;
+  email: string;
+  phone: string | null;
+  createdAt: Date;
+  lastLoginAt: Date | null;
+}
+
+export interface PricingFunnelReport {
+  pricingViews: number;
+  pricingUniqueSessions: number;
+  pricingDropoffs: number;
+  pricingDropoffRate: number;
+  pricingToCheckoutSessions: number;
 }
 
 export interface ShopifyAnalyticsReport {
@@ -31,6 +61,13 @@ export interface ShopifyAnalyticsReport {
   abandonedCheckoutSessions: number;
   abandonmentRate: number;
   conversionRate: number;
+
+  // Pricing Page Specific Funnel
+  pricingFunnel: PricingFunnelReport;
+
+  // Lead Recovery & Retargeting
+  registeredNonBuyers: RegisteredNonBuyer[];
+  abandonedCheckoutsList: AbandonedCheckoutLead[];
 
   // Financials
   totalRevenue: number;
@@ -224,7 +261,93 @@ export async function getAnalyticsSummary(filters: AnalyticsFilters = {}): Promi
       ? parseFloat(((totalOrdersPlaced / uniqueSessions) * 100).toFixed(1))
       : 0;
 
-    // 8. Top Visited Pages with Avg Duration
+    // 8. Pricing Page Specific Funnel
+    const pricingConditions = [...pvConditions, eq(pageViews.path, '/pricing')];
+    const [{ pricingViewsRaw }] = await db
+      .select({ pricingViewsRaw: count() })
+      .from(pageViews)
+      .where(and(...pricingConditions));
+
+    const [{ pricingSessionsRaw }] = await db
+      .select({ pricingSessionsRaw: count(sql`DISTINCT ${pageViews.sessionId}`) })
+      .from(pageViews)
+      .where(and(...pricingConditions));
+
+    const pricingViews = Number(pricingViewsRaw) || 0;
+    const pricingUniqueSessions = Number(pricingSessionsRaw) || 0;
+    const pricingDropoffs = Math.max(0, pricingUniqueSessions - totalOrdersPlaced);
+    const pricingDropoffRate = pricingUniqueSessions > 0
+      ? Math.round((pricingDropoffs / pricingUniqueSessions) * 100)
+      : 0;
+
+    // 9. Registered Non-Buyers (Users registered with no approved orders)
+    const nonBuyersRaw = await db
+      .select({
+        id: users.id,
+        name: users.name,
+        email: users.email,
+        phone: users.phone,
+        createdAt: users.createdAt,
+        lastLoginAt: users.lastLoginAt,
+      })
+      .from(users)
+      .leftJoin(
+        orders, 
+        and(eq(orders.userId, users.id), eq(orders.status, 'approved'))
+      )
+      .where(eq(users.role, 'user'))
+      .groupBy(users.id)
+      .having(sql`count(${orders.id}) = 0`)
+      .orderBy(desc(users.createdAt))
+      .limit(50);
+
+    const registeredNonBuyers: RegisteredNonBuyer[] = nonBuyersRaw.map((u) => ({
+      id: u.id,
+      name: u.name,
+      email: u.email,
+      phone: u.phone,
+      createdAt: u.createdAt,
+      lastLoginAt: u.lastLoginAt,
+    }));
+
+    // 10. Abandoned Checkouts Leads (Phone entered, order not completed)
+    const packageMap: Record<string, string> = {
+      'bundle-vip': 'باقة VIP الشاملة',
+      'bundle-premium': 'باقة Premium',
+      'single-tool': 'باقة أداة واحدة',
+    };
+
+    const abandonedRaw = await db
+      .select({
+        id: abandonedCheckouts.id,
+        phone: abandonedCheckouts.phone,
+        packageId: abandonedCheckouts.packageId,
+        toolId: abandonedCheckouts.toolId,
+        amount: abandonedCheckouts.amount,
+        couponCode: abandonedCheckouts.couponCode,
+        lastStep: abandonedCheckouts.lastStep,
+        createdAt: abandonedCheckouts.createdAt,
+        updatedAt: abandonedCheckouts.updatedAt,
+      })
+      .from(abandonedCheckouts)
+      .where(eq(abandonedCheckouts.isCompleted, false))
+      .orderBy(desc(abandonedCheckouts.updatedAt))
+      .limit(50);
+
+    const abandonedCheckoutsList: AbandonedCheckoutLead[] = abandonedRaw.map((a) => ({
+      id: a.id,
+      phone: a.phone,
+      packageId: a.packageId,
+      packageName: a.packageId ? (packageMap[a.packageId] || a.packageId) : 'باقة عامة',
+      toolId: a.toolId,
+      amount: a.amount,
+      couponCode: a.couponCode,
+      lastStep: a.lastStep,
+      createdAt: a.createdAt,
+      updatedAt: a.updatedAt,
+    }));
+
+    // 11. Top Visited Pages with Avg Duration
     const topPagesRaw = await db
       .select({
         path: pageViews.path,
@@ -243,7 +366,7 @@ export async function getAnalyticsSummary(filters: AnalyticsFilters = {}): Promi
       avgDuration: Math.round(Number(p.avgDuration) || 0),
     }));
 
-    // 9. Device Stats
+    // 12. Device Stats
     const deviceStatsRaw = await db
       .select({
         deviceType: pageViews.deviceType,
@@ -260,7 +383,7 @@ export async function getAnalyticsSummary(filters: AnalyticsFilters = {}): Promi
       sessions: Number(d.sessions) || 0,
     }));
 
-    // 10. Traffic Sources (UTM Source / Referrer)
+    // 13. Traffic Sources (UTM Source / Referrer)
     const trafficSourcesRaw = await db
       .select({
         source: sql<string>`COALESCE(${pageViews.utmSource}, SPLIT_PART(SPLIT_PART(${pageViews.referrer}, '//', 2), '/', 1), 'Direct / المباشر')`,
@@ -279,7 +402,7 @@ export async function getAnalyticsSummary(filters: AnalyticsFilters = {}): Promi
       sessions: Number(t.sessions) || 0,
     }));
 
-    // 11. Hourly Traffic Breakdown (0 to 23)
+    // 14. Hourly Traffic Breakdown (0 to 23)
     const hourlyRaw = await db
       .select({
         hour: sql<number>`EXTRACT(HOUR FROM ${pageViews.createdAt})`,
@@ -311,7 +434,7 @@ export async function getAnalyticsSummary(filters: AnalyticsFilters = {}): Promi
       sessions: data.sessions,
     }));
 
-    // 12. Recent 15 Filtered Views
+    // 15. Recent 15 Filtered Views
     const recentViews = await db
       .select()
       .from(pageViews)
@@ -319,7 +442,7 @@ export async function getAnalyticsSummary(filters: AnalyticsFilters = {}): Promi
       .orderBy(desc(pageViews.createdAt))
       .limit(15);
 
-    // 13. Distinct Paths for Filter
+    // 16. Distinct Paths for Filter
     const distinctPaths = await db
       .select({ path: pageViews.path })
       .from(pageViews)
@@ -339,6 +462,17 @@ export async function getAnalyticsSummary(filters: AnalyticsFilters = {}): Promi
       abandonedCheckoutSessions,
       abandonmentRate,
       conversionRate,
+
+      pricingFunnel: {
+        pricingViews,
+        pricingUniqueSessions,
+        pricingDropoffs,
+        pricingDropoffRate,
+        pricingToCheckoutSessions: Number(reachedCheckoutSessions) || 0,
+      },
+
+      registeredNonBuyers,
+      abandonedCheckoutsList,
 
       totalRevenue,
       averageOrderValue,
@@ -368,6 +502,15 @@ export async function getAnalyticsSummary(filters: AnalyticsFilters = {}): Promi
       abandonedCheckoutSessions: 0,
       abandonmentRate: 0,
       conversionRate: 0,
+      pricingFunnel: {
+        pricingViews: 0,
+        pricingUniqueSessions: 0,
+        pricingDropoffs: 0,
+        pricingDropoffRate: 0,
+        pricingToCheckoutSessions: 0,
+      },
+      registeredNonBuyers: [],
+      abandonedCheckoutsList: [],
       totalRevenue: 0,
       averageOrderValue: 0,
       excludedAdminViews: 0,

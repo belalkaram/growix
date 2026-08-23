@@ -1,11 +1,11 @@
 import React from 'react';
 import { db } from '@/db';
-import { users, tools, packages } from '@/db/schema';
+import { users, tools, packages, orders } from '@/db/schema';
 import { desc, asc, eq } from 'drizzle-orm';
 import { UsersClient } from './UsersClient';
 
 export default async function AdminUsersPage() {
-  const [allUsers, activeTools, activePackages] = await Promise.all([
+  const [allUsers, activeTools, activePackages, approvedOrders] = await Promise.all([
     db.select().from(users).orderBy(desc(users.createdAt)),
     db
       .select({ id: tools.id, name: tools.name, category: tools.category })
@@ -22,13 +22,20 @@ export default async function AdminUsersPage() {
       .from(packages)
       .where(eq(packages.isActive, true))
       .orderBy(asc(packages.sortOrder)),
+    db
+      .select({ userId: orders.userId })
+      .from(orders)
+      .where(eq(orders.status, 'approved')),
   ]);
+
+  const paidUserIds = Array.from(new Set(approvedOrders.map((o) => o.userId)));
 
   return (
     <UsersClient 
       initialUsers={allUsers} 
       toolsList={activeTools} 
-      packagesList={activePackages} 
+      packagesList={activePackages}
+      paidUserIds={paidUserIds}
     />
   );
 }

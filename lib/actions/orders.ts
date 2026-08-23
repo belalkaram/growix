@@ -1,8 +1,8 @@
 'use server';
 
 import { db } from '@/db';
-import { orders, users, packages, tools, coupons, couponUsages, paymentTransactions } from '@/db/schema';
-import { eq, desc, sql, and, gte, lte } from 'drizzle-orm';
+import { orders, users, packages, tools, coupons, couponUsages, paymentTransactions, abandonedCheckouts } from '@/db/schema';
+import { eq, desc, sql, and, gte, lte, or } from 'drizzle-orm';
 import { auth } from '@/lib/auth';
 import { revalidatePath } from 'next/cache';
 import { sendTelegramOrderAlert, sendTelegramOrderStatusAlert } from '@/lib/telegram';
@@ -192,6 +192,24 @@ export async function createOrderAction(data: {
       } catch (couponErr) {
         console.error('Error recording coupon usage:', couponErr);
       }
+    }
+
+    // 🎯 Mark any matching abandoned checkout lead as completed
+    try {
+      await db
+        .update(abandonedCheckouts)
+        .set({
+          isCompleted: true,
+          updatedAt: new Date(),
+        })
+        .where(
+          or(
+            eq(abandonedCheckouts.phone, data.senderNumber.trim()),
+            eq(abandonedCheckouts.userId, session.user.id)
+          )
+        );
+    } catch (abandonedErr) {
+      console.warn('Error updating abandoned checkout status:', abandonedErr);
     }
 
     // 🚀 Send Instant Telegram Bot Alert (Non-blocking / Background safe)

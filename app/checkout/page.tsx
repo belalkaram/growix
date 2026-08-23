@@ -138,6 +138,36 @@ function CheckoutContent() {
     }
   }, [activePkgId, packagePriceNum]);
 
+  const finalPayableAmount = appliedCoupon ? appliedCoupon.finalPrice : packagePriceNum;
+
+  // 🎯 Realtime Abandoned Checkout / Lead Recovery Auto-capture
+  useEffect(() => {
+    const trimmed = senderNumber.trim();
+    if (trimmed.length < 8) return;
+
+    const timer = setTimeout(() => {
+      let sid = 'unknown';
+      if (typeof window !== 'undefined') {
+        sid = sessionStorage.getItem('growix_session_id') || 'gx_' + Math.random().toString(36).substring(2, 11);
+      }
+      fetch('/api/track/abandoned', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sessionId: sid,
+          phone: trimmed,
+          packageId: activePkgId,
+          toolId: activePkgId === 'single-tool' ? selectedToolId : undefined,
+          amount: finalPayableAmount,
+          couponCode: appliedCoupon ? appliedCoupon.code : undefined,
+          lastStep: receiptFile ? 4 : 3,
+        }),
+      }).catch(() => {});
+    }, 1200);
+
+    return () => clearTimeout(timer);
+  }, [senderNumber, activePkgId, selectedToolId, finalPayableAmount, appliedCoupon, receiptFile]);
+
   const handleApplyCoupon = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!couponCodeInput || !couponCodeInput.trim()) {
@@ -167,8 +197,6 @@ function CheckoutContent() {
     setCouponCodeInput('');
     setCouponMessage(null);
   };
-
-  const finalPayableAmount = appliedCoupon ? appliedCoupon.finalPrice : packagePriceNum;
 
   const handleCopy = (text: string, id: string) => {
     navigator.clipboard.writeText(text);
