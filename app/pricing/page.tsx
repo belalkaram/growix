@@ -99,50 +99,59 @@ export default async function PricingPage() {
             </p>
           </div>
 
-          <div className="overflow-x-auto rounded-3xl border border-gray-200 shadow-sm">
+          <div className="overflow-x-auto rounded-3xl border border-gray-200 shadow-md bg-white">
             <table className="w-full text-right text-xs sm:text-sm border-collapse min-w-[600px]">
               <thead>
                 <tr className="bg-[#0B1220] text-white">
-                  <th className="p-4 font-black">الميزة / الأداة</th>
-                  <th className="p-4 font-black text-center text-[#2ECC8F]">باقة VIP ({vipPkg?.discountedPrice || '500'}ج) ⭐</th>
-                  <th className="p-4 font-black text-center">باقة Premium ({premiumPkg?.discountedPrice || '300'}ج)</th>
-                  <th className="p-4 font-black text-center">برنامج واحد ({singlePkg?.discountedPrice || '200'}ج)</th>
+                  <th className="p-4 sm:p-5 font-black">الميزة / الأداة</th>
+                  <th className="p-4 sm:p-5 font-black text-center text-[#2ECC8F] bg-[#111C2E] border-x border-white/10">
+                    <div className="flex flex-col items-center gap-1">
+                      <span className="text-xs bg-amber-400/20 text-amber-300 px-2 py-0.5 rounded-full border border-amber-400/30">الأكثر طلباً ⭐</span>
+                      <span>باقة VIP ({vipPkg?.discountedPrice || '500'}ج)</span>
+                    </div>
+                  </th>
+                  <th className="p-4 sm:p-5 font-black text-center">باقة Premium ({premiumPkg?.discountedPrice || '350'}ج)</th>
+                  <th className="p-4 sm:p-5 font-black text-center">برنامج واحد ({singlePkg?.discountedPrice || '150'}ج)</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200 bg-white">
-                <tr>
+              <tbody className="divide-y divide-gray-100 bg-white">
+                <tr className="hover:bg-gray-50/60 transition-colors">
                   <td className="p-4 font-bold text-[#0B1220]">عدد الأدوات التسويقية</td>
-                  <td className="p-4 text-center font-extrabold text-[#0F9D58] bg-emerald-50/50">الـ 12 أداة كاملة</td>
-                  <td className="p-4 text-center text-gray-700">الـ 12 أداة كاملة</td>
-                  <td className="p-4 text-center text-gray-500">أداة واحدة اختيارية</td>
+                  <td className="p-4 text-center font-extrabold text-[#0F9D58] bg-emerald-50/60 border-x border-emerald-100">الـ 12 أداة كاملة</td>
+                  <td className="p-4 text-center text-gray-700 font-bold">الـ 12 أداة كاملة</td>
+                  <td className="p-4 text-center text-gray-500 font-medium">أداة واحدة اختيارية</td>
                 </tr>
-                <tr>
+                <tr className="hover:bg-gray-50/60 transition-colors">
                   <td className="p-4 font-bold text-[#0B1220]">كورس التسويق الإلكتروني التطبيقي</td>
-                  <td className="p-4 text-center font-extrabold text-[#0F9D58] bg-emerald-50/50">✓ متوفر بالكامل</td>
-                  <td className="p-4 text-center text-red-400">✕ غير شامل الكورس</td>
-                  <td className="p-4 text-center text-red-400">✕ غير شامل الكورس</td>
+                  <td className="p-4 text-center font-extrabold text-[#0F9D58] bg-emerald-50/60 border-x border-emerald-100">
+                    <span className="inline-flex items-center gap-1 bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-lg">✓ متوفر بالكامل</span>
+                  </td>
+                  <td className="p-4 text-center text-rose-500 font-bold">✕ غير شامل الكورس</td>
+                  <td className="p-4 text-center text-rose-500 font-bold">✕ غير شامل الكورس</td>
                 </tr>
-                <tr>
+                <tr className="hover:bg-gray-50/60 transition-colors">
                   <td className="p-4 font-bold text-[#0B1220]">هدية داتا مصر (500 ألف رقم)</td>
-                  <td className="p-4 text-center font-extrabold text-[#0F9D58] bg-emerald-50/50">✓ مجاناً مع الباقة</td>
-                  <td className="p-4 text-center text-[#0F9D58]">✓ مجاناً مع الباقة</td>
-                  <td className="p-4 text-center text-red-400">✕ غير متوفرة</td>
+                  <td className="p-4 text-center font-extrabold text-[#0F9D58] bg-emerald-50/60 border-x border-emerald-100">
+                    <span className="inline-flex items-center gap-1 bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-lg">✓ مجاناً مع الباقة</span>
+                  </td>
+                  <td className="p-4 text-center text-[#0F9D58] font-bold">✓ مجاناً مع الباقة</td>
+                  <td className="p-4 text-center text-rose-500 font-bold">✕ غير متوفرة</td>
                 </tr>
-                <tr>
+                <tr className="hover:bg-gray-50/60 transition-colors">
                   <td className="p-4 font-bold text-[#0B1220]">فيديوهات شرح الاستخدام وتثبيت البرامج</td>
-                  <td className="p-4 text-center font-bold text-[#0F9D58] bg-emerald-50/50">✓ شاملة وصوت وصورة</td>
-                  <td className="p-4 text-center text-[#0F9D58]">✓ شاملة وصوت وصورة</td>
-                  <td className="p-4 text-center text-[#0F9D58]">✓ شرح للأداة المحددة</td>
+                  <td className="p-4 text-center font-bold text-[#0F9D58] bg-emerald-50/60 border-x border-emerald-100">✓ شاملة وصوت وصورة</td>
+                  <td className="p-4 text-center text-[#0F9D58] font-bold">✓ شاملة وصوت وصورة</td>
+                  <td className="p-4 text-center text-[#0F9D58] font-bold">✓ شرح للأداة المحددة</td>
                 </tr>
-                <tr>
+                <tr className="hover:bg-gray-50/60 transition-colors">
                   <td className="p-4 font-bold text-[#0B1220]">الدعم الفني المباشر لحل المشاكل</td>
-                  <td className="p-4 text-center font-bold text-[#0F9D58] bg-emerald-50/50">✓ دعم مباشر 24/7</td>
-                  <td className="p-4 text-center text-[#0F9D58]">✓ دعم مباشر 24/7</td>
-                  <td className="p-4 text-center text-[#0F9D58]">✓ دعم مباشر 24/7</td>
+                  <td className="p-4 text-center font-bold text-[#0F9D58] bg-emerald-50/60 border-x border-emerald-100">✓ دعم مباشر 24/7</td>
+                  <td className="p-4 text-center text-[#0F9D58] font-bold">✓ دعم مباشر 24/7</td>
+                  <td className="p-4 text-center text-[#0F9D58] font-bold">✓ دعم مباشر 24/7</td>
                 </tr>
-                <tr>
+                <tr className="hover:bg-gray-50/60 transition-colors">
                   <td className="p-4 font-bold text-[#0B1220]">مدة الاشتراك والتفعيل</td>
-                  <td className="p-4 text-center font-extrabold text-[#0F9D58] bg-emerald-50/50">مدى الحياة</td>
+                  <td className="p-4 text-center font-black text-[#0F9D58] bg-emerald-50/60 border-x border-emerald-100">مدى الحياة</td>
                   <td className="p-4 text-center font-bold text-gray-700">مدى الحياة</td>
                   <td className="p-4 text-center font-bold text-gray-700">مدى الحياة</td>
                 </tr>

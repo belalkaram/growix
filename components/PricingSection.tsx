@@ -60,6 +60,10 @@ export const PricingSection: React.FC<PricingSectionProps> = ({ packages, tools,
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 xl:gap-8 max-w-7xl mx-auto items-stretch">
           {packageList.map((pkg) => {
             const isPopular = pkg.isPopular;
+            const origNum = parseInt(pkg.originalPrice) || 0;
+            const discNum = parseInt(pkg.discountedPrice) || 0;
+            const savings = origNum - discNum;
+            const savingsPercent = origNum > 0 ? Math.round((savings / origNum) * 100) : 0;
 
             return (
               <motion.div
@@ -70,9 +74,9 @@ export const PricingSection: React.FC<PricingSectionProps> = ({ packages, tools,
                 transition={{ duration: 0.4 }}
                 className={`rounded-3xl p-6 sm:p-8 flex flex-col justify-between transition-all duration-300 relative ${
                   isPopular
-                    ? 'bg-[#0B1220] text-white border-2 border-[#2ECC8F] shadow-2xl z-10 glow-navy'
+                    ? 'bg-[#0B1220] text-white border-2 border-[#2ECC8F] shadow-2xl z-10 glow-navy ring-4 ring-[#2ECC8F]/10 scale-[1.02]'
                     : pkg.id === 'bundle-premium'
-                    ? 'bg-gradient-to-b from-[#F0FDF6] to-white text-[#0B1220] border border-[#0F9D58]/40 hover:border-[#0F9D58] hover:shadow-xl'
+                    ? 'bg-gradient-to-b from-[#F0FDF6] to-white text-[#0B1220] border-2 border-[#0F9D58]/30 hover:border-[#0F9D58] hover:shadow-xl'
                     : 'bg-[#F7F9FA] text-[#0B1220] border border-gray-200 hover:border-[#0F9D58] hover:shadow-xl'
                 }`}
               >
@@ -91,23 +95,53 @@ export const PricingSection: React.FC<PricingSectionProps> = ({ packages, tools,
                 )}
 
                 <div>
-                  {/* Package Title */}
+                  {/* Package Title & Social Proof Tag */}
                   <div className="mb-4">
-                    <h3 className={`text-2xl font-black mb-1 ${isPopular ? 'text-white' : 'text-[#0B1220]'}`}>
-                      {pkg.name}
-                    </h3>
+                    <div className="flex items-center justify-between gap-2 mb-1">
+                      <h3 className={`text-2xl font-black ${isPopular ? 'text-white' : 'text-[#0B1220]'}`}>
+                        {pkg.name}
+                      </h3>
+                      {pkg.id === 'bundle-vip' && (
+                        <span className="text-[10px] font-black px-2 py-0.5 rounded-md bg-[#2ECC8F]/20 text-[#2ECC8F] border border-[#2ECC8F]/30">
+                          🔥 الأكثر طلباً (+250)
+                        </span>
+                      )}
+                      {pkg.id === 'bundle-premium' && (
+                        <span className="text-[10px] font-black px-2 py-0.5 rounded-md bg-[#0F9D58]/10 text-[#0F9D58] border border-[#0F9D58]/20">
+                          ⚡ قيمة ممتازة
+                        </span>
+                      )}
+                    </div>
                     <p className={`text-xs ${isPopular ? 'text-gray-300' : 'text-gray-500'}`}>
                       {pkg.description}
                     </p>
                   </div>
 
-                  {/* Pricing Box */}
-                  <div className="my-6 p-4 rounded-2xl bg-white/5 border border-white/10 flex items-baseline gap-2">
-                    <span className="text-4xl font-black text-growix-gradient">{pkg.discountedPrice}</span>
-                    <span className={`text-sm font-bold ${isPopular ? 'text-gray-200' : 'text-gray-700'}`}>{pkg.currency}</span>
-                    <span className={`text-xs line-through mr-auto ${isPopular ? 'text-gray-400' : 'text-gray-400'}`}>
-                      {pkg.originalPrice} {pkg.currency}
-                    </span>
+                  {/* Pricing Box & Savings Badge */}
+                  <div className={`my-5 p-4 rounded-2xl border flex flex-col gap-2 ${
+                    isPopular 
+                      ? 'bg-white/5 border-white/10' 
+                      : 'bg-emerald-50/50 border-emerald-100'
+                  }`}>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-4xl font-black text-growix-gradient">{pkg.discountedPrice}</span>
+                      <span className={`text-sm font-bold ${isPopular ? 'text-gray-200' : 'text-gray-700'}`}>{pkg.currency}</span>
+                      <span className={`text-xs line-through mr-auto ${isPopular ? 'text-gray-400' : 'text-gray-400'}`}>
+                        {pkg.originalPrice} {pkg.currency}
+                      </span>
+                    </div>
+
+                    {savings > 0 && (
+                      <div className="flex items-center gap-1.5 pt-1 border-t border-white/10">
+                        <span className={`text-[11px] font-extrabold px-2 py-0.5 rounded-md ${
+                          isPopular 
+                            ? 'bg-[#2ECC8F]/20 text-[#2ECC8F]' 
+                            : 'bg-[#0F9D58]/10 text-[#0F9D58]'
+                        }`}>
+                          وفرت {savings} {pkg.currency} ({savingsPercent}% خصم)
+                        </span>
+                      </div>
+                    )}
                   </div>
 
                   <div className={`text-xs font-semibold mb-6 flex items-center gap-1.5 ${isPopular ? 'text-[#2ECC8F]' : 'text-[#0F9D58]'}`}>

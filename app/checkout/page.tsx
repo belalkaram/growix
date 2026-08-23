@@ -21,7 +21,8 @@ import {
   X,
   UploadCloud,
   Image as ImageIcon,
-  FileCheck
+  FileCheck,
+  Package
 } from 'lucide-react';
 import { SITE_CONFIG, SITE_PRICING, PricingPackage } from '@/config/site';
 import { GrowixLogo } from '@/components/GrowixLogo';
@@ -361,8 +362,8 @@ function CheckoutContent() {
         </div>
       </header>
 
-      {/* Main Content Area - Clean White & High Contrast Theme */}
-      <main className="flex-1 max-w-4xl mx-auto w-full px-4 sm:px-6 py-8 space-y-7">
+      {/* Main Content Area - Clean High Contrast Theme with 2-Column Desktop Layout */}
+      <main className="flex-1 max-w-6xl mx-auto w-full px-4 sm:px-6 py-8 space-y-7">
         
         {/* Title Header Card */}
         <div className="bg-[#0B1220] text-white rounded-3xl p-6 sm:p-8 relative overflow-hidden border border-gray-100 shadow-xl space-y-4">
@@ -422,6 +423,47 @@ function CheckoutContent() {
               <span className="text-xs text-gray-300 block">الباقة المختارة:</span>
               <span className="font-bold text-white text-sm">{currentPkg.name}</span>
             </div>
+          </div>
+        </div>
+
+        {/* 2-Column Responsive Layout for Desktop */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          
+          {/* Main Transaction Form Column (8 cols on lg) */}
+          <div className="lg:col-span-7 xl:col-span-8 space-y-7">
+
+        {/* Stepper Progress Bar */}
+        <div className="bg-white rounded-3xl p-4 sm:p-6 border border-gray-200 shadow-sm text-[#0B1220]">
+          <div className="flex items-center justify-between relative">
+            {/* Background line */}
+            <div className="absolute top-1/2 left-0 right-0 h-1 bg-gray-100 -translate-y-1/2 rounded-full z-0"></div>
+            {/* Progress line */}
+            <div 
+              className="absolute top-1/2 right-0 h-1 bg-[#0F9D58] -translate-y-1/2 rounded-full z-0 transition-all duration-500"
+              style={{ width: `${(Math.min((activePkgId ? 1 : 0) + (activePaymentMethod ? 1 : 0) + (senderNumber.trim().length >= 10 ? 1 : 0) + (receiptFile ? 1 : 0), 3) / 3) * 100}%` }}
+            ></div>
+            
+            {[
+              { id: 1, title: 'الباقة', icon: <Package className="w-4 h-4" />, completed: !!activePkgId, current: true },
+              { id: 2, title: 'الدفع', icon: <CreditCard className="w-4 h-4" />, completed: !!activePaymentMethod, current: !!activePkgId },
+              { id: 3, title: 'الرقم', icon: <Smartphone className="w-4 h-4" />, completed: senderNumber.trim().length >= 10, current: !!activePaymentMethod },
+              { id: 4, title: 'تأكيد', icon: <FileCheck className="w-4 h-4" />, completed: !!receiptFile, current: senderNumber.trim().length >= 10 }
+            ].map((step, idx) => (
+              <div key={step.id} className="relative z-10 flex flex-col items-center gap-2 bg-white px-2 sm:px-4">
+                <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center border-2 transition-colors ${
+                  step.completed 
+                    ? 'bg-[#0F9D58] border-[#0F9D58] text-white' 
+                    : step.current 
+                      ? 'bg-emerald-50 border-[#0F9D58] text-[#0F9D58]' 
+                      : 'bg-white border-gray-200 text-gray-400'
+                }`}>
+                  {step.completed ? <Check className="w-4 h-4 sm:w-5 sm:h-5" /> : step.icon}
+                </div>
+                <span className={`text-[10px] sm:text-xs font-bold ${step.completed || step.current ? 'text-[#0B1220]' : 'text-gray-400'}`}>
+                  {step.title}
+                </span>
+              </div>
+            ))}
           </div>
         </div>
 
@@ -863,6 +905,22 @@ function CheckoutContent() {
             <p className="text-xs text-gray-500 text-center font-medium leading-relaxed">
               بمجرد تأكيد الطلب، سيتم مطابقة تحويل الـ ({finalPayableAmount} ج) وتفعيل حسابك تلقائياً وبشكل فوري.
             </p>
+
+            {/* Trust & Guarantee Badges under submit button */}
+            <div className="grid grid-cols-3 gap-2 pt-3 text-center text-[11px] text-gray-600 border-t border-gray-100">
+              <div className="p-2.5 rounded-xl bg-gray-50 flex flex-col items-center gap-1 border border-gray-100">
+                <ShieldCheck className="w-4 h-4 text-[#0F9D58]" />
+                <span className="font-bold text-[10px] sm:text-[11px]">دفع وتأكيد مشفر</span>
+              </div>
+              <div className="p-2.5 rounded-xl bg-gray-50 flex flex-col items-center gap-1 border border-gray-100">
+                <Clock className="w-4 h-4 text-[#0F9D58]" />
+                <span className="font-bold text-[10px] sm:text-[11px]">تفعيل فوري سحابي</span>
+              </div>
+              <div className="p-2.5 rounded-xl bg-gray-50 flex flex-col items-center gap-1 border border-gray-100">
+                <Sparkles className="w-4 h-4 text-amber-500" />
+                <span className="font-bold text-[10px] sm:text-[11px]">ضمان تشغيل 100%</span>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -888,6 +946,93 @@ function CheckoutContent() {
               <p className="text-gray-600 text-xs leading-relaxed">يتم فتح الأدوات والدورة في صفحة طلباتك خلال أقل من 60 دقيقة.</p>
             </div>
           </div>
+        </div>
+
+          </div>
+
+          {/* Desktop Sticky Order Summary Sidebar (4-5 cols on lg) */}
+          <div className="hidden lg:block lg:col-span-5 xl:col-span-4 sticky top-24 space-y-5">
+            
+            {/* Sticky Order Summary Card */}
+            <div className="bg-white rounded-3xl p-6 border border-gray-200 shadow-lg space-y-5 text-[#0B1220]">
+              <div className="flex items-center justify-between pb-4 border-b border-gray-100">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-10 h-10 rounded-xl bg-[#0F9D58]/10 text-[#0F9D58] flex items-center justify-center font-black">
+                    <Package className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <span className="text-[11px] text-gray-500 font-bold block">تفاصيل الطلب</span>
+                    <h3 className="text-sm sm:text-base font-black text-[#0B1220]">{currentPkg.name}</h3>
+                  </div>
+                </div>
+                <span className="text-xs font-black text-[#0F9D58] bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
+                  مدى الحياة
+                </span>
+              </div>
+
+              {/* Package Included Highlights */}
+              <div className="space-y-2 text-xs text-gray-700 bg-gray-50 p-4 rounded-2xl border border-gray-100">
+                <span className="font-extrabold text-[11px] text-gray-600 block mb-1">أبرز ما تشمله باقتك:</span>
+                {currentPkg.features.slice(0, 4).map((f, i) => (
+                  <div key={i} className="flex items-start gap-2">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-[#0F9D58] shrink-0 mt-0.5" />
+                    <span className="font-medium text-gray-800">{f.text}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Price Breakdown */}
+              <div className="space-y-2 text-xs pt-2 border-t border-gray-100">
+                <div className="flex justify-between text-gray-600">
+                  <span>السعر الأصلي:</span>
+                  <span className="line-through">{currentPkg.originalPrice} {currentPkg.currency}</span>
+                </div>
+                <div className="flex justify-between text-gray-600 font-bold">
+                  <span>سعر العرض:</span>
+                  <span>{currentPkg.discountedPrice} {currentPkg.currency}</span>
+                </div>
+                {appliedCoupon && (
+                  <div className="flex justify-between text-emerald-600 font-bold">
+                    <span>خصم الكوبون ({appliedCoupon.code}):</span>
+                    <span>- {appliedCoupon.discountAmount} {currentPkg.currency}</span>
+                  </div>
+                )}
+                <div className="flex justify-between text-sm font-black text-[#0B1220] pt-2 border-t border-gray-200">
+                  <span>الإجمالي المطلوب:</span>
+                  <span className="text-xl text-[#0F9D58]">{finalPayableAmount} {currentPkg.currency}</span>
+                </div>
+              </div>
+
+              {/* Trust Badges in Sidebar */}
+              <div className="space-y-2 pt-2 border-t border-gray-100">
+                <div className="flex items-center gap-2 text-xs text-gray-600">
+                  <Lock className="w-3.5 h-3.5 text-[#0F9D58] shrink-0" />
+                  <span>تشفير آمن 256-bit SSL</span>
+                </div>
+                <div className="flex items-center gap-2 text-xs text-gray-600">
+                  <Clock className="w-3.5 h-3.5 text-[#0F9D58] shrink-0" />
+                  <span>تفعيل فوري خلال أقل من 60 دقيقة</span>
+                </div>
+                <div className="flex items-center gap-2 text-xs text-gray-600">
+                  <Sparkles className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                  <span>تحديثات مجانية مستمرة مدى الحياة</span>
+                </div>
+              </div>
+
+              {/* Help WhatsApp Support */}
+              <a
+                href={`https://wa.me/${SITE_CONFIG.whatsappNumber}?text=${encodeURIComponent(`مرحباً، أحتاج مساعدة في إتمام طلبي لـ ${currentPkg.name}`)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full py-3 px-4 rounded-xl bg-gray-100 hover:bg-gray-200 text-[#0B1220] font-bold text-xs flex items-center justify-center gap-2 transition-colors border border-gray-200"
+              >
+                <span>تحتاج مساعدة؟ تواصل عبر واتساب</span>
+                <Send className="w-3.5 h-3.5 text-[#0F9D58]" />
+              </a>
+            </div>
+
+          </div>
+
         </div>
 
       </main>

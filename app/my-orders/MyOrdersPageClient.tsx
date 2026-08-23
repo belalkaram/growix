@@ -34,7 +34,9 @@ import {
   AlertTriangle,
   Compass,
   CheckSquare,
-  Sparkle
+  Sparkle,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 import { SITE_CONFIG } from '@/config/site';
 
@@ -50,6 +52,8 @@ export const MyOrdersPageClient: React.FC<MyOrdersPageClientProps> = ({ orders, 
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [watchedVideos, setWatchedVideos] = useState<Set<number>>(new Set());
   const [downloadedFiles, setDownloadedFiles] = useState<Set<string>>(new Set());
+  const [activeTab, setActiveTab] = useState<'videos' | 'courses' | 'tools' | 'bonus'>('videos');
+  const [isInstructionsOpen, setIsInstructionsOpen] = useState(false);
 
   const handleCopyOrderId = (orderId: string) => {
     navigator.clipboard.writeText(orderId);
@@ -125,13 +129,19 @@ export const MyOrdersPageClient: React.FC<MyOrdersPageClientProps> = ({ orders, 
               </div>
             </div>
 
-            <span className="text-xs font-black text-amber-900 bg-amber-200/70 border border-amber-400/60 px-3.5 py-1.5 rounded-xl self-start sm:self-auto shadow-2xs">
-              ⚠️ يرجى القراءة بعناية لتفادي حظر الحساب
-            </span>
+            <button
+              onClick={() => setIsInstructionsOpen(!isInstructionsOpen)}
+              className="text-xs font-black text-amber-900 bg-amber-200/70 hover:bg-amber-300/70 transition-colors border border-amber-400/60 px-3.5 py-1.5 rounded-xl self-start sm:self-auto shadow-2xs flex items-center gap-1.5 cursor-pointer"
+            >
+              <span>{isInstructionsOpen ? 'إخفاء الإرشادات' : 'عرض الإرشادات المهمة'}</span>
+              {isInstructionsOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            </button>
           </div>
 
-          {/* The 5 Key Instructions Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {isInstructionsOpen && (
+            <div className="space-y-6 animate-in fade-in slide-in-from-top-4 duration-300">
+              {/* The 5 Key Instructions Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
 
             {/* Rule 1: No sharing (Ban warning) */}
             <div className="p-4 sm:p-5 bg-red-50/70 border border-red-200 rounded-2xl space-y-2 shadow-2xs relative">
@@ -225,6 +235,8 @@ export const MyOrdersPageClient: React.FC<MyOrdersPageClientProps> = ({ orders, 
               <MessageSquare className="w-3.5 h-3.5" />
             </a>
           </div>
+            </div>
+          )}
 
         </div>
 
@@ -411,10 +423,42 @@ export const MyOrdersPageClient: React.FC<MyOrdersPageClientProps> = ({ orders, 
                   {isApproved && (
                     <div className="space-y-8 pt-2">
 
+                      {/* Tab Navigation */}
+                      <div className="flex items-center gap-2 overflow-x-auto pb-2 border-b border-gray-100 no-scrollbar">
+                        {[
+                          { id: 'videos', label: 'فيديوهات الشرح', icon: <Video className="w-4 h-4" />, count: ord.videos?.length || 0 },
+                          { id: 'courses', label: 'الكورسات', icon: <FolderOpen className="w-4 h-4" />, count: ord.megaLinks?.length || 0 },
+                          { id: 'tools', label: 'الأدوات', icon: <Wrench className="w-4 h-4" />, count: toolFiles.length },
+                          { id: 'bonus', label: 'هدايا VIP', icon: <Gift className="w-4 h-4" />, count: giftFiles.length },
+                        ].map((tab) => (
+                          <button
+                            key={tab.id}
+                            type="button"
+                            onClick={() => setActiveTab(tab.id as any)}
+                            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs whitespace-nowrap transition-all cursor-pointer ${
+                              activeTab === tab.id
+                                ? 'bg-[#0B1220] text-white shadow-md'
+                                : 'bg-gray-50 text-gray-600 hover:bg-gray-100 border border-gray-200'
+                            }`}
+                          >
+                            {tab.icon}
+                            <span>{tab.label}</span>
+                            {tab.count > 0 && (
+                              <span className={`px-2 py-0.5 rounded-md text-[10px] font-black ${
+                                activeTab === tab.id ? 'bg-white/20 text-white' : 'bg-gray-200 text-gray-600'
+                              }`}>
+                                {tab.count}
+                              </span>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+
                       {/* ============================================================ */}
                       {/* SECTION 1: فيديوهات الشرح والتدريب (Videos First) */}
                       {/* ============================================================ */}
-                      <div id="my-videos" className="space-y-4">
+                      {activeTab === 'videos' && (
+                      <div id="my-videos" className="space-y-4 animate-in fade-in duration-300">
                         <div className="flex items-center justify-between">
                           <h4 className="text-sm font-black text-[#0B1220] flex items-center gap-2">
                             <div className="w-7 h-7 rounded-lg bg-[#2ECC8F]/15 border border-[#2ECC8F]/30 flex items-center justify-center text-[#0F9D58]">
@@ -483,12 +527,13 @@ export const MyOrdersPageClient: React.FC<MyOrdersPageClientProps> = ({ orders, 
                           </div>
                         )}
                       </div>
+                      )}
 
                       {/* ============================================================ */}
                       {/* SECTION 2: كورسات التسويق السحابية (Courses Second) */}
                       {/* ============================================================ */}
-                      {ord.megaLinks && ord.megaLinks.length > 0 && (
-                        <div id="my-courses" className="space-y-4 pt-2">
+                      {activeTab === 'courses' && (
+                        <div id="my-courses" className="space-y-4 animate-in fade-in duration-300">
                           <div className="flex items-center justify-between">
                             <h4 className="text-sm font-black text-[#0B1220] flex items-center gap-2">
                               <div className="w-7 h-7 rounded-lg bg-blue-500/15 border border-blue-500/30 flex items-center justify-center text-blue-600">
@@ -501,57 +546,64 @@ export const MyOrdersPageClient: React.FC<MyOrdersPageClientProps> = ({ orders, 
                             </span>
                           </div>
 
-                          <div className="grid grid-cols-1 gap-3">
-                            {ord.megaLinks.map((ml: any) => (
-                              <div
-                                key={ml.id}
-                                className="p-5 bg-gradient-to-l from-blue-50/80 via-indigo-50/40 to-white border border-blue-200/80 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm hover:border-blue-300/80 transition-colors"
-                              >
-                                <div className="flex items-start sm:items-center gap-3.5">
-                                  <div className="w-12 h-12 rounded-2xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-md shadow-blue-500/30 font-black">
-                                    <FolderOpen className="w-6 h-6" />
-                                  </div>
-                                  <div className="space-y-1">
-                                    <div className="flex items-center gap-2 flex-wrap">
-                                      <span className="font-black text-sm text-gray-900">{ml.title}</span>
-                                      {ml.sizeLabel && (
-                                        <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-blue-600 text-white shadow-xs flex items-center gap-1">
-                                          <HardDrive className="w-2.5 h-2.5" />
-                                          {ml.sizeLabel}
+                          {ord.megaLinks && ord.megaLinks.length > 0 ? (
+                            <div className="grid grid-cols-1 gap-3">
+                              {ord.megaLinks.map((ml: any) => (
+                                <div
+                                  key={ml.id}
+                                  className="p-5 bg-gradient-to-l from-blue-50/80 via-indigo-50/40 to-white border border-blue-200/80 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm hover:border-blue-300/80 transition-colors"
+                                >
+                                  <div className="flex items-start sm:items-center gap-3.5">
+                                    <div className="w-12 h-12 rounded-2xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-md shadow-blue-500/30 font-black">
+                                      <FolderOpen className="w-6 h-6" />
+                                    </div>
+                                    <div className="space-y-1">
+                                      <div className="flex items-center gap-2 flex-wrap">
+                                        <span className="font-black text-sm text-gray-900">{ml.title}</span>
+                                        {ml.sizeLabel && (
+                                          <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-blue-600 text-white shadow-xs flex items-center gap-1">
+                                            <HardDrive className="w-2.5 h-2.5" />
+                                            {ml.sizeLabel}
+                                          </span>
+                                        )}
+                                      </div>
+                                      {ml.description && (
+                                        <p className="text-xs text-gray-600 font-medium">{ml.description}</p>
+                                      )}
+                                      {ml.contentCount && (
+                                        <span className="text-[11px] font-bold text-blue-700 block flex items-center gap-1">
+                                          <Video className="w-3 h-3" />
+                                          {ml.contentCount}
                                         </span>
                                       )}
                                     </div>
-                                    {ml.description && (
-                                      <p className="text-xs text-gray-600 font-medium">{ml.description}</p>
-                                    )}
-                                    {ml.contentCount && (
-                                      <span className="text-[11px] font-bold text-blue-700 block flex items-center gap-1">
-                                        <Video className="w-3 h-3" />
-                                        {ml.contentCount}
-                                      </span>
-                                    )}
                                   </div>
-                                </div>
 
-                                <a
-                                  href={ml.megaUrl}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="py-3 px-5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-black flex items-center justify-center gap-2 shadow-md shadow-blue-600/20 transition-all active:scale-95 shrink-0"
-                                >
-                                  <ExternalLink className="w-4 h-4" />
-                                  <span>فتح السيرفر السحابي</span>
-                                </a>
-                              </div>
-                            ))}
-                          </div>
+                                  <a
+                                    href={ml.megaUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="py-3 px-5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-black flex items-center justify-center gap-2 shadow-md shadow-blue-600/20 transition-all active:scale-95 shrink-0"
+                                  >
+                                    <ExternalLink className="w-4 h-4" />
+                                    <span>فتح السيرفر السحابي</span>
+                                  </a>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="p-6 bg-gray-50 border border-gray-100 rounded-2xl text-xs text-gray-500 font-bold text-center">
+                              لا يوجد كورسات متاحة في هذه الباقة.
+                            </div>
+                          )}
                         </div>
                       )}
 
                       {/* ============================================================ */}
-                      {/* SECTION 3: البرامج والأدوات المتاحة (Tools Third with Search & Filters) */}
+                      {/* SECTION 3: البرامج والأدوات المتاحة (Tools Third) */}
                       {/* ============================================================ */}
-                      <div id="my-tools" className="space-y-4 pt-2">
+                      {activeTab === 'tools' && (
+                      <div id="my-tools" className="space-y-4 animate-in fade-in duration-300">
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                           <h4 className="text-sm font-black text-[#0B1220] flex items-center gap-2">
                             <div className="w-7 h-7 rounded-lg bg-[#0F9D58]/15 border border-[#0F9D58]/30 flex items-center justify-center text-[#0F9D58]">
@@ -560,7 +612,6 @@ export const MyOrdersPageClient: React.FC<MyOrdersPageClientProps> = ({ orders, 
                             <span>3. البرامج والأدوات التسويقية المتاحة ({toolFiles.length} برنامج)</span>
                           </h4>
 
-                          {/* Smart Search Bar */}
                           <div className="relative w-full sm:w-64">
                             <Search className="w-4 h-4 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2" />
                             <input
@@ -573,7 +624,6 @@ export const MyOrdersPageClient: React.FC<MyOrdersPageClientProps> = ({ orders, 
                           </div>
                         </div>
 
-                        {/* Category Filter Tabs */}
                         <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs no-scrollbar">
                           {[
                             { id: 'all', label: 'الكل' },
@@ -598,52 +648,49 @@ export const MyOrdersPageClient: React.FC<MyOrdersPageClientProps> = ({ orders, 
                         </div>
 
                         {filteredTools.length > 0 ? (
-                          <div className="grid grid-cols-1 gap-3">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {filteredTools.map((f: any) => (
                               <div
                                 key={f.id || f.fileKey}
-                                className="p-4 bg-gray-50/90 border border-gray-200/80 hover:border-[#0F9D58]/40 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-colors shadow-2xs"
+                                className="p-4 sm:p-5 bg-white border border-gray-200/90 hover:border-[#0F9D58] rounded-2xl flex flex-col justify-between gap-4 transition-all shadow-2xs hover:shadow-md group"
                               >
-                                <div className="flex items-center gap-3">
-                                  <div className={`w-11 h-11 rounded-xl border flex items-center justify-center shrink-0 font-extrabold text-[11px] ${f.fileType === 'apk'
-                                    ? 'bg-blue-500/10 border-blue-500/20 text-blue-600'
-                                    : 'bg-[#0F9D58]/10 border-[#0F9D58]/20 text-[#0F9D58]'
-                                    }`}>
-                                    {f.fileType === 'apk' ? 'APK' : 'ZIP'}
+                                <div className="flex items-start gap-3.5">
+                                  <div className={`w-12 h-12 rounded-2xl border flex flex-col items-center justify-center shrink-0 font-extrabold text-[11px] transition-transform group-hover:scale-105 ${
+                                    f.fileType === 'apk'
+                                      ? 'bg-blue-500/10 border-blue-500/20 text-blue-600'
+                                      : 'bg-[#0F9D58]/10 border-[#0F9D58]/20 text-[#0F9D58]'
+                                  }`}>
+                                    {f.fileType === 'apk' ? (
+                                      <Smartphone className="w-5 h-5" />
+                                    ) : (
+                                      <Monitor className="w-5 h-5" />
+                                    )}
+                                    <span className="text-[9px] mt-0.5 font-mono uppercase">{f.fileType || 'ZIP'}</span>
                                   </div>
 
-                                  <div className="space-y-1">
-                                    <div className="flex items-center gap-2 flex-wrap">
-                                      <span className="font-extrabold text-xs text-[#0B1220] block">{f.fileName}</span>
+                                  <div className="space-y-1.5 min-w-0 flex-1">
+                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                      <h5 className="font-black text-xs sm:text-sm text-[#0B1220] leading-snug">{f.fileName}</h5>
+                                    </div>
 
-                                      {/* Compatibility Badges */}
-                                      <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-gray-200 text-gray-700 flex items-center gap-1">
-                                        {f.fileType === 'apk' ? (
-                                          <>
-                                            <Smartphone className="w-3 h-3 text-blue-600" />
-                                            <span>Android APK</span>
-                                          </>
-                                        ) : (
-                                          <>
-                                            <Monitor className="w-3 h-3 text-gray-600" />
-                                            <span>Windows 10/11</span>
-                                          </>
-                                        )}
+                                    <div className="flex items-center gap-2 flex-wrap text-[10px]">
+                                      <span className="px-2 py-0.5 rounded-md font-bold bg-gray-100 text-gray-700">
+                                        {f.fileType === 'apk' ? 'Android APK' : 'Windows 10/11'}
                                       </span>
 
+                                      {f.fileSize && (
+                                        <span className="text-gray-500 font-medium">
+                                          {f.fileSize}
+                                        </span>
+                                      )}
+
                                       {downloadedFiles.has(f.fileKey) && (
-                                        <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-100 text-emerald-800 flex items-center gap-1">
+                                        <span className="px-2 py-0.5 rounded-md font-bold bg-emerald-100 text-emerald-800 flex items-center gap-1">
                                           <Check className="w-3 h-3" />
                                           <span>تم التحميل</span>
                                         </span>
                                       )}
                                     </div>
-
-                                    {f.fileSize && (
-                                      <span className="text-[10px] text-gray-500 block">
-                                        الحجم: {f.fileSize}
-                                      </span>
-                                    )}
                                   </div>
                                 </div>
 
@@ -652,10 +699,10 @@ export const MyOrdersPageClient: React.FC<MyOrdersPageClientProps> = ({ orders, 
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   onClick={() => handleFileDownload(f.fileKey)}
-                                  className="py-2.5 px-4 rounded-xl bg-[#0F9D58] hover:bg-[#0D8B4E] text-white text-xs font-black flex items-center justify-center gap-2 shadow-sm shadow-[#0F9D58]/20 transition-transform active:scale-95 shrink-0 cursor-pointer"
+                                  className="w-full py-2.5 px-4 rounded-xl bg-[#0F9D58] hover:bg-[#0D8B4E] text-white text-xs font-black flex items-center justify-center gap-2 shadow-sm shadow-[#0F9D58]/20 transition-all active:scale-95 cursor-pointer"
                                 >
                                   <Download className="w-4 h-4" />
-                                  <span>تحميل البرامج ({f.fileType === 'apk' ? 'APK' : 'ZIP'})</span>
+                                  <span>تحميل الأداة الآن ({f.fileType === 'apk' ? 'APK' : 'ZIP'})</span>
                                 </a>
                               </div>
                             ))}
@@ -666,11 +713,13 @@ export const MyOrdersPageClient: React.FC<MyOrdersPageClientProps> = ({ orders, 
                           </div>
                         )}
                       </div>
+                      )}
 
                       {/* ============================================================ */}
                       {/* SECTION 4: الهدية الإضافية: داتا مصر التسويقية (Bonus Fourth) */}
                       {/* ============================================================ */}
-                      <div id="my-bonus" className="space-y-4 pt-2">
+                      {activeTab === 'bonus' && (
+                      <div id="my-bonus" className="space-y-4 animate-in fade-in duration-300">
                         <h4 className="text-sm font-black text-[#0B1220] flex items-center gap-2">
                           <div className="w-7 h-7 rounded-lg bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-600">
                             <Gift className="w-4 h-4" />
@@ -726,6 +775,7 @@ export const MyOrdersPageClient: React.FC<MyOrdersPageClientProps> = ({ orders, 
                           </div>
                         )}
                       </div>
+                      )}
 
                     </div>
                   )}
