@@ -34,6 +34,36 @@ export async function getPackages(): Promise<PricingPackage[]> {
   return SITE_CONFIG.packages;
 }
 
+// 1.1. Fetch single package by id with DB fallback
+export async function getPackageById(id: string): Promise<PricingPackage | null> {
+  try {
+    const [dbPkg] = await db
+      .select()
+      .from(schema.packages)
+      .where(eq(schema.packages.id, id))
+      .limit(1);
+
+    if (dbPkg) {
+      return {
+        id: dbPkg.id,
+        name: dbPkg.name,
+        badge: dbPkg.badge || undefined,
+        isPopular: dbPkg.isPopular,
+        originalPrice: dbPkg.originalPrice,
+        discountedPrice: dbPkg.discountedPrice,
+        currency: dbPkg.currency,
+        period: dbPkg.period,
+        description: dbPkg.description,
+        features: (dbPkg.features as { text: string; included: boolean; highlight?: boolean }[]) || [],
+        ctaText: dbPkg.ctaText,
+      };
+    }
+  } catch (error) {
+    console.error(`Database fetch error (getPackageById: ${id}), falling back to static config:`, error);
+  }
+  return SITE_CONFIG.packages.find((p) => p.id === id) || null;
+}
+
 // 2. Fetch all active tools with DB fallback
 export async function getTools(): Promise<MarketingTool[]> {
   try {

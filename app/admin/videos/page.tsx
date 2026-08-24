@@ -276,25 +276,42 @@ export default function AdminVideosPage() {
           <div className="space-y-3">
             {videos.map((vid) => {
               const matchedTool = SITE_CONFIG.tools.find((t) => t.id === vid.toolId);
+              const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|shorts\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+              const match = (vid.videoUrl || '').match(regExp);
+              const ytThumb = match && match[2].length === 11 ? `https://img.youtube.com/vi/${match[2]}/hqdefault.jpg` : null;
 
               return (
                 <div
                   key={vid.id}
                   className="p-4 bg-white/5 border border-white/10 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs hover:border-[#2ECC8F]/40 transition-colors"
                 >
-                  <div className="space-y-1 max-w-xl">
-                    <div className="flex items-center gap-2">
-                      <span className="font-black text-white text-sm">{vid.title}</span>
-                      <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-[#2ECC8F]/10 text-[#2ECC8F] border border-[#2ECC8F]/30 flex items-center gap-1">
-                        {matchedTool ? (
-                          matchedTool.name
-                        ) : (
-                          <>
-                            <GraduationCap className="w-3 h-3 text-[#2ECC8F]" />
-                            <span>شرح عام / كورس</span>
-                          </>
-                        )}
-                      </span>
+                  <div className="flex items-center gap-3.5 max-w-xl">
+                    {ytThumb ? (
+                      <div className="relative w-20 h-12 rounded-xl overflow-hidden bg-black shrink-0 border border-white/10">
+                        <img src={ytThumb} alt="" className="w-full h-full object-cover" />
+                        <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                          <Video className="w-4 h-4 text-white" />
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center shrink-0 text-[#2ECC8F]">
+                        <Video className="w-5 h-5" />
+                      </div>
+                    )}
+
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-black text-white text-sm">{vid.title}</span>
+                        <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-[#2ECC8F]/10 text-[#2ECC8F] border border-[#2ECC8F]/30 flex items-center gap-1">
+                          {matchedTool ? (
+                            matchedTool.name
+                          ) : (
+                            <>
+                              <GraduationCap className="w-3 h-3 text-[#2ECC8F]" />
+                              <span>شرح عام / كورس</span>
+                            </>
+                          )}
+                        </span>
                       {!vid.isActive && (
                         <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-red-500/10 text-red-400 border border-red-500/30">
                           مخفي
@@ -316,8 +333,9 @@ export default function AdminVideosPage() {
                       <span className="truncate max-w-sm">{vid.videoUrl}</span>
                     </a>
                   </div>
+                </div>
 
-                  <div className="flex items-center gap-2 shrink-0">
+                <div className="flex items-center gap-2 shrink-0">
                     <button
                       onClick={() => setEditingVideo({ ...vid })}
                       className="p-2 rounded-xl bg-blue-500/10 border border-blue-500/30 text-blue-400 hover:bg-blue-500/20 transition-colors cursor-pointer"

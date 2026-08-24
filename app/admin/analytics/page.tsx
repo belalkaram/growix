@@ -354,11 +354,12 @@ export default async function AdminAnalyticsPage({
 
       </div>
 
-      {/* 🎯 LEAD RECOVERY & RETARGETING CENTER (ABANDONED CHECKOUTS + REGISTERED NON-BUYERS + PRICING DROP-OFFS) */}
+      {/* 🎯 LEAD RECOVERY & RETARGETING CENTER (ABANDONED CHECKOUTS + REGISTERED NON-BUYERS + PRICING DROP-OFFS + PACKAGES) */}
       <LeadRecoveryCenter 
         abandonedCheckouts={analytics.abandonedCheckoutsList}
         registeredNonBuyers={analytics.registeredNonBuyers}
         pricingFunnel={analytics.pricingFunnel}
+        packageAnalytics={analytics.packageAnalytics}
       />
 
       {/* ⏰ HOURLY TRAFFIC & PEAK BUYING HOURS HEATMAP */}

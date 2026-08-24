@@ -4,7 +4,8 @@ import React, { useState } from 'react';
 import { 
   AbandonedCheckoutLead, 
   RegisteredNonBuyer, 
-  PricingFunnelReport 
+  PricingFunnelReport,
+  PackageAnalyticsItem 
 } from '@/lib/queries/analytics';
 import { 
   Users, 
@@ -25,21 +26,28 @@ import {
   Smartphone,
   Eye,
   Tag,
-  DollarSign
+  DollarSign,
+  Package,
+  Layers,
+  Crown,
+  TrendingUp,
+  Percent
 } from 'lucide-react';
 
 interface LeadRecoveryCenterProps {
   abandonedCheckouts: AbandonedCheckoutLead[];
   registeredNonBuyers: RegisteredNonBuyer[];
   pricingFunnel: PricingFunnelReport;
+  packageAnalytics?: PackageAnalyticsItem[];
 }
 
 export const LeadRecoveryCenter: React.FC<LeadRecoveryCenterProps> = ({
   abandonedCheckouts,
   registeredNonBuyers,
   pricingFunnel,
+  packageAnalytics = [],
 }) => {
-  const [activeTab, setActiveTab] = useState<'abandoned' | 'nonbuyers' | 'pricing'>('abandoned');
+  const [activeTab, setActiveTab] = useState<'abandoned' | 'nonbuyers' | 'pricing' | 'packages'>('abandoned');
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
   const handleCopy = (text: string, id: string) => {
@@ -137,6 +145,24 @@ export const LeadRecoveryCenter: React.FC<LeadRecoveryCenterProps> = ({
           >
             <TrendingDown className="w-3.5 h-3.5" />
             <span>تسرب صفحة الأسعار</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('packages')}
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-black transition-all whitespace-nowrap cursor-pointer ${
+              activeTab === 'packages'
+                ? 'bg-[#0F9D58] text-white shadow-md'
+                : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            <Package className="w-3.5 h-3.5" />
+            <span>أداء وزيارات الباقات</span>
+            <span className={`text-[10px] px-1.5 py-0.2 rounded-md ${
+              activeTab === 'packages' ? 'bg-white/20 text-white' : 'bg-white/10 text-gray-400'
+            }`}>
+              {packageAnalytics.length}
+            </span>
           </button>
         </div>
       </div>
@@ -442,6 +468,81 @@ export const LeadRecoveryCenter: React.FC<LeadRecoveryCenterProps> = ({
             </div>
           </div>
 
+        </div>
+      )}
+
+      {/* ─── TAB 4: PACKAGES PERFORMANCE & VISITS ─── */}
+      {activeTab === 'packages' && (
+        <div className="space-y-6 animate-in fade-in duration-300">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-gray-400 bg-white/5 p-4 rounded-2xl border border-white/10">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-[#2ECC8F] shrink-0" />
+              <span>
+                إحصائيات صفحات الباقات المستقلة: عدد الزيارات، الجلسات الفريدة، والمبيعات المنفذة ومعدل التحويل لكل باقة.
+              </span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {packageAnalytics.map((pkg) => {
+              const isVip = pkg.packageId === 'bundle-vip';
+              return (
+                <div
+                  key={pkg.packageId}
+                  className={`p-5 rounded-2xl border flex flex-col justify-between space-y-4 shadow-md transition-all ${
+                    isVip 
+                      ? 'bg-gradient-to-b from-[#0B1220] to-[#0F172A] border-[#2ECC8F]/40 ring-2 ring-[#2ECC8F]/10' 
+                      : 'bg-white/5 border-white/10'
+                  }`}
+                >
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className={`text-[10px] font-black px-2.5 py-0.5 rounded-full ${
+                        isVip ? 'bg-amber-500 text-[#0B1220]' : 'bg-white/10 text-gray-300'
+                      }`}>
+                        {isVip ? '💎 الأكثر طلباً' : '📦 باقة مستقلة'}
+                      </span>
+                      <span className="text-[11px] font-mono text-gray-400">{pkg.path}</span>
+                    </div>
+
+                    <div>
+                      <h4 className="font-extrabold text-sm text-white line-clamp-1">{pkg.packageName}</h4>
+                    </div>
+
+                    {/* Stats Grid */}
+                    <div className="grid grid-cols-2 gap-2 text-xs pt-1 border-t border-white/10">
+                      <div className="p-2.5 rounded-xl bg-white/5 space-y-0.5">
+                        <span className="text-[10px] text-gray-400 block">إجمالي الزيارات</span>
+                        <span className="text-base font-black text-white">{pkg.views}</span>
+                      </div>
+                      <div className="p-2.5 rounded-xl bg-white/5 space-y-0.5">
+                        <span className="text-[10px] text-gray-400 block">الزوار الفريدين</span>
+                        <span className="text-base font-black text-blue-400">{pkg.uniqueSessions}</span>
+                      </div>
+                      <div className="p-2.5 rounded-xl bg-white/5 space-y-0.5">
+                        <span className="text-[10px] text-gray-400 block">الطلبات المنفذة</span>
+                        <span className="text-base font-black text-[#2ECC8F]">{pkg.ordersPlaced}</span>
+                      </div>
+                      <div className="p-2.5 rounded-xl bg-white/5 space-y-0.5">
+                        <span className="text-[10px] text-gray-400 block">معدل التحويل</span>
+                        <span className="text-base font-black text-amber-400">{pkg.conversionRate}%</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <a
+                    href={pkg.path}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full py-2 px-3 rounded-xl bg-white/10 hover:bg-white/20 text-gray-200 hover:text-white text-xs font-bold flex items-center justify-center gap-1.5 transition-colors"
+                  >
+                    <span>معاينة صفحة الباقة</span>
+                    <ExternalLink className="w-3.5 h-3.5 text-[#2ECC8F]" />
+                  </a>
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
 

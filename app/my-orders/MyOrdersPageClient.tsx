@@ -40,6 +40,16 @@ import {
 } from 'lucide-react';
 import { SITE_CONFIG } from '@/config/site';
 
+function getVideoThumbnail(url?: string): string | null {
+  if (!url) return null;
+  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|shorts\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+  const match = url.match(regExp);
+  if (match && match[2].length === 11) {
+    return `https://img.youtube.com/vi/${match[2]}/hqdefault.jpg`;
+  }
+  return null;
+}
+
 interface MyOrdersPageClientProps {
   orders: any[];
   userSession: any;
@@ -481,26 +491,47 @@ export const MyOrdersPageClient: React.FC<MyOrdersPageClientProps> = ({ orders, 
                                 key={v.id}
                                 className="bg-[#0B1220] border border-white/10 hover:border-[#2ECC8F]/40 rounded-2xl overflow-hidden shadow-md transition-all flex flex-col justify-between"
                               >
-                                {/* Video Thumbnail Card */}
-                                <div className="relative aspect-video bg-gradient-to-tr from-slate-900 via-slate-800 to-emerald-950 flex items-center justify-center p-4 group cursor-pointer"
-                                  onClick={() => handleVideoClick(v)}
-                                >
-                                  <div className="w-12 h-12 rounded-full bg-[#0F9D58] text-white flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-                                    <Play className="w-5 h-5 fill-current text-white translate-x-0.5" />
-                                  </div>
+                                {/* Video Thumbnail Card with Original Thumbnail Image */}
+                                {(() => {
+                                  const thumbUrl = getVideoThumbnail(v.videoUrl);
+                                  return (
+                                    <div 
+                                      className="relative aspect-video bg-slate-900 rounded-t-2xl overflow-hidden flex items-center justify-center p-4 group cursor-pointer"
+                                      onClick={() => handleVideoClick(v)}
+                                    >
+                                      {thumbUrl ? (
+                                        <img
+                                          src={thumbUrl}
+                                          alt={v.title}
+                                          loading="lazy"
+                                          className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                        />
+                                      ) : (
+                                        <div className="absolute inset-0 bg-gradient-to-tr from-slate-900 via-slate-800 to-emerald-950" />
+                                      )}
 
-                                  <span className="absolute top-2 right-2 px-2.5 py-1 rounded-lg text-[10px] font-bold bg-black/60 text-white backdrop-blur-md border border-white/10 flex items-center gap-1">
-                                    <Clock className="w-3 h-3 text-[#2ECC8F]" />
-                                    <span>شرح تفصيلي</span>
-                                  </span>
+                                      {/* Dark Gradient Overlay for Contrast */}
+                                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-black/20 group-hover:bg-black/40 transition-colors" />
 
-                                  {watchedVideos.has(v.id) && (
-                                    <span className="absolute top-2 left-2 px-2 py-0.5 rounded-lg text-[10px] font-bold bg-emerald-500 text-white flex items-center gap-1">
-                                      <Check className="w-3 h-3" />
-                                      <span>تمت المشاهدة</span>
-                                    </span>
-                                  )}
-                                </div>
+                                      {/* Play Button */}
+                                      <div className="relative z-10 w-12 h-12 rounded-full bg-[#0F9D58] text-white flex items-center justify-center shadow-xl shadow-emerald-950/60 group-hover:scale-115 group-hover:bg-[#2ECC8F] transition-all">
+                                        <Play className="w-5 h-5 fill-current text-white translate-x-0.5" />
+                                      </div>
+
+                                      <span className="absolute top-2.5 right-2.5 z-10 px-2.5 py-1 rounded-lg text-[10px] font-bold bg-black/70 text-white backdrop-blur-md border border-white/10 flex items-center gap-1 shadow-sm">
+                                        <Clock className="w-3 h-3 text-[#2ECC8F]" />
+                                        <span>شرح تفصيلي</span>
+                                      </span>
+
+                                      {watchedVideos.has(v.id) && (
+                                        <span className="absolute top-2.5 left-2.5 z-10 px-2 py-0.5 rounded-lg text-[10px] font-bold bg-emerald-500 text-white flex items-center gap-1 shadow-sm">
+                                          <Check className="w-3 h-3" />
+                                          <span>تمت المشاهدة</span>
+                                        </span>
+                                      )}
+                                    </div>
+                                  );
+                                })()}
 
                                 <div className="p-4 space-y-3 flex-1 flex flex-col justify-between">
                                   <div className="space-y-1">

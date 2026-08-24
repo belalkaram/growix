@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Link from 'next/link';
 import { motion } from 'motion/react';
 import { useRouter } from 'next/navigation';
 import { SITE_CONFIG, PricingPackage, MarketingTool } from '@/config/site';
@@ -191,27 +192,39 @@ export const PricingSection: React.FC<PricingSectionProps> = ({ packages, tools,
                   )}
                 </div>
 
-                {/* CTA Button */}
-                <div>
-                  <button
-                    onClick={() => handleSelectPackage(pkg, pkg.id === 'single-tool' ? selectedToolId : undefined)}
-                    className={`w-full py-4 px-6 rounded-2xl font-extrabold text-sm sm:text-base flex items-center justify-center gap-2 transition-all shadow-lg hover:scale-[1.02] ${
-                      isPopular
-                        ? 'bg-growix-gradient hover:bg-growix-gradient-hover text-white shadow-[#0F9D58]/30'
-                        : 'bg-[#0B1220] hover:bg-[#1a263d] text-white'
-                    }`}
-                  >
-                    <span>{pkg.ctaText}</span>
-                    <ArrowLeft className="w-4 h-4" />
-                  </button>
+                  {/* CTA Button */}
+                  <div className="space-y-2">
+                    <button
+                      onClick={() => handleSelectPackage(pkg, pkg.id === 'single-tool' ? selectedToolId : undefined)}
+                      className={`w-full py-4 px-6 rounded-2xl font-extrabold text-sm sm:text-base flex items-center justify-center gap-2 transition-all shadow-lg hover:scale-[1.02] cursor-pointer ${
+                        isPopular
+                          ? 'bg-growix-gradient hover:bg-growix-gradient-hover text-white shadow-[#0F9D58]/30'
+                          : 'bg-[#0B1220] hover:bg-[#1a263d] text-white'
+                      }`}
+                    >
+                      <span>{pkg.ctaText}</span>
+                      <ArrowLeft className="w-4 h-4" />
+                    </button>
 
-                  <div className={`text-[11px] text-center mt-3 flex items-center justify-center gap-1 ${
-                    isPopular ? 'text-gray-400' : 'text-gray-500'
-                  }`}>
-                    <ShieldCheck className="w-3.5 h-3.5 text-[#0F9D58]" />
-                    <span>تفعيل فور التحويل عبر الواتساب</span>
+                    <Link
+                      href={`/packages/${pkg.id}`}
+                      className={`w-full py-2.5 px-4 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all border cursor-pointer ${
+                        isPopular 
+                          ? 'border-[#2ECC8F]/40 hover:bg-white/10 text-emerald-300' 
+                          : 'border-gray-200 hover:bg-gray-100 text-gray-700'
+                      }`}
+                    >
+                      <span>استعراض تفاصيل ومحتويات الباقة</span>
+                      <ArrowLeft className="w-3.5 h-3.5" />
+                    </Link>
+
+                    <div className={`text-[11px] text-center pt-1 flex items-center justify-center gap-1 ${
+                      isPopular ? 'text-gray-400' : 'text-gray-500'
+                    }`}>
+                      <ShieldCheck className="w-3.5 h-3.5 text-[#0F9D58]" />
+                      <span>تفعيل فور التحويل عبر الواتساب</span>
+                    </div>
                   </div>
-                </div>
 
               </motion.div>
             );

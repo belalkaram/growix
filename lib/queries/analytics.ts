@@ -2,6 +2,7 @@ import { db } from '@/db';
 import { pageViews, orders, users, abandonedCheckouts, packages, tools } from '@/db/schema';
 import { desc, count, sql, and, gte, lte, eq, not, isNull } from 'drizzle-orm';
 import { auth } from '@/lib/auth';
+import { SITE_CONFIG } from '@/config/site';
 
 export interface AnalyticsFilters {
   range?: string;
@@ -37,6 +38,16 @@ export interface RegisteredNonBuyer {
   lastLoginAt: Date | null;
 }
 
+export interface PackageAnalyticsItem {
+  packageId: string;
+  packageName: string;
+  path: string;
+  views: number;
+  uniqueSessions: number;
+  ordersPlaced: number;
+  conversionRate: number;
+}
+
 export interface PricingFunnelReport {
   pricingViews: number;
   pricingUniqueSessions: number;
@@ -61,6 +72,9 @@ export interface ShopifyAnalyticsReport {
   abandonedCheckoutSessions: number;
   abandonmentRate: number;
   conversionRate: number;
+
+  // Package Performance Breakdown
+  packageAnalytics: PackageAnalyticsItem[];
 
   // Pricing Page Specific Funnel
   pricingFunnel: PricingFunnelReport;
@@ -218,7 +232,7 @@ export async function getAnalyticsSummary(filters: AnalyticsFilters = {}): Promi
       .where(and(...checkoutDurationConditions));
 
     // 5. Funnel Stage 2: Viewed Tools or Pricing Catalog
-    const catalogConditions = [...pvConditions, sql`(${pageViews.path} LIKE '/tools%' OR ${pageViews.path} LIKE '/pricing%')`];
+    const catalogConditions = [...pvConditions, sql`(${pageViews.path} LIKE '/tools%' OR ${pageViews.path} LIKE '/pricing%' OR ${pageViews.path} LIKE '/packages%')`];
     const [{ viewedCatalogSessions }] = await db
       .select({ viewedCatalogSessions: count(sql`DISTINCT ${pageViews.sessionId}`) })
       .from(pageViews)
@@ -448,6 +462,54 @@ export async function getAnalyticsSummary(filters: AnalyticsFilters = {}): Promi
       .from(pageViews)
       .groupBy(pageViews.path);
 
+    // 17. Package Pages Performance Breakdown
+    const packageViewsRaw = await db
+      .select({
+        path: pageViews.path,
+        views: count(),
+        uniqueSessions: count(sql`DISTINCT ${pageViews.sessionId}`),
+      })
+      .from(pageViews)
+      .where(and(...pvConditions, sql`${pageViews.path} LIKE '/packages%'`))
+      .groupBy(pageViews.path);
+
+    // Get orders by package
+    const ordersByPackageRaw = await db
+      .select({
+        packageId: orders.packageId,
+        ordersCount: count(),
+      })
+      .from(orders)
+      .where(orderWhereClause)
+      .groupBy(orders.packageId);
+
+    const ordersByPackageMap = new Map<string, number>();
+    ordersByPackageRaw.forEach((row) => {
+      if (row.packageId) {
+        ordersByPackageMap.set(row.packageId, Number(row.ordersCount) || 0);
+      }
+    });
+
+    const knownPackages = SITE_CONFIG.packages;
+    const packageAnalytics: PackageAnalyticsItem[] = knownPackages.map((pkg) => {
+      const pkgPath = `/packages/${pkg.id}`;
+      const foundPv = packageViewsRaw.find((pv) => pv.path === pkgPath || pv.path?.startsWith(pkgPath));
+      const views = foundPv ? Number(foundPv.views) : 0;
+      const uniqueSessions = foundPv ? Number(foundPv.uniqueSessions) : 0;
+      const ordersPlaced = ordersByPackageMap.get(pkg.id) || 0;
+      const conversionRate = uniqueSessions > 0 ? parseFloat(((ordersPlaced / uniqueSessions) * 100).toFixed(1)) : 0;
+
+      return {
+        packageId: pkg.id,
+        packageName: pkg.name,
+        path: pkgPath,
+        views,
+        uniqueSessions,
+        ordersPlaced,
+        conversionRate,
+      };
+    });
+
     return {
       totalViews: Number(totalViews) || 0,
       uniqueSessions: Number(uniqueSessions) || 0,
@@ -462,6 +524,8 @@ export async function getAnalyticsSummary(filters: AnalyticsFilters = {}): Promi
       abandonedCheckoutSessions,
       abandonmentRate,
       conversionRate,
+
+      packageAnalytics,
 
       pricingFunnel: {
         pricingViews,
@@ -502,6 +566,7 @@ export async function getAnalyticsSummary(filters: AnalyticsFilters = {}): Promi
       abandonedCheckoutSessions: 0,
       abandonmentRate: 0,
       conversionRate: 0,
+      packageAnalytics: [],
       pricingFunnel: {
         pricingViews: 0,
         pricingUniqueSessions: 0,
