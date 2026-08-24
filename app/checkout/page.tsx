@@ -22,7 +22,8 @@ import {
   UploadCloud,
   Image as ImageIcon,
   FileCheck,
-  Package
+  Package,
+  ExternalLink
 } from 'lucide-react';
 import { SITE_CONFIG, SITE_PRICING, PricingPackage } from '@/config/site';
 import { GrowixLogo } from '@/components/GrowixLogo';
@@ -447,9 +448,18 @@ function CheckoutContent() {
               </div>
             </div>
 
-            <div className="text-right sm:text-left">
+            <div className="text-right sm:text-left space-y-1">
               <span className="text-xs text-gray-300 block">الباقة المختارة:</span>
-              <span className="font-bold text-white text-sm">{currentPkg.name}</span>
+              <span className="font-black text-white text-sm sm:text-base block">{currentPkg.name}</span>
+              <Link
+                href={`/packages/${currentPkg.id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-[11px] font-bold text-[#2ECC8F] hover:underline"
+              >
+                <span>استعراض كل محتويات وشرح الباقة</span>
+                <ExternalLink className="w-3 h-3" />
+              </Link>
             </div>
           </div>
         </div>
@@ -505,44 +515,71 @@ function CheckoutContent() {
             <span className="text-xs text-gray-400">خطوة 1 من 4</span>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
             {availablePackages.map((pkg) => {
               const isSelected = pkg.id === activePkgId;
               const isVIP = pkg.id === 'bundle-vip';
               return (
-                <button
+                <div
                   key={pkg.id}
-                  type="button"
-                  onClick={() => setActivePkgId(pkg.id)}
-                  className={`p-4 rounded-2xl border text-right transition-all relative flex flex-col justify-between cursor-pointer ${
+                  className={`p-4 rounded-2xl border text-right transition-all relative flex flex-col justify-between ${
                     isSelected
-                      ? 'border-[#0F9D58] bg-emerald-50/70 ring-2 ring-[#0F9D58]/20 shadow-2xs'
-                      : 'border-gray-200 bg-gray-50/60 hover:bg-gray-100/80 text-gray-700'
+                      ? 'border-[#0F9D58] bg-emerald-50/80 ring-2 ring-[#0F9D58]/20 shadow-sm'
+                      : 'border-gray-200 bg-gray-50/70 hover:bg-gray-100/80 text-gray-700'
                   }`}
                 >
                   {isVIP && (
-                    <span className="absolute -top-2.5 left-3 text-[10px] bg-[#0F9D58] text-white px-2 py-0.5 rounded-full font-black shadow-xs">
-                      الأكثر طلباً ⭐
+                    <span className="absolute -top-2.5 left-3 text-[10px] bg-gradient-to-l from-amber-500 to-yellow-400 text-[#0B1220] px-2.5 py-0.5 rounded-full font-black shadow-xs flex items-center gap-1">
+                      <Sparkles className="w-3 h-3" />
+                      <span>الأقوى ⭐</span>
                     </span>
                   )}
 
-                  <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <span className={`text-xs font-black ${isSelected ? 'text-[#0F9D58]' : 'text-[#0B1220]'}`}>
+                  <div className="cursor-pointer" onClick={() => setActivePkgId(pkg.id)}>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className={`text-xs sm:text-sm font-black ${isSelected ? 'text-[#0F9D58]' : 'text-[#0B1220]'}`}>
                         {pkg.name}
                       </span>
-                      {isSelected && <CheckCircle2 className="w-4 h-4 text-[#0F9D58]" />}
+                      <div className={`w-4 h-4 rounded-full flex items-center justify-center border ${
+                        isSelected ? 'bg-[#0F9D58] border-[#0F9D58] text-white' : 'border-gray-300 bg-white'
+                      }`}>
+                        {isSelected && <Check className="w-2.5 h-2.5 stroke-[3]" />}
+                      </div>
                     </div>
-                    <p className="text-[11px] text-gray-500 leading-snug line-clamp-2 mb-3">
+
+                    <p className="text-[11px] text-gray-600 leading-relaxed line-clamp-2 mb-2 font-medium">
                       {pkg.description}
                     </p>
+
+                    {/* Deliverables checklist */}
+                    <div className="space-y-1 mb-3 pt-1 border-t border-gray-200/50 text-[10.5px]">
+                      {pkg.features.slice(0, 3).map((feat, fIdx) => (
+                        <div key={fIdx} className="flex items-center gap-1.5 text-gray-700">
+                          <Check className="w-3 h-3 text-[#0F9D58] shrink-0" />
+                          <span className="truncate">{feat.text}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
 
-                  <div className="pt-2 border-t border-gray-200/80 flex items-baseline justify-between">
-                    <span className="text-xs font-bold text-gray-400 line-through">{pkg.originalPrice}</span>
-                    <span className="text-sm font-black text-[#0B1220]">{pkg.discountedPrice} {pkg.currency}</span>
+                  <div className="space-y-2 pt-2 border-t border-gray-200/80">
+                    <div className="flex items-baseline justify-between">
+                      <span className="text-xs font-bold text-gray-400 line-through">{pkg.originalPrice}</span>
+                      <span className="text-sm font-black text-[#0B1220]">{pkg.discountedPrice} {pkg.currency}</span>
+                    </div>
+
+                    {/* Link to Dedicated Package Page */}
+                    <Link
+                      href={`/packages/${pkg.id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full py-1.5 px-2 rounded-lg bg-white hover:bg-gray-50 border border-gray-200 text-[10.5px] font-bold text-gray-700 hover:text-[#0F9D58] flex items-center justify-center gap-1 transition-colors"
+                    >
+                      <span>تفاصيل أكثر عن الباقة</span>
+                      <ExternalLink className="w-3 h-3 text-[#0F9D58]" />
+                    </Link>
                   </div>
-                </button>
+                </div>
               );
             })}
           </div>
@@ -998,15 +1035,31 @@ function CheckoutContent() {
                 </span>
               </div>
 
-              {/* Package Included Highlights */}
-              <div className="space-y-2 text-xs text-gray-700 bg-gray-50 p-4 rounded-2xl border border-gray-100">
-                <span className="font-extrabold text-[11px] text-gray-600 block mb-1">أبرز ما تشمله باقتك:</span>
+              {/* Package Included Highlights with Dedicated Details Button */}
+              <div className="space-y-2.5 text-xs text-gray-700 bg-gray-50 p-4 rounded-2xl border border-gray-100">
+                <div className="flex items-center justify-between">
+                  <span className="font-extrabold text-[11px] text-gray-700">أبرز ما تشمله باقتك:</span>
+                  <span className="text-[10px] text-[#0F9D58] font-bold">تفعيل دائم</span>
+                </div>
+
                 {currentPkg.features.slice(0, 4).map((f, i) => (
                   <div key={i} className="flex items-start gap-2">
                     <CheckCircle2 className="w-3.5 h-3.5 text-[#0F9D58] shrink-0 mt-0.5" />
                     <span className="font-medium text-gray-800">{f.text}</span>
                   </div>
                 ))}
+
+                <div className="pt-2 border-t border-gray-200/60">
+                  <Link
+                    href={`/packages/${currentPkg.id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full py-2 px-3 rounded-xl bg-white hover:bg-emerald-50 border border-emerald-200 text-emerald-800 font-black text-[11px] flex items-center justify-center gap-1.5 transition-colors shadow-2xs group"
+                  >
+                    <span>عرض الشرح الكامل والمميزات بالتفصيل</span>
+                    <ExternalLink className="w-3.5 h-3.5 text-[#0F9D58] group-hover:translate-x-[-2px] transition-transform" />
+                  </Link>
+                </div>
               </div>
 
               {/* Price Breakdown */}

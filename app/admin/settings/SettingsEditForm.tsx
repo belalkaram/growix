@@ -27,12 +27,12 @@ export const SettingsEditForm: React.FC<{ initialSettings: Record<string, string
     initialSettings.maintenance_message ||
       'الموقع حالياً خاضع للصيانة والتحديثات الدورية لتقديم أفضل تجربة. سنعود للعمل قريباً جداً!'
   );
-  const [vodafoneNumber, setVodafoneNumber] = useState(initialSettings.vodafone_number || '01009149021');
-  const [instapayId, setInstapayId] = useState(initialSettings.instapay_id || 'growix@instapay');
-  const [whatsappNumber, setWhatsappNumber] = useState(initialSettings.whatsapp_number || '201009149021');
-  const [whatsappDisplayNumber, setWhatsappDisplayNumber] = useState(initialSettings.whatsapp_display_number || '01009149021');
+  const [vodafoneNumber, setVodafoneNumber] = useState(initialSettings.vodafone_number || '01019033661');
+  const [instapayId, setInstapayId] = useState(initialSettings.instapay_id || '01019033661');
+  const [whatsappNumber, setWhatsappNumber] = useState(initialSettings.whatsapp_number || '966507988705');
+  const [whatsappDisplayNumber, setWhatsappDisplayNumber] = useState(initialSettings.whatsapp_display_number || '+966507988705');
   const [telegramUsername, setTelegramUsername] = useState(initialSettings.telegram_username || 'growix_official');
-  const [supportPhone, setSupportPhone] = useState(initialSettings.support_phone || '01009149021');
+  const [supportPhone, setSupportPhone] = useState(initialSettings.support_phone || '+966507988705');
   const [supportEmail, setSupportEmail] = useState(initialSettings.support_email || 'growix@belalkaram.dev');
   const [workingHours, setWorkingHours] = useState(initialSettings.working_hours || 'دعم فني وتفعيل فوري على مدار 24/7');
   const [heroNotice, setHeroNotice] = useState(initialSettings.hero_notice || 'خصم 65% لفترة محدودة');
@@ -241,7 +241,7 @@ export const SettingsEditForm: React.FC<{ initialSettings: Record<string, string
               type="text"
               value={whatsappNumber}
               onChange={(e) => setWhatsappNumber(e.target.value)}
-              placeholder="201019033661"
+              placeholder="966507988705"
               className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-xs font-medium text-white focus:outline-none focus:border-[#2ECC8F] dir-ltr text-right"
             />
           </div>
@@ -255,7 +255,7 @@ export const SettingsEditForm: React.FC<{ initialSettings: Record<string, string
               type="text"
               value={whatsappDisplayNumber}
               onChange={(e) => setWhatsappDisplayNumber(e.target.value)}
-              placeholder="01019033661"
+              placeholder="+966507988705"
               className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-xs font-medium text-white focus:outline-none focus:border-[#2ECC8F] dir-ltr text-right"
             />
           </div>

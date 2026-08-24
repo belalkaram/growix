@@ -80,8 +80,8 @@ export const SITE_CONFIG = {
   heroSubtitle: ' احصل على أقوى كورس تسويق إلكتروني عملي في الوطن العربي + 12 برنامج وأداة تسويقية احترافية لزيادة مبيعاتك وتكبير عملك تلقائياً + هدية داتا مصر التسويقية.',
 
   // Contact & Payment Details
-  whatsappNumber: '201019033661', // غيّر الرقم هنا بسهولة
-  whatsappDisplayNumber: '01019033661',
+  whatsappNumber: '966507988705', // رقم الواتساب الموحد
+  whatsappDisplayNumber: '+966507988705',
   telegramUsername: 'growix_official',
   supportEmail: 'growix@belalkaram.dev',
   workingHours: 'تفعيل فوري خلال أقل من ساعة | دعم فني على مدار 24/7',
