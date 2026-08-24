@@ -7,12 +7,13 @@ import { registerUser } from '@/lib/actions/users';
 import { GrowixLogo } from '@/components/GrowixLogo';
 import { TurnstileWidget } from '@/components/TurnstileWidget';
 import { AuthBrandShowcase } from '@/components/AuthBrandShowcase';
-import { User, Mail, Lock, ArrowLeft, ArrowRight, UserPlus, AlertCircle, CheckCircle2, ShieldCheck, Eye, EyeOff } from 'lucide-react';
+import { User, Mail, Lock, ArrowLeft, ArrowRight, UserPlus, AlertCircle, CheckCircle2, ShieldCheck, Eye, EyeOff, Smartphone } from 'lucide-react';
 
 export default function RegisterPage() {
   const router = useRouter();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -43,6 +44,7 @@ export default function RegisterPage() {
       const res = await registerUser({ 
         name, 
         email, 
+        phone: phone.trim(),
         password, 
         turnstileToken 
       });
@@ -143,7 +145,26 @@ export default function RegisterPage() {
                 />
               </div>
 
-              {/* 3. كلمة المرور */}
+              {/* 3. رقم الهاتف / الواتساب */}
+              <div>
+                <label className="block text-xs font-bold text-gray-200 mb-1 flex items-center justify-between">
+                  <span className="flex items-center gap-1.5">
+                    <Smartphone className="w-3.5 h-3.5 text-[#38BDF8]" />
+                    <span>رقم الهاتف / الواتساب</span>
+                  </span>
+                  <span className="text-[10px] text-gray-400 font-normal">لإرسال بيانات التفعيل</span>
+                </label>
+                <input
+                  type="tel"
+                  required
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="0507988705 أو 01019033661"
+                  className="w-full px-4 py-2.5 rounded-xl bg-[#070C1A] border border-white/15 text-sm font-medium text-white placeholder:text-gray-500 focus:outline-none focus:border-[#00FF87] focus:ring-2 focus:ring-[#00FF87]/20 transition-all dir-ltr text-right"
+                />
+              </div>
+
+              {/* 4. كلمة المرور */}
               <div>
                 <label className="block text-xs font-bold text-gray-200 mb-1 flex items-center gap-1.5">
                   <Lock className="w-3.5 h-3.5 text-[#38BDF8]" />
