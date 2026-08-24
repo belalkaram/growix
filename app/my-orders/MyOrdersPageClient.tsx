@@ -467,8 +467,9 @@ export const MyOrdersPageClient: React.FC<MyOrdersPageClientProps> = ({ orders, 
                             <span>1. فيديوهات الشرح والتدريب المباشر ({ord.videos?.length || 0} فيديو)</span>
                           </h4>
                           {ord.videos && ord.videos.length > 0 && (
-                            <span className="text-[10px] font-bold bg-[#2ECC8F]/10 text-[#0F9D58] px-2.5 py-1 rounded-full border border-[#2ECC8F]/20">
-                              مشغّل محمي خاص
+                            <span className="text-[10px] font-bold bg-[#2ECC8F]/10 text-[#0F9D58] px-2.5 py-1 rounded-full border border-[#2ECC8F]/20 flex items-center gap-1">
+                              <Sparkles className="w-3 h-3 text-[#2ECC8F]" />
+                              <span>مشغّل متقدم (تحكم بالجودة + تقديم/تأخير 5ث)</span>
                             </span>
                           )}
                         </div>
