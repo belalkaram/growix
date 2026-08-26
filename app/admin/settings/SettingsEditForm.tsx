@@ -17,7 +17,13 @@ import {
   Bot,
   Zap,
   CreditCard,
-  Sparkles
+  Sparkles,
+  Megaphone,
+  Flame,
+  Tag,
+  Sliders,
+  Link as LinkIcon,
+  ArrowLeft
 } from 'lucide-react';
 
 export const SettingsEditForm: React.FC<{ initialSettings: Record<string, string> }> = ({ initialSettings }) => {
@@ -49,6 +55,16 @@ export const SettingsEditForm: React.FC<{ initialSettings: Record<string, string
   // Facebook Pixel Settings
   const [facebookPixelId, setFacebookPixelId] = useState(initialSettings.facebook_pixel_id || '');
   const [facebookPixelEnabled, setFacebookPixelEnabled] = useState(initialSettings.facebook_pixel_enabled === 'true');
+
+  // Promo Ticker Bar Settings
+  const [promoBarEnabled, setPromoBarEnabled] = useState(initialSettings.promo_bar_enabled !== 'false');
+  const [promoDiscount, setPromoDiscount] = useState(initialSettings.promo_discount || '75%');
+  const [promoCustomerLimit, setPromoCustomerLimit] = useState(initialSettings.promo_customer_limit || '100 عميل');
+  const [promoToolCount, setPromoToolCount] = useState(initialSettings.promo_tool_count || '12 أداة تسويقية');
+  const [promoPrice, setPromoPrice] = useState(initialSettings.promo_price || '500 جنيه فقط');
+  const [promoCtaText, setPromoCtaText] = useState(initialSettings.promo_cta_text || 'احجز الآن مع التفعيل الفوري');
+  const [promoCtaLink, setPromoCtaLink] = useState(initialSettings.promo_cta_link || '/checkout?package=bundle-vip');
+  const [promoCustomText, setPromoCustomText] = useState(initialSettings.promo_custom_text || '');
 
   const [loading, setLoading] = useState(false);
   const [testingTelegram, setTestingTelegram] = useState(false);
@@ -87,6 +103,14 @@ export const SettingsEditForm: React.FC<{ initialSettings: Record<string, string
       telegram_alerts_enabled: String(telegramAlertsEnabled),
       facebook_pixel_id: facebookPixelId,
       facebook_pixel_enabled: String(facebookPixelEnabled),
+      promo_bar_enabled: String(promoBarEnabled),
+      promo_discount: promoDiscount,
+      promo_customer_limit: promoCustomerLimit,
+      promo_tool_count: promoToolCount,
+      promo_price: promoPrice,
+      promo_cta_text: promoCtaText,
+      promo_cta_link: promoCtaLink,
+      promo_custom_text: promoCustomText,
     });
 
     setLoading(false);
@@ -342,6 +366,206 @@ export const SettingsEditForm: React.FC<{ initialSettings: Record<string, string
           </div>
         </div>
       </div>
+
+      {/* Promo Announcement Ticker Bar Settings */}
+      <div className="space-y-4 pt-2 border-t border-white/10">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold">
+              <Megaphone className="w-4 h-4" />
+            </div>
+            <div>
+              <h3 className="text-sm font-black text-white flex items-center gap-2">
+                <span>الشريط العلوي المتحرك للعروض (Promo Ticker Bar)</span>
+                {promoBarEnabled ? (
+                  <span className="text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded-full font-bold">
+                    مُفعل ويظهر أعلى الموقع
+                  </span>
+                ) : (
+                  <span className="text-[10px] bg-gray-500/20 text-gray-400 border border-gray-500/30 px-2 py-0.5 rounded-full font-bold">
+                    مخفي
+                  </span>
+                )}
+              </h3>
+              <p className="text-xs text-gray-400">التحكم في الشريط الإعلاني المتحرك الذي يظهر في أعلى كافة صفحات الموقع</p>
+            </div>
+          </div>
+          
+          <label className="relative inline-flex items-center cursor-pointer">
+            <input 
+              type="checkbox" 
+              checked={promoBarEnabled}
+              onChange={(e) => setPromoBarEnabled(e.target.checked)}
+              className="sr-only peer"
+            />
+            <div className="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#2ECC8F]"></div>
+            <span className="mr-2 text-xs font-bold text-gray-300">{promoBarEnabled ? 'مُفعّل' : 'معطّل'}</span>
+          </label>
+        </div>
+
+        {/* Live Preview of Promo Bar */}
+        <div className="space-y-2">
+          <label className="block text-xs font-bold text-gray-300 flex items-center gap-1.5">
+            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+            <span>معاينة حية لشكل الشريط أعلى الموقع:</span>
+          </label>
+          <div className={`p-3 rounded-2xl bg-[#060B15] border border-[#0F9D58]/40 overflow-hidden text-xs text-white dir-ltr ${
+            !promoBarEnabled ? 'opacity-40 grayscale' : ''
+          }`}>
+            <div className="flex items-center gap-3 whitespace-nowrap overflow-x-auto py-1 dir-rtl scrollbar-none font-bold">
+              {promoCustomText.trim() ? (
+                <div className="inline-flex items-center gap-2">
+                  <Flame className="w-4 h-4 text-amber-400 shrink-0" />
+                  <span>{promoCustomText}</span>
+                </div>
+              ) : (
+                <>
+                  <div className="inline-flex items-center gap-1.5">
+                    <Flame className="w-4 h-4 text-amber-400 shrink-0" />
+                    <span>خصم</span>
+                    <span className="bg-amber-400 text-[#0B1220] px-2 py-0.5 rounded-md font-black">
+                      {promoDiscount}
+                    </span>
+                    <span>لأول</span>
+                    <span className="text-[#2ECC8F] font-black underline underline-offset-2">
+                      {promoCustomerLimit}
+                    </span>
+                    <span>فقط — الحق بسرعة!</span>
+                  </div>
+
+                  <span className="text-emerald-500/40">|</span>
+
+                  <div className="inline-flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-[#2ECC8F] shrink-0" />
+                    <span>احصل على</span>
+                    <span className="bg-[#0F9D58] text-white px-2 py-0.5 rounded-md font-black border border-[#2ECC8F]/30">
+                      {promoToolCount}
+                    </span>
+                    <span>بسعر</span>
+                    <span className="text-amber-300 font-black underline underline-offset-2">
+                      {promoPrice}
+                    </span>
+                  </div>
+                </>
+              )}
+
+              <span className="text-emerald-500/40">|</span>
+
+              <span className="inline-flex items-center gap-1 text-[#2ECC8F] font-black underline">
+                <span>{promoCtaText}</span>
+                <ArrowLeft className="w-3 h-3" />
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Promo Bar Settings Inputs */}
+        <div className="p-5 rounded-2xl bg-white/5 border border-white/10 space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <div>
+              <label className="block text-xs font-bold text-gray-300 mb-1.5 flex items-center gap-1.5">
+                <Tag className="w-3.5 h-3.5 text-[#2ECC8F]" />
+                <span>نسبة الخصم</span>
+              </label>
+              <input
+                type="text"
+                value={promoDiscount}
+                onChange={(e) => setPromoDiscount(e.target.value)}
+                placeholder="مثال: 75%"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-xs font-bold text-white focus:outline-none focus:border-[#2ECC8F]"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-gray-300 mb-1.5 flex items-center gap-1.5">
+                <Sliders className="w-3.5 h-3.5 text-[#2ECC8F]" />
+                <span>الحد الأقصى للعملاء</span>
+              </label>
+              <input
+                type="text"
+                value={promoCustomerLimit}
+                onChange={(e) => setPromoCustomerLimit(e.target.value)}
+                placeholder="مثال: 100 عميل"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-xs font-bold text-white focus:outline-none focus:border-[#2ECC8F]"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-gray-300 mb-1.5 flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-[#2ECC8F]" />
+                <span>عدد الأدوات / المحتوى</span>
+              </label>
+              <input
+                type="text"
+                value={promoToolCount}
+                onChange={(e) => setPromoToolCount(e.target.value)}
+                placeholder="مثال: 12 أداة تسويقية"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-xs font-bold text-white focus:outline-none focus:border-[#2ECC8F]"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-gray-300 mb-1.5 flex items-center gap-1.5">
+                <Flame className="w-3.5 h-3.5 text-amber-400" />
+                <span>السعر المعروض</span>
+              </label>
+              <input
+                type="text"
+                value={promoPrice}
+                onChange={(e) => setPromoPrice(e.target.value)}
+                placeholder="مثال: 500 جنيه فقط"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-xs font-bold text-[#2ECC8F] focus:outline-none focus:border-[#2ECC8F]"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-gray-300 mb-1.5 flex items-center gap-1.5">
+                <FileText className="w-3.5 h-3.5 text-[#2ECC8F]" />
+                <span>نص زر الحجز (CTA)</span>
+              </label>
+              <input
+                type="text"
+                value={promoCtaText}
+                onChange={(e) => setPromoCtaText(e.target.value)}
+                placeholder="مثال: احجز الآن مع التفعيل الفوري"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-xs font-bold text-white focus:outline-none focus:border-[#2ECC8F]"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-gray-300 mb-1.5 flex items-center gap-1.5">
+                <LinkIcon className="w-3.5 h-3.5 text-[#2ECC8F]" />
+                <span>رابط الزر (CTA Link)</span>
+              </label>
+              <input
+                type="text"
+                value={promoCtaLink}
+                onChange={(e) => setPromoCtaLink(e.target.value)}
+                placeholder="مثال: /checkout?package=bundle-vip"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-xs font-mono font-bold text-white focus:outline-none focus:border-[#2ECC8F] dir-ltr text-right"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-gray-300 mb-1.5 flex items-center justify-between">
+              <span className="flex items-center gap-1.5">
+                <Megaphone className="w-3.5 h-3.5 text-amber-400" />
+                <span>نص مخصص كامل للشريط المتحرك (اختياري):</span>
+              </span>
+              <span className="text-[10px] text-gray-400 font-normal">إذا تمت كتابته سيظهر مباشرة بدلاً من الأجزاء التلقائية</span>
+            </label>
+            <input
+              type="text"
+              value={promoCustomText}
+              onChange={(e) => setPromoCustomText(e.target.value)}
+              placeholder="مثال: 🔥 عرض خاص: كورس التسويق الشامل + 12 أداة مع داتا مصر مجاناً لفترة محدودة!"
+              className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-xs font-medium text-white focus:outline-none focus:border-[#2ECC8F]"
+            />
+          </div>
+        </div>
+      </div>
+
       <div className="space-y-4 pt-2">
         <h3 className="text-sm font-black text-[#2ECC8F] border-b border-white/10 pb-2">نصوص الهيدر والعنوان الرئيسية</h3>
 

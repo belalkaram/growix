@@ -1,26 +1,26 @@
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { getToolSeoBySlug, getAllToolsSeo, getTools, getSiteSettings } from '@/lib/queries';
+import { getToolSeoBySlug, getAllToolsSeo, getTools, getSiteSettings, getPackages } from '@/lib/queries';
 import { auth } from '@/lib/auth';
 import { MaintenanceScreen } from '@/components/MaintenanceScreen';
 import { HeaderNavbar } from '@/components/HeaderNavbar';
 import { Footer } from '@/components/Footer';
-import { Sparkles } from 'lucide-react';
+import { SITE_CONFIG, SITE_PRICING } from '@/config/site';
 
-interface ToolPageProps {
+interface Props {
   params: Promise<{ slug: string }>;
 }
 
-export async function generateStaticParams() {
-  const allSeo = await getAllToolsSeo();
-  return allSeo.map((tool) => ({ slug: tool.slug }));
-}
-
-export async function generateMetadata({ params }: ToolPageProps): Promise<Metadata> {
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const toolSeo = await getToolSeoBySlug(slug);
 
-  if (!toolSeo) return {};
+  if (!toolSeo) {
+    return {
+      title: 'الأداة غير موجودة | GROWIX',
+      robots: { index: false, follow: false },
+    };
+  }
 
   return {
     title: toolSeo.metaTitle,
@@ -35,7 +35,7 @@ export async function generateMetadata({ params }: ToolPageProps): Promise<Metad
       url: `https://growix.belalkaram.dev/tools/${slug}`,
       siteName: 'GROWIX',
       locale: 'ar_EG',
-      type: 'website',
+      type: 'article',
     },
     twitter: {
       card: 'summary_large_image',
@@ -45,13 +45,19 @@ export async function generateMetadata({ params }: ToolPageProps): Promise<Metad
   };
 }
 
-export default async function ToolPage({ params }: ToolPageProps) {
+export default async function ToolDetailPage({ params }: Props) {
   const { slug } = await params;
-  const [toolSeo, siteSettings, session] = await Promise.all([
+  const [toolSeo, toolsList, siteSettings, packages, session] = await Promise.all([
     getToolSeoBySlug(slug),
+    getTools(),
     getSiteSettings(),
+    getPackages(),
     auth(),
   ]);
+
+  if (!toolSeo) {
+    notFound();
+  }
 
   if (siteSettings?.maintenance_mode === 'true' && (session?.user as { role?: string })?.role !== 'admin') {
     return (
@@ -63,31 +69,35 @@ export default async function ToolPage({ params }: ToolPageProps) {
     );
   }
 
-  if (!toolSeo) notFound();
+  const singlePkg = packages.find((p) => p.id === 'single-tool') || SITE_CONFIG.packages.find((p) => p.id === 'single-tool') || SITE_CONFIG.packages[2];
+  const vipPkg = packages.find((p) => p.id === 'bundle-vip') || SITE_CONFIG.packages.find((p) => p.id === 'bundle-vip') || SITE_CONFIG.packages[0];
+  const singlePrice = singlePkg?.discountedPrice || SITE_PRICING.singleToolPrice;
+  const vipPrice = vipPkg?.discountedPrice || SITE_PRICING.vipPackagePrice;
+  const vipOriginalPrice = vipPkg?.originalPrice || SITE_PRICING.vipPackageOriginalPrice;
 
-  // Match tool data from DB
-  const allTools = await getTools();
-  const toolData = allTools.find((t) => t.id === toolSeo.toolId);
+  // Find matching tool entity to get features and long description
+  const toolData = toolsList.find((t) => t.id === toolSeo.toolId);
 
-  const toolImageUrl = `https://growix.belalkaram.dev/images/tools/${slug}.webp`;
+  // Dynamic Image mapping fallback based on toolId
+  const toolImageUrl = `/tools/${toolSeo.toolId}.png`;
 
-  // JSON-LD structured data for this tool page
+  // JSON-LD Product Schema
   const productSchema = {
     '@context': 'https://schema.org',
     '@type': 'Product',
     name: toolSeo.schemaName,
     description: toolSeo.schemaDescription,
-    image: [toolImageUrl],
-    brand: { '@type': 'Brand', name: 'GROWIX' },
-    sku: `growix-${slug}`,
-    url: `https://growix.belalkaram.dev/tools/${slug}`,
+    image: `https://growix.belalkaram.dev/tools/${toolSeo.toolId}.png`,
+    brand: {
+      '@type': 'Brand',
+      name: 'GROWIX',
+    },
     offers: {
       '@type': 'Offer',
-      price: toolSeo.toolId === 'course' || toolSeo.toolId === 'data-egypt' ? '500' : '200',
+      price: singlePrice,
       priceCurrency: 'EGP',
       availability: 'https://schema.org/InStock',
-      url: `https://growix.belalkaram.dev/checkout?package=single-tool&tool=${toolSeo.toolId}`,
-      itemCondition: 'https://schema.org/NewCondition',
+      url: `https://growix.belalkaram.dev/tools/${slug}`,
     },
   };
 
@@ -113,7 +123,6 @@ export default async function ToolPage({ params }: ToolPageProps) {
 
   return (
     <>
-      {/* JSON-LD Structured Data */}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(productSchema) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
@@ -122,13 +131,11 @@ export default async function ToolPage({ params }: ToolPageProps) {
         className="min-h-screen bg-[#F7F9FA] text-[#0B1220] font-sans"
         dir="rtl"
       >
-        <HeaderNavbar session={session} />
+        <HeaderNavbar session={session} settings={siteSettings} />
 
-        {/* ─── Hero Banner ─── */}
         <section className="bg-[#0B1220] text-white pt-32 pb-20 relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-[#0F9D58]/10 to-transparent pointer-events-none" />
           <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-            {/* Breadcrumb */}
             <nav className="mb-6 text-sm text-gray-400" aria-label="Breadcrumb">
               <ol className="flex items-center gap-2">
                 <li><a href="/" className="hover:text-[#2ECC8F] transition-colors">الرئيسية</a></li>
@@ -167,7 +174,7 @@ export default async function ToolPage({ params }: ToolPageProps) {
                 href={`/checkout?package=single-tool&tool=${toolSeo.toolId}`}
                 className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-2xl bg-gradient-to-l from-[#0F9D58] to-[#2ECC8F] text-white font-extrabold text-sm shadow-xl shadow-[#0F9D58]/30 hover:scale-105 transition-transform"
               >
-                <span>احصل على الأداة الآن — 200 جنيه فقط</span>
+                <span>احصل على الأداة الآن — {singlePrice} جنيه فقط</span>
               </a>
               <a
                 href="/checkout?package=bundle-vip"
@@ -245,13 +252,13 @@ export default async function ToolPage({ params }: ToolPageProps) {
               وفّر أكثر مع <span className="text-[#2ECC8F]">الباقة الكاملة</span>
             </h2>
             <p className="text-gray-300 mb-8 text-sm sm:text-base">
-              احصل على جميع الأدوات الـ 12 + كورس التسويق الإلكتروني + داتا مصر التسويقية — كل ده بـ 500 جنيه فقط بدل 2,400 جنيه.
+              احصل على جميع الأدوات الـ 12 + كورس التسويق الإلكتروني + داتا مصر التسويقية — كل ده بـ {vipPrice} جنيه فقط بدل {vipOriginalPrice} جنيه.
             </p>
             <a
               href="/checkout?package=bundle-vip"
               className="inline-flex items-center gap-2 px-10 py-4 rounded-2xl bg-gradient-to-l from-[#0F9D58] to-[#2ECC8F] text-white font-extrabold text-base shadow-xl shadow-[#0F9D58]/30 hover:scale-105 transition-transform"
             >
-              احصل على الباقة الكاملة — 500 ج فقط
+              احصل على الباقة الكاملة — {vipPrice} ج فقط
             </a>
           </div>
         </section>

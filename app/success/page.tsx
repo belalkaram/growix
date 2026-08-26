@@ -50,7 +50,7 @@ export default async function SuccessPage({
 
   return (
     <main className="min-h-screen bg-[#F7F9FA] text-[#0B1220] font-sans" dir="rtl">
-      <HeaderNavbar session={session} />
+      <HeaderNavbar session={session} settings={siteSettings} />
 
       <section className="pt-36 pb-24 px-4 sm:px-6 lg:px-8 max-w-3xl mx-auto">
         <div className="bg-white rounded-3xl p-8 sm:p-12 border border-gray-200 shadow-xl text-center space-y-6">

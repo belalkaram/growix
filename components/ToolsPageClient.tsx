@@ -27,7 +27,7 @@ import {
   Wand2,
   Languages
 } from 'lucide-react';
-import { MarketingTool } from '@/config/site';
+import { MarketingTool, PricingPackage } from '@/config/site';
 
 interface ToolWithSlug extends MarketingTool {
   slug?: string;
@@ -35,9 +35,12 @@ interface ToolWithSlug extends MarketingTool {
 
 interface ToolsPageClientProps {
   tools: ToolWithSlug[];
+  packages?: PricingPackage[];
 }
 
-export const ToolsPageClient: React.FC<ToolsPageClientProps> = ({ tools }) => {
+export const ToolsPageClient: React.FC<ToolsPageClientProps> = ({ tools, packages }) => {
+  const vipPkg = packages?.find((p) => p.id === 'bundle-vip');
+  const vipPrice = vipPkg?.discountedPrice || '500';
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
 
@@ -310,7 +313,7 @@ export const ToolsPageClient: React.FC<ToolsPageClientProps> = ({ tools }) => {
           </div>
 
           <h2 className="text-2xl sm:text-4xl font-black text-white">
-            احصل على الـ <span className="text-[#2ECC8F]">12 أداة كاملة</span> بسعر 500 جنيه فقط
+            احصل على الـ <span className="text-[#2ECC8F]">12 أداة كاملة</span> بسعر {vipPrice} جنيه فقط
           </h2>
 
           <p className="text-gray-300 text-xs sm:text-sm leading-relaxed">

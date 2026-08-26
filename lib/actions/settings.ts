@@ -46,9 +46,17 @@ export async function updateSiteSettingsAction(settingsMap: Record<string, strin
         });
     }
 
+    revalidatePath('/', 'layout');
     revalidatePath('/');
-    revalidatePath('/admin/settings');
+    revalidatePath('/pricing');
     revalidatePath('/tools');
+    revalidatePath('/course');
+    revalidatePath('/data-bonus');
+    revalidatePath('/how-it-works');
+    revalidatePath('/faq');
+    revalidatePath('/about');
+    revalidatePath('/checkout');
+    revalidatePath('/admin/settings');
     return { success: true };
   } catch (error) {
     console.error('Update settings error:', error);

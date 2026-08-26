@@ -15,9 +15,15 @@ interface HeaderNavbarProps {
   onOpenPaymentModal?: () => void;
   session?: any;
   isSubscriberPage?: boolean;
+  settings?: Record<string, string>;
 }
 
-export const HeaderNavbar: React.FC<HeaderNavbarProps> = ({ onOpenPaymentModal, session, isSubscriberPage }) => {
+export const HeaderNavbar: React.FC<HeaderNavbarProps> = ({ 
+  onOpenPaymentModal, 
+  session, 
+  isSubscriberPage,
+  settings 
+}) => {
   const pathname = usePathname();
   const router = useRouter();
   const isMyOrders = isSubscriberPage || pathname === '/my-orders';
@@ -75,7 +81,7 @@ export const HeaderNavbar: React.FC<HeaderNavbarProps> = ({ onOpenPaymentModal, 
       }`}
     >
       {/* Promo Announcement Ticker Bar (Hidden for subscribers) */}
-      {!isMyOrders && <PromoAnnouncementBar />}
+      {!isMyOrders && <PromoAnnouncementBar settings={settings} />}
 
       <div className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between dir-rtl transition-all duration-300 ${
         isScrolled ? 'py-2.5' : 'py-3.5'

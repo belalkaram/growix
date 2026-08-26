@@ -109,7 +109,7 @@ export default async function PackageDetailPage({ params }: PackagePageProps) {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       
-      <HeaderNavbar />
+      <HeaderNavbar settings={settings} />
 
       <main className="flex-1">
         <PackageDetailClient
@@ -119,7 +119,7 @@ export default async function PackageDetailPage({ params }: PackagePageProps) {
         />
       </main>
 
-      <Footer />
+      <Footer settings={settings} />
     </div>
   );
 }

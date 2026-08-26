@@ -23,21 +23,34 @@ async function computeServerOrderPrice(packageId: string, couponCode?: string | 
   let basePrice = 500;
   let originalPrice = 2000;
 
-  if (packageId === 'bundle-vip') {
-    basePrice = parseInt(SITE_PRICING.vipPackagePrice) || 500;
-    originalPrice = parseInt(SITE_PRICING.vipPackageOriginalPrice) || 2000;
-  } else if (packageId === 'bundle-premium') {
-    basePrice = parseInt(SITE_PRICING.fullPackagePrice) || 300;
-    originalPrice = parseInt(SITE_PRICING.fullPackageOriginalPrice) || 1200;
-  } else if (packageId === 'single-tool') {
-    basePrice = parseInt(SITE_PRICING.singleToolPrice) || 200;
-    originalPrice = parseInt(SITE_PRICING.singleToolOriginalPrice) || 700;
-  } else {
-    // Check custom packages in database
-    const [customPkg] = await db.select().from(packages).where(eq(packages.id, packageId)).limit(1);
-    if (customPkg) {
-      basePrice = parseInt(customPkg.discountedPrice.replace(/[^0-9]/g, '')) || 500;
-      originalPrice = parseInt(customPkg.originalPrice.replace(/[^0-9]/g, '')) || basePrice;
+  try {
+    const [dbPkg] = await db.select().from(packages).where(eq(packages.id, packageId)).limit(1);
+    if (dbPkg) {
+      basePrice = parseInt(dbPkg.discountedPrice.replace(/[^0-9]/g, '')) || 500;
+      originalPrice = parseInt(dbPkg.originalPrice.replace(/[^0-9]/g, '')) || 2000;
+    } else {
+      if (packageId === 'bundle-vip') {
+        basePrice = parseInt(SITE_PRICING.vipPackagePrice) || 500;
+        originalPrice = parseInt(SITE_PRICING.vipPackageOriginalPrice) || 2000;
+      } else if (packageId === 'bundle-premium') {
+        basePrice = parseInt(SITE_PRICING.fullPackagePrice) || 300;
+        originalPrice = parseInt(SITE_PRICING.fullPackageOriginalPrice) || 1200;
+      } else if (packageId === 'single-tool') {
+        basePrice = parseInt(SITE_PRICING.singleToolPrice) || 200;
+        originalPrice = parseInt(SITE_PRICING.singleToolOriginalPrice) || 700;
+      }
+    }
+  } catch (err) {
+    console.error('Error fetching live package price in computeServerOrderPrice:', err);
+    if (packageId === 'bundle-vip') {
+      basePrice = parseInt(SITE_PRICING.vipPackagePrice) || 500;
+      originalPrice = parseInt(SITE_PRICING.vipPackageOriginalPrice) || 2000;
+    } else if (packageId === 'bundle-premium') {
+      basePrice = parseInt(SITE_PRICING.fullPackagePrice) || 300;
+      originalPrice = parseInt(SITE_PRICING.fullPackageOriginalPrice) || 1200;
+    } else if (packageId === 'single-tool') {
+      basePrice = parseInt(SITE_PRICING.singleToolPrice) || 200;
+      originalPrice = parseInt(SITE_PRICING.singleToolOriginalPrice) || 700;
     }
   }
 

@@ -17,10 +17,23 @@ export const PackageEditForm: React.FC<{ initialData: any }> = ({ initialData })
   const [originalPrice, setOriginalPrice] = useState(initialData.originalPrice);
   const [period, setPeriod] = useState(initialData.period);
   const [description, setDescription] = useState(initialData.description);
+  const [ctaText, setCtaText] = useState(initialData.ctaText || 'اشترك الآن');
   const [features, setFeatures] = useState<FeatureItem[]>((initialData.features as FeatureItem[]) || []);
   const [isPopular, setIsPopular] = useState(initialData.isPopular);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  const handleAutoGenerateCta = () => {
+    if (initialData.id === 'single-tool') {
+      setCtaText(`اختر برنامجك واشترك بـ ${discountedPrice} ج`);
+    } else if (initialData.id === 'bundle-vip') {
+      setCtaText(`احصل على الباقة VIP بـ ${discountedPrice} ج`);
+    } else if (initialData.id === 'bundle-premium') {
+      setCtaText(`احصل على باقة Premium بـ ${discountedPrice} ج`);
+    } else {
+      setCtaText(`احصل على ${name} بـ ${discountedPrice} ج`);
+    }
+  };
 
   const handleFeatureChange = (index: number, field: keyof FeatureItem, value: any) => {
     const updated = [...features];
@@ -52,7 +65,7 @@ export const PackageEditForm: React.FC<{ initialData: any }> = ({ initialData })
       period,
       description,
       features,
-      ctaText: initialData.ctaText || 'اشترك الآن',
+      ctaText: ctaText.trim() || 'اشترك الآن',
     });
 
     setLoading(false);
@@ -152,6 +165,28 @@ export const PackageEditForm: React.FC<{ initialData: any }> = ({ initialData })
           rows={2}
           className="w-full px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-xs font-medium text-white focus:outline-none focus:border-[#2ECC8F]"
         />
+      </div>
+
+      <div>
+        <div className="flex items-center justify-between mb-1">
+          <label className="block text-xs font-bold text-gray-300">نص زر الشراء / الإجراء (CTA Button Text)</label>
+          <button
+            type="button"
+            onClick={handleAutoGenerateCta}
+            className="text-[11px] font-bold text-[#2ECC8F] hover:underline"
+            title="تحديث النص تلقائياً بحسب السعر واسم الباقة"
+          >
+            🔄 ضبط تلقائي مع السعر
+          </button>
+        </div>
+        <input
+          type="text"
+          value={ctaText}
+          onChange={(e) => setCtaText(e.target.value)}
+          placeholder="مثال: احصل على الباقة VIP بـ 500 ج"
+          className="w-full px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-xs font-bold text-white focus:outline-none focus:border-[#2ECC8F]"
+        />
+        <p className="text-[11px] text-gray-400 mt-1">هذا هو النص الذي سيظهر داخل أزرار الشراء الرئيسية في صفحات الأسعار والمتجر.</p>
       </div>
 
       {/* Dynamic Features List */}

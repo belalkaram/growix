@@ -1,7 +1,7 @@
 import { db } from '../db';
 import * as schema from '../db/schema';
 import { eq, asc, desc } from 'drizzle-orm';
-import { SITE_CONFIG, SITE_PRICING, MarketingTool, PricingPackage, FAQItem, Testimonial } from '../config/site';
+import { SITE_CONFIG, SITE_PRICING, PROMO_BAR_CONFIG, MarketingTool, PricingPackage, FAQItem, Testimonial } from '../config/site';
 import { TOOLS_SEO, ToolSeoData } from '../config/seo';
 
 // 1. Fetch all active packages with DB fallback to static SITE_CONFIG
@@ -164,6 +164,14 @@ export async function getSiteSettings(): Promise<Record<string, string>> {
     full_package_original_price: SITE_PRICING.fullPackageOriginalPrice,
     single_tool_price: SITE_PRICING.singleToolPrice,
     single_tool_original_price: SITE_PRICING.singleToolOriginalPrice,
+    promo_bar_enabled: String(PROMO_BAR_CONFIG.enabled),
+    promo_discount: PROMO_BAR_CONFIG.discount,
+    promo_customer_limit: PROMO_BAR_CONFIG.customerLimit,
+    promo_tool_count: PROMO_BAR_CONFIG.toolCount,
+    promo_price: PROMO_BAR_CONFIG.price,
+    promo_cta_text: 'احجز الآن مع التفعيل الفوري',
+    promo_cta_link: '/checkout?package=bundle-vip',
+    promo_custom_text: '',
   };
 
   try {

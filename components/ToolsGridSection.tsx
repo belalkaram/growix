@@ -30,6 +30,7 @@ import {
 
 interface ToolsGridSectionProps {
   tools?: MarketingTool[];
+  packages?: PricingPackage[];
   onOpenPaymentModal?: (pkg?: PricingPackage, toolId?: string) => void;
   isHomepage?: boolean;
 }
@@ -51,11 +52,14 @@ const toolSlugMap: Record<string, string> = {
 
 export const ToolsGridSection: React.FC<ToolsGridSectionProps> = ({ 
   tools, 
+  packages,
   onOpenPaymentModal, 
   isHomepage = false 
 }) => {
   const router = useRouter();
   const toolsList = tools && tools.length > 0 ? tools : SITE_CONFIG.tools;
+  const singlePkg = packages?.find((p) => p.id === 'single-tool') || SITE_CONFIG.packages.find((p) => p.id === 'single-tool') || SITE_CONFIG.packages[2];
+  const singleToolPrice = singlePkg?.discountedPrice || SITE_PRICING.singleToolPrice;
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
 
@@ -253,10 +257,10 @@ export const ToolsGridSection: React.FC<ToolsGridSectionProps> = ({
                 </Link>
 
                 <button
-                  onClick={() => handleOpenPayment(SITE_CONFIG.packages[1], tool.id)}
+                  onClick={() => handleOpenPayment(singlePkg, tool.id)}
                   className="py-2 px-3.5 rounded-xl bg-gray-100 group-hover:bg-growix-gradient text-[#0B1220] group-hover:text-white font-bold text-xs flex items-center gap-1 transition-all shadow-sm"
                 >
-                  <span>شراء بـ {SITE_PRICING.singleToolPrice}ج</span>
+                  <span>شراء بـ {singleToolPrice}ج</span>
                   <ArrowLeft className="w-3.5 h-3.5" />
                 </button>
               </div>

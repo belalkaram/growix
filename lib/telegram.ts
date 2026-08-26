@@ -335,3 +335,73 @@ export async function testTelegramConnectionAction(token?: string, chatId?: stri
   }
 }
 
+export interface TelegramLoginPayload {
+  userId: string;
+  userName: string;
+  userEmail: string;
+  userPhone?: string | null;
+  role?: string;
+  ip?: string;
+  userAgent?: string;
+  loginTime?: Date;
+}
+
+export async function sendTelegramLoginAlert(payload: TelegramLoginPayload): Promise<{ success: boolean; error?: string }> {
+  const { token, chatId, alertsEnabled } = await getTelegramCredentials();
+
+  if (!alertsEnabled) {
+    return { success: true };
+  }
+
+  if (!token || !chatId) {
+    return { success: false, error: 'Telegram credentials not configured' };
+  }
+
+  try {
+    const timeStr = (payload.loginTime ? new Date(payload.loginTime) : new Date()).toLocaleString('ar-EG', {
+      timeZone: 'Africa/Cairo',
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    });
+
+    const phoneLine = payload.userPhone ? `\n📱 <b>الهاتف:</b> <code>${payload.userPhone}</code>` : '';
+    const roleBadge = payload.role === 'admin' ? '👑 مسؤول (Admin)' : '👤 مستخدم (User)';
+
+    const message = `
+🔐 <b>تسجيل دخول جديد إلى منصة GROWIX!</b>
+━━━━━━━━━━━━━━━━━━━━
+⏰ <b>الوقت والتاريخ:</b> ${timeStr}
+
+👤 <b>بيانات الحساب:</b>
+• <b>الاسم:</b> ${payload.userName}
+• <b>البريد:</b> <code>${payload.userEmail}</code>${phoneLine}
+• <b>نوع الحساب:</b> ${roleBadge}
+• <b>معرف المستخدم:</b> <code>${payload.userId}</code>
+━━━━━━━━━━━━━━━━━━━━
+💡 <i>تم تسجيل الدخول بنجاح إلى لوحة المنصة.</i>
+    `.trim();
+
+    const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text: message,
+        parse_mode: 'HTML',
+      }),
+    });
+
+    const data = await res.json();
+    if (!data.ok) {
+      console.error('Telegram login alert API error:', data);
+      return { success: false, error: data.description || 'Telegram API error' };
+    }
+
+    return { success: true };
+  } catch (err: any) {
+    console.error('Failed to send Telegram login alert:', err);
+    return { success: false, error: err?.message || 'Network error' };
+  }
+}
+
+

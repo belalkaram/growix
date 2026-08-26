@@ -90,7 +90,7 @@ export const HomePageClient: React.FC<HomePageClientProps> = ({
       <JsonLd toolsSeo={toolsSeo} />
 
       {/* Sticky Header Navbar */}
-      <HeaderNavbar onOpenPaymentModal={() => handleNavigateToCheckout()} session={session} />
+      <HeaderNavbar onOpenPaymentModal={() => handleNavigateToCheckout()} session={session} settings={settings} />
 
       {/* Hero Section */}
       <HeroSection onOpenPaymentModal={() => handleNavigateToCheckout()} />
@@ -101,6 +101,7 @@ export const HomePageClient: React.FC<HomePageClientProps> = ({
       {/* Tools Section Summary */}
       <ToolsGridSection 
         tools={tools} 
+        packages={packages}
         onOpenPaymentModal={(pkg, toolId) => handleNavigateToCheckout(pkg, toolId)} 
         isHomepage={true}
       />

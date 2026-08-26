@@ -82,7 +82,7 @@ export default async function HowItWorksPage() {
 
   return (
     <main className="min-h-screen bg-[#F7F9FA] text-[#0B1220] font-sans" dir="rtl">
-      <HeaderNavbar session={session} />
+      <HeaderNavbar session={session} settings={siteSettings} />
 
       {/* Hero Header */}
       <section className="bg-[#0B1220] text-white pt-32 pb-20 text-center relative overflow-hidden">

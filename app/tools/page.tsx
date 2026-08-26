@@ -1,5 +1,5 @@
 import { Metadata } from 'next';
-import { getTools, getAllToolsSeo, getSiteSettings } from '@/lib/queries';
+import { getTools, getAllToolsSeo, getSiteSettings, getPackages } from '@/lib/queries';
 import { auth } from '@/lib/auth';
 import { HeaderNavbar } from '@/components/HeaderNavbar';
 import { Footer } from '@/components/Footer';
@@ -27,10 +27,11 @@ export const metadata: Metadata = {
 };
 
 export default async function ToolsIndexPage() {
-  const [toolsList, allSeo, siteSettings, session] = await Promise.all([
+  const [toolsList, allSeo, siteSettings, packages, session] = await Promise.all([
     getTools(),
     getAllToolsSeo(),
     getSiteSettings(),
+    getPackages(),
     auth(),
   ]);
 
@@ -71,7 +72,7 @@ export default async function ToolsIndexPage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
 
       <main className="min-h-screen bg-[#F7F9FA] text-[#0B1220] font-sans" dir="rtl">
-        <HeaderNavbar session={session} />
+        <HeaderNavbar session={session} settings={siteSettings} />
 
         {/* Hero */}
         <section className="bg-[#0B1220] text-white pt-32 pb-20 text-center relative overflow-hidden">
@@ -95,7 +96,7 @@ export default async function ToolsIndexPage() {
 
         {/* Interactive Client-side Search, Category Filter and Rich Cards */}
         <section className="pb-24">
-          <ToolsPageClient tools={toolsWithSlug} />
+          <ToolsPageClient tools={toolsWithSlug} packages={packages} />
         </section>
 
         <Footer settings={siteSettings} />

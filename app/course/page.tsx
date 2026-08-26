@@ -1,7 +1,7 @@
 import React from 'react';
 import { Metadata } from 'next';
-import { SITE_CONFIG } from '@/config/site';
-import { getSiteSettings } from '@/lib/queries';
+import { SITE_CONFIG, SITE_PRICING } from '@/config/site';
+import { getSiteSettings, getPackages } from '@/lib/queries';
 import { auth } from '@/lib/auth';
 import { MaintenanceScreen } from '@/components/MaintenanceScreen';
 import { HeaderNavbar } from '@/components/HeaderNavbar';
@@ -41,10 +41,14 @@ export const metadata: Metadata = {
 };
 
 export default async function CoursePage() {
-  const [siteSettings, session] = await Promise.all([
+  const [siteSettings, packages, session] = await Promise.all([
     getSiteSettings(),
+    getPackages(),
     auth(),
   ]);
+
+  const vipPkg = packages.find((p) => p.id === 'bundle-vip') || SITE_CONFIG.packages.find((p) => p.id === 'bundle-vip');
+  const vipPrice = vipPkg?.discountedPrice || SITE_PRICING.vipPackagePrice;
 
   if (siteSettings?.maintenance_mode === 'true' && (session?.user as { role?: string })?.role !== 'admin') {
     return (
@@ -69,7 +73,7 @@ export default async function CoursePage() {
     inLanguage: 'ar-EG',
     offers: {
       '@type': 'Offer',
-      price: '500',
+      price: vipPrice,
       priceCurrency: 'EGP',
       availability: 'https://schema.org/InStock',
       url: 'https://growix.belalkaram.dev/checkout?package=bundle-vip',
@@ -91,7 +95,7 @@ export default async function CoursePage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
 
       <main className="min-h-screen bg-[#F7F9FA] text-[#0B1220] font-sans" dir="rtl">
-        <HeaderNavbar session={session} />
+        <HeaderNavbar session={session} settings={siteSettings} />
 
         {/* Hero Banner */}
         <section className="bg-[#0B1220] text-white pt-32 pb-20 relative overflow-hidden">
@@ -235,7 +239,7 @@ export default async function CoursePage() {
         <section className="py-16 bg-[#0B1220] text-white text-center">
           <div className="max-w-3xl mx-auto px-4">
             <h2 className="text-2xl sm:text-3xl font-black mb-4">
-              احصل على <span className="text-[#2ECC8F]">الكورس الكامل + الـ 12 أداة</span> بـ 500 جنيه فقط
+              احصل على <span className="text-[#2ECC8F]">الكورس الكامل + الـ 12 أداة</span> بـ {vipPrice} جنيه فقط
             </h2>
             <p className="text-gray-300 mb-8 text-sm sm:text-base">
               تفعيل فوري لحسابك بعد الاشتراك مباشرة، مع دعم فني دائم وتحديثات مجانية.

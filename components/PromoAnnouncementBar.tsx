@@ -5,57 +5,100 @@ import Link from 'next/link';
 import { PROMO_BAR_CONFIG } from '@/config/site';
 import { Sparkles, Flame, ArrowLeft } from 'lucide-react';
 
-export const PromoAnnouncementBar: React.FC = () => {
-  if (!PROMO_BAR_CONFIG.enabled) return null;
+interface PromoAnnouncementBarProps {
+  settings?: Record<string, string>;
+}
+
+export const PromoAnnouncementBar: React.FC<PromoAnnouncementBarProps> = ({ settings }) => {
+  const isEnabled = settings?.promo_bar_enabled !== undefined 
+    ? settings.promo_bar_enabled === 'true' 
+    : PROMO_BAR_CONFIG.enabled;
+
+  if (!isEnabled) return null;
+
+  const discount = settings?.promo_discount || PROMO_BAR_CONFIG.discount;
+  const customerLimit = settings?.promo_customer_limit || PROMO_BAR_CONFIG.customerLimit;
+  const toolCount = settings?.promo_tool_count || PROMO_BAR_CONFIG.toolCount;
+  const price = settings?.promo_price || PROMO_BAR_CONFIG.price;
+  const ctaText = settings?.promo_cta_text || 'احجز الآن مع التفعيل الفوري';
+  const ctaLink = settings?.promo_cta_link || '/checkout?package=bundle-vip';
+  const customText = settings?.promo_custom_text?.trim();
 
   // Single item block helper to render styled text with highlighted elements
-  const renderItemContent = (keyPrefix: string, isDuplicate = false) => (
-    <div key={keyPrefix} className="inline-flex items-center gap-3 sm:gap-6 px-4 shrink-0 font-bold text-xs sm:text-sm text-white">
-      {/* Item 1: Discount & Customer limit */}
-      <div className="inline-flex items-center gap-1.5">
-        <Flame className="w-4 h-4 text-amber-400 shrink-0" />
-        <span>خصم</span>
-        <span className="bg-amber-400 text-[#0B1220] px-2 py-0.5 rounded-md font-black text-xs sm:text-sm shadow-sm">
-          {PROMO_BAR_CONFIG.discount}
-        </span>
-        <span>لأول</span>
-        <span className="text-[#2ECC8F] font-black underline underline-offset-2">
-          {PROMO_BAR_CONFIG.customerLimit}
-        </span>
-        <span>فقط — الحق بسرعة!</span>
+  const renderItemContent = (keyPrefix: string, isDuplicate = false) => {
+    if (customText) {
+      return (
+        <div key={keyPrefix} className="inline-flex items-center gap-3 sm:gap-6 px-4 shrink-0 font-bold text-xs sm:text-sm text-white">
+          <div className="inline-flex items-center gap-1.5">
+            <Flame className="w-4 h-4 text-amber-400 shrink-0" />
+            <span>{customText}</span>
+          </div>
+
+          <span className="text-emerald-500/40 font-normal">|</span>
+
+          <Link 
+            href={ctaLink} 
+            tabIndex={isDuplicate ? -1 : undefined}
+            aria-hidden={isDuplicate ? true : undefined}
+            className="inline-flex items-center gap-1 text-[#2ECC8F] hover:text-amber-300 transition-colors text-xs font-black underline"
+          >
+            <span>{ctaText}</span>
+            <ArrowLeft className="w-3 h-3" />
+          </Link>
+
+          <span className="text-emerald-500/40 font-normal">✦</span>
+        </div>
+      );
+    }
+
+    return (
+      <div key={keyPrefix} className="inline-flex items-center gap-3 sm:gap-6 px-4 shrink-0 font-bold text-xs sm:text-sm text-white">
+        {/* Item 1: Discount & Customer limit */}
+        <div className="inline-flex items-center gap-1.5">
+          <Flame className="w-4 h-4 text-amber-400 shrink-0" />
+          <span>خصم</span>
+          <span className="bg-amber-400 text-[#0B1220] px-2 py-0.5 rounded-md font-black text-xs sm:text-sm shadow-sm">
+            {discount}
+          </span>
+          <span>لأول</span>
+          <span className="text-[#2ECC8F] font-black underline underline-offset-2">
+            {customerLimit}
+          </span>
+          <span>فقط — الحق بسرعة!</span>
+        </div>
+
+        <span className="text-emerald-500/40 font-normal">|</span>
+
+        {/* Item 2: Tools count & Price */}
+        <div className="inline-flex items-center gap-1.5">
+          <Sparkles className="w-3.5 h-3.5 text-[#2ECC8F] shrink-0" />
+          <span>احصل على</span>
+          <span className="bg-[#0F9D58] text-white px-2 py-0.5 rounded-md font-black text-xs sm:text-sm shadow-sm border border-[#2ECC8F]/30">
+            {toolCount}
+          </span>
+          <span>بسعر</span>
+          <span className="text-amber-300 font-black text-sm sm:text-base underline underline-offset-2">
+            {price}
+          </span>
+        </div>
+
+        <span className="text-emerald-500/40 font-normal">|</span>
+
+        {/* CTA Link */}
+        <Link 
+          href={ctaLink} 
+          tabIndex={isDuplicate ? -1 : undefined}
+          aria-hidden={isDuplicate ? true : undefined}
+          className="inline-flex items-center gap-1 text-[#2ECC8F] hover:text-amber-300 transition-colors text-xs font-black underline"
+        >
+          <span>{ctaText}</span>
+          <ArrowLeft className="w-3 h-3" />
+        </Link>
+
+        <span className="text-emerald-500/40 font-normal">✦</span>
       </div>
-
-      <span className="text-emerald-500/40 font-normal">|</span>
-
-      {/* Item 2: Tools count & Price */}
-      <div className="inline-flex items-center gap-1.5">
-        <Sparkles className="w-3.5 h-3.5 text-[#2ECC8F] shrink-0" />
-        <span>احصل على</span>
-        <span className="bg-[#0F9D58] text-white px-2 py-0.5 rounded-md font-black text-xs sm:text-sm shadow-sm border border-[#2ECC8F]/30">
-          {PROMO_BAR_CONFIG.toolCount}
-        </span>
-        <span>بسعر</span>
-        <span className="text-amber-300 font-black text-sm sm:text-base underline underline-offset-2">
-          {PROMO_BAR_CONFIG.price}
-        </span>
-      </div>
-
-      <span className="text-emerald-500/40 font-normal">|</span>
-
-      {/* CTA Link */}
-      <Link 
-        href="/checkout?package=bundle-vip" 
-        tabIndex={isDuplicate ? -1 : undefined}
-        aria-hidden={isDuplicate ? true : undefined}
-        className="inline-flex items-center gap-1 text-[#2ECC8F] hover:text-amber-300 transition-colors text-xs font-black underline"
-      >
-        <span>احجز الآن مع التفعيل الفوري</span>
-        <ArrowLeft className="w-3 h-3" />
-      </Link>
-
-      <span className="text-emerald-500/40 font-normal">✦</span>
-    </div>
-  );
+    );
+  };
 
   return (
     <div 
