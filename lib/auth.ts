@@ -4,6 +4,7 @@ import bcrypt from 'bcryptjs';
 import { db } from '@/db';
 import { users } from '@/db/schema';
 import { eq } from 'drizzle-orm';
+import { sendTelegramLoginAlert } from '@/lib/telegram';
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   trustHost: true,
@@ -68,6 +69,18 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             .update(users)
             .set({ lastLoginAt: new Date() })
             .where(eq(users.id, user.id));
+
+          // Trigger Telegram login notification asynchronously
+          sendTelegramLoginAlert({
+            userId: user.id,
+            userName: user.name,
+            userEmail: user.email,
+            userPhone: user.phone,
+            role: user.role,
+            loginTime: new Date(),
+          }).catch((err) => {
+            console.error('Failed to trigger Telegram login notification:', err);
+          });
 
           return {
             id: user.id,

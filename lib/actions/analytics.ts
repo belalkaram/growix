@@ -80,7 +80,7 @@ export async function resetAnalyticsDataAction(options: ResetAnalyticsOptions) {
 }
 
 export interface AnalyticsFilterParams {
-  range?: string; // 'all' | 'today' | 'yesterday' | '7days' | '30days' | 'month' | 'year' | 'custom'
+  range?: string; // 'all' | 'today' | 'yesterday' | '7days' | '30days' | 'month' | 'last_month' | 'year' | 'custom'
   startDate?: string; // YYYY-MM-DD
   startTime?: string; // HH:mm
   endDate?: string; // YYYY-MM-DD
@@ -89,40 +89,137 @@ export interface AnalyticsFilterParams {
   path?: string; // specific page path
 }
 
+export interface VisitorLogsFilterParams {
+  range?: string; // 'all' | 'today' | 'yesterday' | '7days' | '30days' | 'month' | 'last_month' | 'year' | 'custom'
+  startDate?: string; // YYYY-MM-DD
+  startTime?: string; // HH:mm
+  endDate?: string; // YYYY-MM-DD
+  endTime?: string; // HH:mm
+  device?: string; // 'all' | 'desktop' | 'mobile'
+  path?: string; // specific page path or 'all'
+  search?: string; // search in path, sessionId, utmSource, referrer
+  limit?: number; // 15, 30, 50, 100, 200
+  includeAdmin?: boolean;
+}
+
 function parseDateRange(filter?: AnalyticsFilterParams): { start?: Date; end?: Date } {
   if (!filter) return {};
 
   const now = new Date();
   let start: Date | undefined;
-  let end: Date | undefined = new Date();
+  let end: Date | undefined;
 
   if (filter.range === 'today') {
-    start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+    start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+    end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
   } else if (filter.range === 'yesterday') {
-    start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 0, 0, 0);
-    end = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 23, 59, 59);
+    start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 0, 0, 0, 0);
+    end = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 23, 59, 59, 999);
   } else if (filter.range === '7days') {
     start = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    end = new Date();
   } else if (filter.range === '30days') {
     start = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    end = new Date();
   } else if (filter.range === 'month') {
-    start = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0);
+    start = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+    end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+  } else if (filter.range === 'last_month') {
+    start = new Date(now.getFullYear(), now.getMonth() - 1, 1, 0, 0, 0, 0);
+    end = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
   } else if (filter.range === 'year') {
-    start = new Date(now.getFullYear(), 0, 1, 0, 0, 0);
+    start = new Date(now.getFullYear(), 0, 1, 0, 0, 0, 0);
+    end = new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999);
   } else if (filter.startDate) {
     // Custom range
     const [year, month, day] = filter.startDate.split('-').map(Number);
     const [startHour, startMin] = (filter.startTime || '00:00').split(':').map(Number);
-    start = new Date(year, month - 1, day, startHour, startMin, 0);
+    start = new Date(year, month - 1, day, startHour, startMin, 0, 0);
 
     if (filter.endDate) {
       const [endYear, endMonth, endDay] = filter.endDate.split('-').map(Number);
       const [endHour, endMin] = (filter.endTime || '23:59').split(':').map(Number);
-      end = new Date(endYear, endMonth - 1, endDay, endHour, endMin, 59);
+      end = new Date(endYear, endMonth - 1, endDay, endHour, endMin, 59, 999);
     }
   }
 
   return { start, end };
+}
+
+export async function getRecentVisitorLogsAction(params: VisitorLogsFilterParams = {}) {
+  const session = await auth();
+  if (!session?.user || (session.user as { role?: string }).role !== 'admin') {
+    return { success: false, error: 'غير مصرح بالوصول', views: [], totalCount: 0 };
+  }
+
+  try {
+    const { start, end } = parseDateRange(params);
+    const conditions: any[] = [];
+
+    if (start) {
+      conditions.push(gte(pageViews.createdAt, start));
+    }
+    if (end) {
+      conditions.push(lte(pageViews.createdAt, end));
+    }
+
+    if (params.device && params.device !== 'all') {
+      conditions.push(eq(pageViews.deviceType, params.device));
+    }
+
+    if (params.path && params.path !== 'all') {
+      conditions.push(eq(pageViews.path, params.path));
+    }
+
+    if (!params.includeAdmin) {
+      conditions.push(sql`(${pageViews.isAdmin} IS FALSE OR ${pageViews.isAdmin} IS NULL)`);
+      conditions.push(sql`(${pageViews.isTest} IS FALSE OR ${pageViews.isTest} IS NULL)`);
+    }
+
+    if (params.search && params.search.trim()) {
+      const q = `%${params.search.trim()}%`;
+      conditions.push(
+        sql`(${pageViews.path} ILIKE ${q} OR ${pageViews.sessionId} ILIKE ${q} OR ${pageViews.utmSource} ILIKE ${q} OR ${pageViews.referrer} ILIKE ${q})`
+      );
+    }
+
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+    const limitCount = Math.min(Math.max(params.limit || 15, 1), 500);
+
+    const [{ totalCount }] = await db
+      .select({ totalCount: count() })
+      .from(pageViews)
+      .where(whereClause);
+
+    const views = await db
+      .select()
+      .from(pageViews)
+      .where(whereClause)
+      .orderBy(desc(pageViews.createdAt))
+      .limit(limitCount);
+
+    return {
+      success: true,
+      totalCount: Number(totalCount || 0),
+      views: views.map((v) => ({
+        id: v.id,
+        sessionId: v.sessionId,
+        path: v.path,
+        referrer: v.referrer,
+        utmSource: v.utmSource,
+        utmMedium: v.utmMedium,
+        utmCampaign: v.utmCampaign,
+        deviceType: v.deviceType,
+        durationSeconds: v.durationSeconds,
+        isAdmin: v.isAdmin,
+        createdAt: v.createdAt.toISOString(),
+      })),
+      timestamp: new Date().toISOString(),
+    };
+  } catch (error: any) {
+    console.error('getRecentVisitorLogsAction error:', error);
+    return { success: false, error: error.message || 'حدث خطأ أثناء جلب سجل الزيارات', views: [], totalCount: 0 };
+  }
 }
 
 export async function getDynamicAnalyticsAction(filter?: AnalyticsFilterParams) {

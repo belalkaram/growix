@@ -3,6 +3,7 @@ import { getAnalyticsSummary } from '@/lib/queries/analytics';
 import { AdvancedDateFilter } from './AdvancedDateFilter';
 import { ResetAnalyticsModal } from './ResetAnalyticsModal';
 import { LeadRecoveryCenter } from './LeadRecoveryCenter';
+import { RealtimeVisitorFeed } from './RealtimeVisitorFeed';
 import { 
   BarChart3, 
   Eye, 
@@ -493,88 +494,11 @@ export default async function AdminAnalyticsPage({
 
       </div>
 
-      {/* REALTIME VISITOR LOG (Live Feed) */}
-      <div className="p-6 sm:p-7 rounded-3xl bg-[#0F172A] border border-white/10 space-y-4 shadow-xl">
-        <div className="flex items-center justify-between">
-          <h2 className="text-base font-black text-white flex items-center gap-2">
-            <Activity className="w-5 h-5 text-[#2ECC8F]" />
-            <span>سجل آخر الزيارات اللحظية (Realtime Live Feed)</span>
-          </h2>
-          <span className="text-xs text-gray-400">آخر 15 جلسة مسجلة</span>
-        </div>
-
-        {analytics.recentViews.length === 0 ? (
-          <p className="text-xs text-gray-400 py-8 text-center">لا توجد زيارات مسجلة تطابق الفلتر</p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-right text-xs">
-              <thead className="text-gray-400 border-b border-white/10 text-[11px]">
-                <tr>
-                  <th className="py-3 px-3">الوقت والتاريخ</th>
-                  <th className="py-3 px-3">الجلسة (Session ID)</th>
-                  <th className="py-3 px-3">الصفحة (Path)</th>
-                  <th className="py-3 px-3">الجهاز (Device)</th>
-                  <th className="py-3 px-3">مدة البقاء</th>
-                  <th className="py-3 px-3">المصدر (UTM / Referrer)</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-white/5">
-                {analytics.recentViews.map((view) => (
-                  <tr key={view.id} className="hover:bg-white/5 transition-colors">
-                    <td className="py-3 px-3 text-gray-400 whitespace-nowrap font-mono text-[11px]">
-                      {new Date(view.createdAt).toLocaleTimeString('ar-EG', {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                        second: '2-digit',
-                      })}
-                    </td>
-                    <td className="py-3 px-3 font-mono text-gray-300 whitespace-nowrap">
-                      {view.sessionId.slice(0, 14)}...
-                    </td>
-                    <td className="py-3 px-3 text-white font-mono font-bold max-w-xs truncate">
-                      {view.path}
-                    </td>
-                    <td className="py-3 px-3 whitespace-nowrap">
-                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold flex items-center gap-1 w-fit ${
-                        view.deviceType === 'mobile'
-                          ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
-                          : 'bg-purple-500/10 text-purple-400 border border-purple-500/20'
-                      }`}>
-                        {view.deviceType === 'mobile' ? (
-                          <>
-                            <Smartphone className="w-3 h-3" />
-                            <span>موبايل</span>
-                          </>
-                        ) : (
-                          <>
-                            <Laptop className="w-3 h-3" />
-                            <span>كمبيوتر</span>
-                          </>
-                        )}
-                      </span>
-                    </td>
-                    <td className="py-3 px-3 font-mono text-amber-400 whitespace-nowrap font-bold">
-                      {formatDuration(view.durationSeconds || 0)}
-                    </td>
-                    <td className="py-3 px-3 text-gray-400 text-[11px] truncate max-w-xs">
-                      {view.utmSource ? (
-                        <span className="flex items-center gap-1">
-                          <Target className="w-3 h-3 text-[#2ECC8F]" />
-                          <span>{view.utmSource}</span>
-                        </span>
-                      ) : view.referrer ? (
-                        view.referrer
-                      ) : (
-                        'مباشر (Direct)'
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+      {/* REALTIME VISITOR LOG (Interactive Live Feed with Date, Day, Month & Custom Filters) */}
+      <RealtimeVisitorFeed 
+        initialViews={analytics.recentViews} 
+        availablePaths={analytics.availablePaths} 
+      />
 
     </div>
   );
