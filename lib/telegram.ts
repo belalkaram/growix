@@ -404,4 +404,92 @@ export async function sendTelegramLoginAlert(payload: TelegramLoginPayload): Pro
   }
 }
 
+export interface TelegramNewUserPayload {
+  userId: string;
+  userName: string;
+  userEmail: string;
+  userPhone?: string | null;
+  role?: string;
+  source: 'web_register' | 'admin_manual' | 'admin_auto';
+  autoPassword?: string;
+  createdAt?: Date;
+}
+
+export async function sendTelegramNewUserAlert(payload: TelegramNewUserPayload): Promise<{ success: boolean; error?: string }> {
+  const { token, chatId, alertsEnabled } = await getTelegramCredentials();
+
+  if (!alertsEnabled) {
+    return { success: true };
+  }
+
+  if (!token || !chatId) {
+    return { success: false, error: 'Telegram credentials not configured' };
+  }
+
+  try {
+    const timeStr = (payload.createdAt ? new Date(payload.createdAt) : new Date()).toLocaleString('ar-EG', {
+      timeZone: 'Africa/Cairo',
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    });
+
+    const phoneLine = payload.userPhone ? `\n📱 <b>الهاتف / الواتساب:</b> <code>${payload.userPhone}</code>` : '';
+    const passwordLine = payload.autoPassword ? `\n🔑 <b>كلمة المرور المولدة:</b> <code>${payload.autoPassword}</code>` : '';
+
+    let sourceTitle = '🎉 <b>تسجيل حساب مستخدم جديد في منصة GROWIX!</b>';
+    let sourceLabel = '🌐 تسجيل ذاتي عبر الموقع (Web Registration)';
+
+    if (payload.source === 'admin_manual') {
+      sourceTitle = '👤 <b>تم إنشاء مستخدم جديد من لوحة تحكم الأدمن!</b>';
+      sourceLabel = '🛠 تم الإنشاء يدوياً بواسطة المدير (Admin Manual)';
+    } else if (payload.source === 'admin_auto') {
+      sourceTitle = '⚡ <b>تم توليد حساب مستخدم تلقائي (1-Click)!</b>';
+      sourceLabel = '🤖 تم التوليد بنقرة واحدة من لوحة التحكم (Auto Generated)';
+    }
+
+    const roleBadge = payload.role === 'admin' 
+      ? '👑 مسؤول (Admin)' 
+      : payload.role === 'test' 
+      ? '🧪 تجريبي (Test)' 
+      : '👤 مستخدم عادي (User)';
+
+    const message = `
+${sourceTitle}
+━━━━━━━━━━━━━━━━━━━━
+⏰ <b>الوقت والتاريخ:</b> ${timeStr}
+📡 <b>طريقة الإنشاء:</b> ${sourceLabel}
+
+👤 <b>بيانات الحساب:</b>
+• <b>الاسم:</b> ${payload.userName}
+• <b>البريد:</b> <code>${payload.userEmail}</code>${phoneLine}${passwordLine}
+• <b>نوع الحساب / الرتبة:</b> ${roleBadge}
+• <b>معرف المستخدم (ID):</b> <code>${payload.userId}</code>
+━━━━━━━━━━━━━━━━━━━━
+✨ <i>تم تسجيل وحفظ بيانات الحساب بنجاح في قاعدة البيانات.</i>
+    `.trim();
+
+    const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text: message,
+        parse_mode: 'HTML',
+      }),
+    });
+
+    const data = await res.json();
+    if (!data.ok) {
+      console.error('Telegram new user alert API error:', data);
+      return { success: false, error: data.description || 'Telegram API error' };
+    }
+
+    return { success: true };
+  } catch (err: any) {
+    console.error('Failed to send Telegram new user alert:', err);
+    return { success: false, error: err?.message || 'Network error' };
+  }
+}
+
+
 

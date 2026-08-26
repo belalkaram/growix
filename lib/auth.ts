@@ -70,17 +70,19 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             .set({ lastLoginAt: new Date() })
             .where(eq(users.id, user.id));
 
-          // Trigger Telegram login notification asynchronously
-          sendTelegramLoginAlert({
-            userId: user.id,
-            userName: user.name,
-            userEmail: user.email,
-            userPhone: user.phone,
-            role: user.role,
-            loginTime: new Date(),
-          }).catch((err) => {
-            console.error('Failed to trigger Telegram login notification:', err);
-          });
+          // Trigger Telegram login notification
+          try {
+            await sendTelegramLoginAlert({
+              userId: user.id,
+              userName: user.name,
+              userEmail: user.email,
+              userPhone: user.phone,
+              role: user.role,
+              loginTime: new Date(),
+            });
+          } catch (tgErr) {
+            console.error('Failed to trigger Telegram login notification:', tgErr);
+          }
 
           return {
             id: user.id,

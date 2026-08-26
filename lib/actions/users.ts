@@ -10,6 +10,7 @@ import { revalidatePath } from 'next/cache';
 import { verifyTurnstileToken } from '@/lib/turnstile';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { isProtectedSuperAdmin } from '@/lib/super-admins';
+import { sendTelegramNewUserAlert } from '@/lib/telegram';
 import crypto from 'crypto';
 
 const registerSchema = z.object({
@@ -75,6 +76,21 @@ export async function registerUser(formData: {
       })
       .returning();
 
+    // Send Telegram Notification for New User Registration
+    try {
+      await sendTelegramNewUserAlert({
+        userId: newUser.id,
+        userName: newUser.name,
+        userEmail: newUser.email,
+        userPhone: newUser.phone,
+        role: newUser.role,
+        source: 'web_register',
+        createdAt: newUser.createdAt,
+      });
+    } catch (tgErr) {
+      console.error('Failed to send telegram new user alert:', tgErr);
+    }
+
     return {
       success: true,
       user: { id: newUser.id, name: newUser.name, email: newUser.email },
@@ -139,6 +155,21 @@ export async function createUserManualAction(data: {
       })
       .returning();
 
+    // Send Telegram Notification for Admin-created User
+    try {
+      await sendTelegramNewUserAlert({
+        userId: newUser.id,
+        userName: newUser.name,
+        userEmail: newUser.email,
+        userPhone: newUser.phone,
+        role: newUser.role,
+        source: 'admin_manual',
+        createdAt: newUser.createdAt,
+      });
+    } catch (tgErr) {
+      console.error('Failed to send telegram admin manual user alert:', tgErr);
+    }
+
     revalidatePath('/admin/users');
     return { success: true, user: newUser };
   } catch (err: any) {
@@ -176,6 +207,21 @@ export async function createUserAutoAction(role: 'admin' | 'user' | 'test' = 'us
         role,
       })
       .returning();
+
+    // Send Telegram Notification for Auto-generated User
+    try {
+      await sendTelegramNewUserAlert({
+        userId: newUser.id,
+        userName: newUser.name,
+        userEmail: newUser.email,
+        role: newUser.role,
+        source: 'admin_auto',
+        autoPassword,
+        createdAt: newUser.createdAt,
+      });
+    } catch (tgErr) {
+      console.error('Failed to send telegram auto user alert:', tgErr);
+    }
 
     revalidatePath('/admin/users');
 
