@@ -573,5 +573,137 @@ ${sourceTitle}
   }
 }
 
+export interface TelegramSecurityPayload {
+  ip: string;
+  action: string;
+  requestCount: number;
+  timeWindow: string;
+  endpoint?: string;
+  details?: string;
+  detectedAt?: Date;
+}
+
+export async function sendTelegramSecurityAlert(payload: TelegramSecurityPayload): Promise<{ success: boolean; error?: string }> {
+  const { token, chatId, alertsEnabled } = await getTelegramCredentials();
+
+  if (!alertsEnabled) return { success: true };
+  if (!token || !chatId) return { success: false, error: 'Telegram credentials not configured' };
+
+  try {
+    const timeStr = (payload.detectedAt ? new Date(payload.detectedAt) : new Date()).toLocaleString('ar-EG', {
+      timeZone: 'Africa/Cairo',
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    });
+
+    const endpointLine = payload.endpoint ? `\n🎯 <b>المسار المستهدف:</b> <code>${payload.endpoint}</code>` : '';
+    const detailsLine = payload.details ? `\n📝 <b>تفاصيل:</b> <i>${payload.details}</i>` : '';
+
+    const message = `
+🚨 <b>تحذير أمني عاجل: رصد نشاط مفرط أو محاولة هجوم!</b>
+━━━━━━━━━━━━━━━━━━━━
+⏰ <b>الوقت:</b> ${timeStr}
+🌐 <b>عنوان الـ IP:</b> <code>${payload.ip}</code>
+⚡ <b>النشاط:</b> تم رصد <b>${payload.requestCount} طلب</b> خلال ${payload.timeWindow}${endpointLine}
+🛡️ <b>نوع العملية:</b> <code>${payload.action}</code>${detailsLine}
+━━━━━━━━━━━━━━━━━━━━
+⚠️ <i>تم تقييد / حظر الطلبات من هذا الـ IP تلقائياً لحماية موارد المنصة.</i>
+    `.trim();
+
+    const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text: message,
+        parse_mode: 'HTML',
+      }),
+    });
+
+    const data = await res.json();
+    if (!data.ok) {
+      console.error('Telegram security alert API error:', data);
+      return { success: false, error: data.description };
+    }
+
+    return { success: true };
+  } catch (err: any) {
+    console.error('Failed to send Telegram security alert:', err);
+    return { success: false, error: err?.message };
+  }
+}
+
+export interface TelegramTransactionPayload {
+  provider: string;
+  amount: string;
+  senderPhone: string;
+  transactionId: string;
+  status: 'AUTO_APPROVED' | 'REVIEW_REQUIRED' | 'FAILED' | 'DUPLICATE' | string;
+  reviewReason?: string;
+  matchedOrderId?: string;
+}
+
+export async function sendTelegramTransactionAlert(payload: TelegramTransactionPayload): Promise<{ success: boolean; error?: string }> {
+  const { token, chatId, alertsEnabled } = await getTelegramCredentials();
+
+  if (!alertsEnabled) return { success: true };
+  if (!token || !chatId) return { success: false, error: 'Telegram credentials not configured' };
+
+  try {
+    const timeStr = new Date().toLocaleString('ar-EG', {
+      timeZone: 'Africa/Cairo',
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    });
+
+    const isAuto = payload.status === 'AUTO_APPROVED';
+    const providerName = payload.provider === 'vodafone_cash' ? 'فودافون كاش' : 'إنستاباي (InstaPay)';
+    
+    let statusEmoji = isAuto ? '🟢' : '🟡';
+    let statusTitle = isAuto 
+      ? '⚡ <b>تم استقبال تحويل وتفعيله تلقائياً بنجاح!</b>' 
+      : '⚠️ <b>تحويل مالي وارد يتطلب المراجعة اليدوية!</b>';
+
+    const orderLine = payload.matchedOrderId 
+      ? `\n🆔 <b>طلب مرتبط:</b> <code>${payload.matchedOrderId}</code>` 
+      : '\n⚠️ <b>الحالة:</b> لا يوجد طلب مطابق بشكل مؤكد حتى الآن';
+
+    const reasonLine = payload.reviewReason ? `\n📝 <b>ملاحظة النظام:</b> <i>${payload.reviewReason}</i>` : '';
+
+    const message = `
+${statusEmoji} ${statusTitle}
+━━━━━━━━━━━━━━━━━━━━
+⏰ <b>الوقت:</b> ${timeStr}
+🏦 <b>وسيلة الدفع:</b> ${providerName}
+💰 <b>المبلغ المستلم:</b> <b>${payload.amount} جنية</b>
+📱 <b>رقم المحوِّل:</b> <code>${payload.senderPhone}</code>
+🔖 <b>رقم المعاملة:</b> <code>${payload.transactionId}</code>${orderLine}${reasonLine}
+━━━━━━━━━━━━━━━━━━━━
+🔍 <i>يمكنك إدارة ومراجعة المعاملات بالكامل من لوحة التحكم.</i>
+    `.trim();
+
+    const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text: message,
+        parse_mode: 'HTML',
+      }),
+    });
+
+    const data = await res.json();
+    if (!data.ok) {
+      console.error('Telegram transaction alert API error:', data);
+      return { success: false, error: data.description };
+    }
+
+    return { success: true };
+  } catch (err: any) {
+    console.error('Failed to send Telegram transaction alert:', err);
+    return { success: false, error: err?.message };
+  }
+}
+
 
 

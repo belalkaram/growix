@@ -286,3 +286,16 @@ export const pushSubscriptions = pgTable('push_subscriptions', {
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
   lastUsedAt: timestamp('last_used_at'),
 });
+
+// 18. File Downloads Table (Tracking user downloads to audit engagement)
+export const fileDownloads = pgTable('file_downloads', {
+  id: serial('id').primaryKey(),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  orderId: uuid('order_id').references(() => orders.id, { onDelete: 'set null' }),
+  fileKey: text('file_key').notNull(),
+  fileName: text('file_name').notNull(),
+  category: varchar('category', { length: 50 }).default('tool').notNull(), // 'tool' | 'data' | 'course' | 'bonus'
+  toolId: varchar('tool_id', { length: 100 }),
+  ip: varchar('ip', { length: 100 }),
+  downloadedAt: timestamp('downloaded_at').defaultNow().notNull(),
+});

@@ -6,6 +6,7 @@ import { parseInstaPayMessage } from '@/lib/payments/instapay-parser';
 import { matchPayment } from '@/lib/payments/matcher';
 import { approveOrderCore } from '@/lib/actions/orders';
 import { checkRateLimit } from '@/lib/rate-limit';
+import { sendTransactionNotification } from '@/lib/notifications';
 import crypto from 'crypto';
 
 /**
@@ -202,6 +203,17 @@ export async function POST(req: NextRequest) {
       console.error('DB Persistence Error:', dbErr);
       return NextResponse.json({ success: false, status: 'INTERNAL_DB_ERROR' }, { status: 500 });
     }
+
+    // 9. 🔔 Multi-Channel Notifications (Telegram + Web Push) — fire-and-forget
+    sendTransactionNotification({
+      provider: detectedProvider,
+      amount,
+      senderPhone,
+      transactionId,
+      status: statusStr as 'AUTO_APPROVED' | 'REVIEW_REQUIRED' | 'FAILED' | 'DUPLICATE',
+      reviewReason: reviewReason || undefined,
+      matchedOrderId: matchResultDetails?.matchedOrderId || undefined,
+    }).catch(err => console.error('[Webhook] Notification dispatch error:', err));
 
     console.log(`Webhook processed ${detectedProvider}: txId=${transactionId} status=${statusStr} matchedOrderId=${matchResultDetails?.matchedOrderId || 'none'} candidates=${matchResultDetails?.candidateCount || 0}`);
 

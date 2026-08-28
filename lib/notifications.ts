@@ -3,10 +3,14 @@ import {
   sendTelegramOrderStatusAlert as rawSendTelegramOrderStatusAlert,
   sendTelegramLoginAlert as rawSendTelegramLoginAlert,
   sendTelegramNewUserAlert as rawSendTelegramNewUserAlert,
+  sendTelegramSecurityAlert as rawSendTelegramSecurityAlert,
+  sendTelegramTransactionAlert as rawSendTelegramTransactionAlert,
   TelegramOrderPayload,
   TelegramOrderStatusPayload,
   TelegramLoginPayload,
   TelegramNewUserPayload,
+  TelegramSecurityPayload,
+  TelegramTransactionPayload,
 } from '@/lib/telegram';
 import { sendWebPushToAdmins, sendWebPushToUser } from '@/lib/push';
 
@@ -15,6 +19,8 @@ export type {
   TelegramOrderStatusPayload as OrderStatusNotificationPayload,
   TelegramLoginPayload as LoginNotificationPayload,
   TelegramNewUserPayload as NewUserNotificationPayload,
+  TelegramSecurityPayload as SecurityNotificationPayload,
+  TelegramTransactionPayload as TransactionNotificationPayload,
 };
 
 /**
@@ -177,6 +183,88 @@ export async function sendNewUserNotification(
         userId: payload.userId,
         email: payload.userEmail,
         source: payload.source,
+      },
+    }),
+  ]);
+
+  const telegramSuccess = results[0].status === 'fulfilled' && (results[0].value as any)?.success === true;
+  const pushSuccess = results[1].status === 'fulfilled' && (results[1].value as any)?.success === true;
+
+  return {
+    telegram: telegramSuccess,
+    push: pushSuccess,
+  };
+}
+
+// 5. Security Attack & High-Traffic Alert
+export async function sendSecurityNotification(
+  payload: TelegramSecurityPayload
+): Promise<{ telegram: boolean; push: boolean }> {
+  console.log(`[NotificationDispatcher] 🚨 Dispatching Security Alert (${payload.ip} - ${payload.requestCount} requests)...`);
+
+  const results = await Promise.allSettled([
+    // Channel 1: Telegram
+    rawSendTelegramSecurityAlert(payload),
+
+    // Channel 2: Web Push to Admins (High Priority Alert on iPhone)
+    sendWebPushToAdmins({
+      title: `🚨 تنبيه أمني: رصد هجوم أو نشاط مفرط!`,
+      body: `الـ IP (${payload.ip}) أرسل ${payload.requestCount} طلب خلال ${payload.timeWindow} على ${payload.endpoint || 'الموقع'}. تم التقييد تلقائياً.`,
+      url: `/admin/analytics`,
+      eventId: `sec-${payload.ip}-${Date.now()}`,
+      type: 'general',
+      tag: `security-${payload.ip}`,
+      timestamp: Date.now(),
+      metadata: {
+        ip: payload.ip,
+        action: payload.action,
+        count: payload.requestCount,
+      },
+    }),
+  ]);
+
+  const telegramSuccess = results[0].status === 'fulfilled' && (results[0].value as any)?.success === true;
+  const pushSuccess = results[1].status === 'fulfilled' && (results[1].value as any)?.success === true;
+
+  return {
+    telegram: telegramSuccess,
+    push: pushSuccess,
+  };
+}
+
+// 6. Webhook Transaction Alert (Vodafone Cash & InstaPay)
+export async function sendTransactionNotification(
+  payload: TelegramTransactionPayload
+): Promise<{ telegram: boolean; push: boolean }> {
+  console.log(`[NotificationDispatcher] Dispatching Transaction Alert (${payload.provider} - ${payload.amount} EGP)...`);
+
+  const isAuto = payload.status === 'AUTO_APPROVED';
+  const providerName = payload.provider === 'vodafone_cash' ? 'فودافون كاش' : 'إنستاباي';
+  const title = isAuto
+    ? `⚡ تحويل تلقائي ناجح: ${payload.amount} ج (${providerName})`
+    : `⚠️ تحويل مالي وارد يتطلب المراجعة: ${payload.amount} ج (${providerName})`;
+
+  const body = isAuto
+    ? `تم استقبال وتفعيل اشتراك العميل (${payload.senderPhone}) تلقائياً. المعاملة #${payload.transactionId.slice(0, 10)}`
+    : `تحويل بقيمة ${payload.amount} ج من ${payload.senderPhone}. ${payload.reviewReason || 'يرجى المطابقة يدوياً'}`;
+
+  const results = await Promise.allSettled([
+    // Channel 1: Telegram
+    rawSendTelegramTransactionAlert(payload),
+
+    // Channel 2: Web Push to Admins
+    sendWebPushToAdmins({
+      title,
+      body,
+      url: `/admin/transactions`,
+      eventId: payload.transactionId,
+      type: 'general',
+      tag: `tx-${payload.transactionId}`,
+      timestamp: Date.now(),
+      metadata: {
+        transactionId: payload.transactionId,
+        amount: payload.amount,
+        status: payload.status,
       },
     }),
   ]);

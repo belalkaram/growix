@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { db } from '@/db';
-import { orders, packageFiles } from '@/db/schema';
+import { orders, packageFiles, fileDownloads } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { generatePresignedDownloadUrl } from '@/lib/r2';
-import { checkRateLimit } from '@/lib/rate-limit';
+import { checkRateLimit, getClientIp } from '@/lib/rate-limit';
 
 export async function GET(req: NextRequest) {
   // 1. Authentication Check
@@ -107,6 +107,30 @@ export async function GET(req: NextRequest) {
 
     // If client requested JSON (e.g. fetch), return URL JSON
     const format = searchParams.get('format');
+
+    // 6. 📊 Track this download for engagement audit (fire-and-forget)
+    const fileName = sanitizedKey.split('/').pop() || sanitizedKey;
+    const fileRecord = await db
+      .select()
+      .from(packageFiles)
+      .where(eq(packageFiles.fileKey, sanitizedKey))
+      .limit(1)
+      .catch(() => []);
+    const category = (fileRecord[0]?.category as string) || 'tool';
+    const toolId = fileRecord[0]?.toolId || order.toolId || null;
+
+    getClientIp().then(ip =>
+      db.insert(fileDownloads).values({
+        userId: session.user.id!,
+        orderId,
+        fileKey: sanitizedKey,
+        fileName,
+        category,
+        toolId,
+        ip,
+      }).catch(err => console.error('[DownloadTracker] Insert error:', err))
+    ).catch(console.error);
+
     if (format === 'json') {
       return NextResponse.json({ 
         success: true, 

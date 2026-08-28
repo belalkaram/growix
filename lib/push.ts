@@ -36,9 +36,13 @@ export async function getVapidCredentials(): Promise<{
   subject: string;
   configured: boolean;
 }> {
-  let publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || '';
-  let privateKey = process.env.VAPID_PRIVATE_KEY || '';
-  let subject = process.env.VAPID_SUBJECT || 'mailto:admin@growix.app';
+  const DEFAULT_PUB_KEY = 'BFbxB4bgdf7Gma1CyYovMBWe5oHKQ7Q6qvw_m5jJnAidpqq2IgqoHPmp2al8r_Pv-xbOzmmWl2CqMgRkWP8HvYg';
+  const DEFAULT_PRIV_KEY = 'qltKO-8K6dM7vhLki5VONBiG-Sgl9VgyzS8SZ4mESBs';
+  const DEFAULT_SUB = 'mailto:admin@growix.app';
+
+  let publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || DEFAULT_PUB_KEY;
+  let privateKey = process.env.VAPID_PRIVATE_KEY || DEFAULT_PRIV_KEY;
+  let subject = process.env.VAPID_SUBJECT || DEFAULT_SUB;
 
   // Check if keys are overridden in siteSettings
   try {

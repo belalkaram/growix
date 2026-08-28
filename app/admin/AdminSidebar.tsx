@@ -14,6 +14,7 @@ import {
   Settings, 
   Users, 
   BarChart3, 
+  BarChart2,
   LogOut, 
   ExternalLink,
   Menu,
@@ -44,6 +45,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({ userEmail }) => {
     { label: 'الباقات والأسعار', href: '/admin/packages', icon: Package },
     { label: 'الـ 12 أداة', href: '/admin/tools', icon: Wrench },
     { label: 'المستخدمون', href: '/admin/users', icon: Users },
+    { label: 'تدقيق تفاعل العملاء', href: '/admin/engagement', icon: BarChart2 },
     { label: 'إعدادات الموقع', href: '/admin/settings', icon: Settings },
     { label: 'الإحصائيات والزيارات', href: '/admin/analytics', icon: BarChart3 },
   ];

@@ -10,6 +10,18 @@ interface RateRecord {
 }
 const memoryRateMap = new Map<string, RateRecord>();
 
+// Traffic Spike Detector – tracks high-frequency requests per IP
+// Separate map: key = ip, value = { timestamps[] }
+const trafficLog = new Map<string, number[]>();
+
+// Throttle security alerts per IP to avoid notification spam
+// key = ip, value = last alert timestamp
+const alertThrottle = new Map<string, number>();
+
+const SPIKE_WINDOW_MS = 10_000;    // 10 seconds sliding window
+const SPIKE_THRESHOLD = 10;        // > 10 requests/10s  ⇒ alert
+const ALERT_COOLDOWN_MS = 600_000; // 10 minutes between alerts for same IP
+
 export interface RateLimitOptions {
   action: 'register' | 'login' | 'order' | 'reset_password' | 'api';
   maxRequests: number;
@@ -35,6 +47,43 @@ export async function getClientIp(): Promise<string> {
   return '127.0.0.1';
 }
 
+/**
+ * Detect traffic spikes and fire a security alert if threshold is exceeded.
+ * Runs entirely asynchronously (never blocks the request path).
+ */
+async function detectTrafficSpike(ip: string, endpoint?: string): Promise<void> {
+  const now = Date.now();
+
+  // Maintain sliding window of timestamps per IP
+  const timestamps = (trafficLog.get(ip) || []).filter(t => now - t < SPIKE_WINDOW_MS);
+  timestamps.push(now);
+  trafficLog.set(ip, timestamps);
+
+  if (timestamps.length < SPIKE_THRESHOLD) return;
+
+  // Check alert throttle – fire at most once per ALERT_COOLDOWN_MS per IP
+  const lastAlert = alertThrottle.get(ip) || 0;
+  if (now - lastAlert < ALERT_COOLDOWN_MS) return;
+
+  alertThrottle.set(ip, now);
+
+  // Fire-and-forget: import lazily to avoid circular deps at module load time
+  try {
+    const { sendSecurityNotification } = await import('@/lib/notifications');
+    await sendSecurityNotification({
+      ip,
+      action: 'traffic_spike',
+      requestCount: timestamps.length,
+      timeWindow: `${SPIKE_WINDOW_MS / 1000} ثانية`,
+      endpoint,
+      details: `رصد ${timestamps.length} طلب في ${SPIKE_WINDOW_MS / 1000} ثانية — يُرجَّح هجوم DDoS أو بوت مؤتمَت`,
+      detectedAt: new Date(),
+    });
+  } catch (err) {
+    console.error('[TrafficSpike] Error sending security notification:', err);
+  }
+}
+
 export async function checkRateLimit(options: RateLimitOptions): Promise<{
   allowed: boolean;
   remaining: number;
@@ -44,6 +93,9 @@ export async function checkRateLimit(options: RateLimitOptions): Promise<{
   const ip = await getClientIp();
   const now = Date.now();
   const key = `${options.action}:${ip}`;
+
+  // Fire spike detector asynchronously (non-blocking)
+  detectTrafficSpike(ip).catch(console.error);
 
   // 1. Fast in-memory check
   const record = memoryRateMap.get(key);

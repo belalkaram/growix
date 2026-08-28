@@ -129,18 +129,25 @@ export async function subscribeUserToPush(): Promise<{
     }
     await navigator.serviceWorker.ready;
 
-    // 3. Get VAPID Public Key
+    // 3. Get VAPID Public Key with multiple bulletproof fallbacks
+    const DEFAULT_VAPID_PUBLIC_KEY = 'BFbxB4bgdf7Gma1CyYovMBWe5oHKQ7Q6qvw_m5jJnAidpqq2IgqoHPmp2al8r_Pv-xbOzmmWl2CqMgRkWP8HvYg';
     let publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
     if (!publicKey) {
-      const res = await fetch('/api/push/public-key');
-      const data = await res.json();
-      if (data.success && data.publicKey) {
-        publicKey = data.publicKey;
+      try {
+        const res = await fetch('/api/push/public-key');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && data.publicKey) {
+            publicKey = data.publicKey;
+          }
+        }
+      } catch (e) {
+        console.warn('Could not fetch public key from API, using fallback key.');
       }
     }
 
     if (!publicKey) {
-      return { success: false, error: 'مفتاح VAPID العام غير متوفر' };
+      publicKey = DEFAULT_VAPID_PUBLIC_KEY;
     }
 
     // 4. Subscribe with PushManager
