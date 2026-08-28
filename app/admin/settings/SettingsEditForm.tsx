@@ -25,6 +25,7 @@ import {
   Link as LinkIcon,
   ArrowLeft
 } from 'lucide-react';
+import { PushNotificationManager } from '@/components/PushNotificationManager';
 
 export const SettingsEditForm: React.FC<{ initialSettings: Record<string, string> }> = ({ initialSettings }) => {
   const router = useRouter();
@@ -250,6 +251,9 @@ export const SettingsEditForm: React.FC<{ initialSettings: Record<string, string
           </div>
         </div>
       </div>
+
+      {/* Web Push Notifications for iPhone / Safari Standalone */}
+      <PushNotificationManager className="!bg-white/5 !border-white/10 !text-white [&_h3]:!text-white [&_p]:!text-gray-400 [&_div.text-gray-700]:!text-gray-300 [&_div.bg-white\/70]:!bg-white/10 [&_div.bg-white\/70]:!text-gray-200 [&_span.text-gray-900]:!text-white [&_div.border-gray-100]:!border-white/10" />
 
       {/* Direct Contact & Support */}
       <div className="space-y-4">

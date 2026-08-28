@@ -5,6 +5,7 @@ import { GlobalNavigationLoader } from '@/components/GlobalNavigationLoader';
 import { AnalyticsTracker } from '@/components/AnalyticsTracker';
 import { FacebookPixelWrapper } from '@/components/FacebookPixelWrapper';
 import { AuthProvider } from '@/components/AuthProvider';
+import { PwaInstallPrompt } from '@/components/PwaInstallPrompt';
 import './globals.css';
 
 const ibmPlexSansArabic = IBM_Plex_Sans_Arabic({
@@ -58,7 +59,18 @@ export const metadata: Metadata = {
   icons: {
     icon: '/logo.png',
     shortcut: '/logo.png',
-    apple: '/logo.png',
+    apple: [
+      { url: '/logo.png' },
+      { url: '/logo.png', sizes: '180x180', type: 'image/png' },
+    ],
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'GROWIX',
+  },
+  formatDetection: {
+    telephone: false,
   },
   openGraph: {
     title: 'GROWIX | منصة التسويق الإلكتروني الشاملة وحزمة الـ 12 أداة',
@@ -97,6 +109,7 @@ export default function RootLayout({
             <GlobalNavigationLoader />
             <AnalyticsTracker />
             <FacebookPixelWrapper />
+            <PwaInstallPrompt />
           </Suspense>
           {children}
         </AuthProvider>

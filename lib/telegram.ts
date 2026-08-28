@@ -2,6 +2,7 @@ import { db } from '@/db';
 import { siteSettings, orders, users, packages, tools } from '@/db/schema';
 import { inArray, eq } from 'drizzle-orm';
 import { decryptSensitiveData } from '@/lib/encryption';
+import { sendWebPushToAdmins } from '@/lib/push';
 
 export interface TelegramOrderPayload {
   orderId: string;
@@ -138,9 +139,36 @@ export async function sendTelegramOrderAlert(payload: TelegramOrderPayload): Pro
       return { success: false, error: data.description || 'Telegram API error' };
     }
 
+    // Concurrently trigger Web Push Notification to admin iPhone / devices
+    sendWebPushToAdmins({
+      title: `🚀 طلب اشتراك جديد #${payload.orderId.slice(0, 8)}`,
+      body: `قام ${payload.userName} بطلب ${payload.packageName} بقيمة ${payload.amount} ج (${payload.paymentMethod})`,
+      url: `/admin/orders?orderId=${payload.orderId}`,
+      eventId: payload.orderId,
+      type: 'order',
+      tag: `order-${payload.orderId}`,
+      timestamp: Date.now(),
+      metadata: {
+        orderId: payload.orderId,
+        userName: payload.userName,
+        amount: payload.amount,
+      },
+    }).catch((pushErr) => console.error('[Telegram->Push] Error dispatching order push:', pushErr));
+
     return { success: true };
   } catch (err: any) {
     console.error('Failed to send Telegram alert:', err);
+    // Even if Telegram fails, attempt Web Push
+    sendWebPushToAdmins({
+      title: `🚀 طلب اشتراك جديد #${payload.orderId.slice(0, 8)}`,
+      body: `قام ${payload.userName} بطلب ${payload.packageName} بقيمة ${payload.amount} ج (${payload.paymentMethod})`,
+      url: `/admin/orders?orderId=${payload.orderId}`,
+      eventId: payload.orderId,
+      type: 'order',
+      tag: `order-${payload.orderId}`,
+      timestamp: Date.now(),
+    }).catch(() => {});
+
     return { success: false, error: err?.message || 'Network error' };
   }
 }
@@ -288,6 +316,28 @@ ${notesLine}
       return { success: false, error: data.description || 'Telegram API error' };
     }
 
+    // Concurrently trigger Web Push Notification to admin iPhone / devices
+    const pushTitle = isApproved
+      ? `✅ تم تفعيل طلب الاشتراك #${payload.orderId.slice(0, 8)}`
+      : `❌ تم رفض طلب الاشتراك #${payload.orderId.slice(0, 8)}`;
+    const pushBody = isApproved
+      ? `تم تفعيل اشتراك ${userName || 'العميل'} في ${packageName || 'الباقة'} (${amount || ''} ج)`
+      : `تم رفض الطلب #${payload.orderId.slice(0, 8)} للعميل ${userName || ''}`;
+
+    sendWebPushToAdmins({
+      title: pushTitle,
+      body: pushBody,
+      url: `/admin/orders?orderId=${payload.orderId}`,
+      eventId: payload.orderId,
+      type: 'order_status',
+      tag: `order-status-${payload.orderId}`,
+      timestamp: Date.now(),
+      metadata: {
+        orderId: payload.orderId,
+        status: payload.status,
+      },
+    }).catch((pushErr) => console.error('[Telegram->Push] Error dispatching status push:', pushErr));
+
     return { success: true };
   } catch (err: any) {
     console.error('Failed to send Telegram status alert:', err);
@@ -397,6 +447,22 @@ export async function sendTelegramLoginAlert(payload: TelegramLoginPayload): Pro
       return { success: false, error: data.description || 'Telegram API error' };
     }
 
+    // Concurrently trigger Web Push Notification to admin iPhone / devices
+    sendWebPushToAdmins({
+      title: `🔐 تسجيل دخول: ${payload.userName}`,
+      body: `تم تسجيل الدخول بواسطة ${payload.userEmail} (${roleBadge})`,
+      url: `/admin/users`,
+      eventId: payload.userId,
+      type: 'login',
+      tag: `login-${payload.userId}-${Date.now()}`,
+      timestamp: Date.now(),
+      metadata: {
+        userId: payload.userId,
+        email: payload.userEmail,
+        role: payload.role,
+      },
+    }).catch((pushErr) => console.error('[Telegram->Push] Error dispatching login push:', pushErr));
+
     return { success: true };
   } catch (err: any) {
     console.error('Failed to send Telegram login alert:', err);
@@ -483,6 +549,22 @@ ${sourceTitle}
       console.error('Telegram new user alert API error:', data);
       return { success: false, error: data.description || 'Telegram API error' };
     }
+
+    // Concurrently trigger Web Push Notification to admin iPhone / devices
+    sendWebPushToAdmins({
+      title: `🎉 مستخدم جديد: ${payload.userName}`,
+      body: `تم تسجيل حساب جديد: ${payload.userEmail} (${sourceLabel})`,
+      url: `/admin/users`,
+      eventId: payload.userId,
+      type: 'user',
+      tag: `user-${payload.userId}`,
+      timestamp: Date.now(),
+      metadata: {
+        userId: payload.userId,
+        email: payload.userEmail,
+        source: payload.source,
+      },
+    }).catch((pushErr) => console.error('[Telegram->Push] Error dispatching new user push:', pushErr));
 
     return { success: true };
   } catch (err: any) {

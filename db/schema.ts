@@ -272,5 +272,17 @@ export const abandonedCheckouts = pgTable('abandoned_checkouts', {
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
 
-
-
+// 17. Push Subscriptions Table (Web Push Notifications for iOS Safari & Modern Browsers)
+export const pushSubscriptions = pgTable('push_subscriptions', {
+  id: serial('id').primaryKey(),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }),
+  userRole: varchar('user_role', { length: 20 }).default('user'), // 'admin' | 'user'
+  endpoint: text('endpoint').notNull().unique(), // Push Service Endpoint URL (APNs / FCM)
+  p256dh: text('p256dh').notNull(), // Client Public Encryption Key
+  auth: text('auth').notNull(), // Client Auth Secret
+  userAgent: text('user_agent'),
+  isActive: boolean('is_active').default(true).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  lastUsedAt: timestamp('last_used_at'),
+});

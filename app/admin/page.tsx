@@ -5,6 +5,7 @@ import { users, packages, tools, pageViews, orders } from '@/db/schema';
 import { count, eq } from 'drizzle-orm';
 import { Users, Package, Wrench, Eye, ArrowUpRight, ShoppingBag, ShieldCheck, Tag, Film, FolderOpen, Sliders } from 'lucide-react';
 import { SystemHealthLive } from './SystemHealthLive';
+import { PushNotificationManager } from '@/components/PushNotificationManager';
 
 export default async function AdminDashboardPage() {
   const [
@@ -77,6 +78,9 @@ export default async function AdminDashboardPage() {
 
       {/* Live System Health Section (100% Real Live Data) */}
       <SystemHealthLive />
+
+      {/* iPhone & Web Push Notifications Link Card */}
+      <PushNotificationManager />
 
       {/* Full CRUD Management Quick Hub */}
       <div className="p-6 sm:p-8 rounded-3xl bg-[#0F172A] border border-white/10 space-y-6 shadow-xl">

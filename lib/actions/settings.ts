@@ -10,6 +10,7 @@ const SENSITIVE_KEYS = new Set([
   'telegram_bot_token',
   'telegram_chat_id',
   'payment_webhook_secret',
+  'vapid_private_key',
 ]);
 
 export async function updateSiteSettingsAction(settingsMap: Record<string, string>) {
