@@ -18,6 +18,7 @@ export const users = pgTable('users', {
   passwordHash: text('password_hash').notNull(),
   role: varchar('role', { length: 20 }).default('user').notNull(), // 'admin' | 'user'
   phone: varchar('phone', { length: 50 }),
+  image: text('image'), // Google OAuth / Profile Avatar
   createdAt: timestamp('created_at').defaultNow().notNull(),
   lastLoginAt: timestamp('last_login_at'),
 });
@@ -299,3 +300,14 @@ export const fileDownloads = pgTable('file_downloads', {
   ip: varchar('ip', { length: 100 }),
   downloadedAt: timestamp('downloaded_at').defaultNow().notNull(),
 });
+
+// 19. Magic Login Tokens Table (Passwordless 1-Click Instant Login for Clients)
+export const magicTokens = pgTable('magic_tokens', {
+  id: serial('id').primaryKey(),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  token: text('token').notNull().unique(),
+  expiresAt: timestamp('expires_at').notNull(),
+  usedAt: timestamp('used_at'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+

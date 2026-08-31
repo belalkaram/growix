@@ -65,12 +65,6 @@ export const HomePageClient: React.FC<HomePageClientProps> = ({
       url += `?${query}`;
     }
 
-    // Require login before going to checkout
-    if (!session?.user) {
-      router.push(`/login?callbackUrl=${encodeURIComponent(url)}`);
-      return;
-    }
-
     router.push(url);
   };
 

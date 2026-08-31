@@ -5,10 +5,11 @@ import { orders, users, packages, tools, coupons, couponUsages, paymentTransacti
 import { eq, desc, sql, and, gte, lte, or } from 'drizzle-orm';
 import { auth } from '@/lib/auth';
 import { revalidatePath } from 'next/cache';
-import { sendTelegramOrderAlert, sendTelegramOrderStatusAlert } from '@/lib/telegram';
+import { sendTelegramOrderAlert, sendTelegramOrderStatusAlert, sendTelegramNewUserAlert } from '@/lib/telegram';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { matchOrderWithRecentTransactions } from '@/lib/payments/matcher';
 import { SITE_CONFIG, SITE_PRICING } from '@/config/site';
+import bcrypt from 'bcryptjs';
 
 /**
  * Validates and calculates the legitimate server-side price for a package and coupon
@@ -100,10 +101,93 @@ export async function createOrderAction(data: {
   couponCode?: string;
   receiptUrl?: string;
   receiptKey?: string;
+  // Guest Checkout Details:
+  customerName?: string;
+  customerEmail?: string;
 }) {
   const session = await auth();
-  if (!session?.user?.id) {
-    return { success: false, error: 'يجب تسجيل الدخول أولاً لإرسال الطلب' };
+  let userId = session?.user?.id;
+  let userRecord: any = null;
+  let isGuestAccountCreated = false;
+  let rawInitialPassword = '';
+
+  if (!data.senderNumber || data.senderNumber.trim().length < 4) {
+    return { success: false, error: 'يرجى كتابة رقم الهاتف أو المحفظة المحوّل منها بشكل صحيح' };
+  }
+
+  // 1. If user is a Guest (not logged in), validate & find or create user account
+  if (!userId) {
+    if (!data.customerName || data.customerName.trim().length < 2) {
+      return { success: false, error: 'يرجى إدخال اسمك بالكامل (حرفين على الأقل)' };
+    }
+
+    if (!data.customerEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.customerEmail.trim())) {
+      return { success: false, error: 'يرجى إدخال بريد إلكتروني صحيح لاستلام تفاصيل الحساب' };
+    }
+
+    const normalizedEmail = data.customerEmail.toLowerCase().trim();
+
+    try {
+      const existing = await db
+        .select()
+        .from(users)
+        .where(eq(users.email, normalizedEmail))
+        .limit(1);
+
+      if (existing && existing.length > 0) {
+        userRecord = existing[0];
+        userId = userRecord.id;
+        // If user didn't have phone, update it
+        if (!userRecord.phone && data.senderNumber) {
+          await db.update(users).set({ phone: data.senderNumber.trim() }).where(eq(users.id, userRecord.id));
+        }
+      } else {
+        // Auto-create new user account with password = senderNumber
+        rawInitialPassword = data.senderNumber.trim();
+        const hashedPassword = await bcrypt.hash(rawInitialPassword, 10);
+
+        const [newUser] = await db
+          .insert(users)
+          .values({
+            name: data.customerName.trim(),
+            email: normalizedEmail,
+            phone: data.senderNumber.trim(),
+            passwordHash: hashedPassword,
+            role: 'user',
+          })
+          .returning();
+
+        userRecord = newUser;
+        userId = newUser.id;
+        isGuestAccountCreated = true;
+
+        // Send Telegram alert for auto-created user from checkout
+        try {
+          await sendTelegramNewUserAlert({
+            userId: newUser.id,
+            userName: newUser.name,
+            userEmail: newUser.email,
+            userPhone: newUser.phone,
+            role: newUser.role,
+            source: 'guest_checkout',
+            createdAt: newUser.createdAt,
+          });
+        } catch (tgErr) {
+          console.error('Failed to send telegram new user alert:', tgErr);
+        }
+      }
+    } catch (dbUserErr: any) {
+      console.error('Error creating guest user:', dbUserErr);
+      return { success: false, error: 'حدث خطأ أثناء تجهيز بيانات المستخدم، يرجى المحاولة مرة أخرى' };
+    }
+  } else {
+    // Authenticated user: fetch user details
+    const [fetchedUser] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, userId!))
+      .limit(1);
+    userRecord = fetchedUser;
   }
 
   // Rate Limiting on order submissions (Max 5 orders per 15 mins per user/IP)
@@ -111,7 +195,7 @@ export async function createOrderAction(data: {
     action: 'order',
     maxRequests: 5,
     windowMs: 15 * 60 * 1000,
-    customIdentifier: session.user.id,
+    customIdentifier: userId,
     errorMessage: 'تم إرسال عدة طلبات مؤخراً. يرجى الانتظار قليلاً أو التواصل مع الدعم الفني.',
   });
 
@@ -119,18 +203,14 @@ export async function createOrderAction(data: {
     return { success: false, error: rateLimit.error };
   }
 
-  if (!data.senderNumber || data.senderNumber.trim().length < 4) {
-    return { success: false, error: 'يرجى كتابة رقم الهاتف أو المحفظة المحوّل منها بشكل صحيح' };
-  }
-
   try {
-    // 1. Server-side price calculation & tampering validation
+    // 2. Server-side price calculation & tampering validation
     const computedPrice = await computeServerOrderPrice(data.packageId, data.couponCode);
     const clientAmountNum = parseInt((data.amount || '').replace(/[^0-9]/g, '')) || 0;
 
     // Reject tampering if client submitted an unauthorized amount differing from calculated price
     if (clientAmountNum !== computedPrice.finalPrice && clientAmountNum !== computedPrice.discountedPrice) {
-      console.warn(`Price tampering detected for user ${session.user.id}: client sent ${clientAmountNum}, expected ${computedPrice.finalPrice}`);
+      console.warn(`Price tampering detected for user ${userId}: client sent ${clientAmountNum}, expected ${computedPrice.finalPrice}`);
     }
 
     // Always use verified server-side final amount
@@ -138,19 +218,12 @@ export async function createOrderAction(data: {
     const verifiedOriginalAmount = computedPrice.originalPrice.toString();
     const verifiedDiscountAmount = computedPrice.discountAmount > 0 ? computedPrice.discountAmount.toString() : null;
 
-    // Fetch user details first to check for test role and Telegram alert
-    const [userRecord] = await db
-      .select()
-      .from(users)
-      .where(eq(users.id, session.user.id))
-      .limit(1);
-
     const isTestUser = userRecord?.role === 'test';
 
     const [newOrder] = await db
       .insert(orders)
       .values({
-        userId: session.user.id,
+        userId: userId!,
         packageId: data.packageId,
         toolId: data.toolId || null,
         paymentMethod: data.paymentMethod,
@@ -171,6 +244,7 @@ export async function createOrderAction(data: {
     let packageName = 'باقة غير محددة';
     if (data.packageId === 'bundle-vip') packageName = 'باقة VIP الشاملة (كورسات + 12 أداة + داتا)';
     else if (data.packageId === 'bundle-premium') packageName = 'باقة Premium (الـ 12 أداة + داتا مصر)';
+    else if (data.packageId === 'single-tool') packageName = 'باقة أداة فردية';
     else {
       const [customPkg] = await db.select().from(packages).where(eq(packages.id, data.packageId)).limit(1);
       if (customPkg) packageName = customPkg.name;
@@ -190,7 +264,7 @@ export async function createOrderAction(data: {
         const c = computedPrice.appliedCoupon;
         await db.insert(couponUsages).values({
           couponId: c.id,
-          userId: session.user.id,
+          userId: userId!,
           orderId: newOrder.id,
           discountApplied: verifiedDiscountAmount || `${c.discountPercent}%`,
         });
@@ -218,7 +292,7 @@ export async function createOrderAction(data: {
         .where(
           or(
             eq(abandonedCheckouts.phone, data.senderNumber.trim()),
-            eq(abandonedCheckouts.userId, session.user.id)
+            eq(abandonedCheckouts.userId, userId!)
           )
         );
     } catch (abandonedErr) {
@@ -228,9 +302,9 @@ export async function createOrderAction(data: {
     // 🚀 Send Instant Telegram Bot Alert (Non-blocking / Background safe)
     sendTelegramOrderAlert({
       orderId: newOrder.id,
-      userName: userRecord?.name || session.user.name || 'عميل GROWIX',
-      userEmail: userRecord?.email || session.user.email || '—',
-      userPhone: userRecord?.phone || undefined,
+      userName: userRecord?.name || data.customerName || 'عميل GROWIX',
+      userEmail: userRecord?.email || data.customerEmail || '—',
+      userPhone: userRecord?.phone || data.senderNumber.trim(),
       packageName,
       toolName,
       amount: verifiedAmount,
@@ -241,6 +315,41 @@ export async function createOrderAction(data: {
       senderNumber: data.senderNumber.trim(),
       createdAt: newOrder.createdAt,
     }).catch((err) => console.error('Telegram dispatch error in order action:', err));
+
+    // 🔑 Generate Magic Login Token for Instant 1-Click Access
+    let magicToken = '';
+    let magicLoginUrl = '';
+    try {
+      const { createMagicLoginToken, buildMagicLoginUrl } = await import('@/lib/magic-auth');
+      magicToken = await createMagicLoginToken(userId!);
+      magicLoginUrl = await buildMagicLoginUrl(magicToken);
+    } catch (tokenErr) {
+      console.error('Error generating magic token:', tokenErr);
+    }
+
+    // 📧 Dispatch Resend Welcome & Order Confirmation Email (Non-blocking)
+    if (userRecord?.email) {
+      try {
+        const { sendWelcomeOrderEmail } = await import('@/lib/resend');
+        const loginPassDisplay = isGuestAccountCreated 
+          ? rawInitialPassword 
+          : (userRecord.phone || data.senderNumber.trim() || 'كلمة المرور الخاصة بحسابك');
+
+        sendWelcomeOrderEmail({
+          to: userRecord.email,
+          customerName: userRecord.name || data.customerName || 'عميلنا العزيز',
+          packageName,
+          orderId: newOrder.id,
+          amount: verifiedAmount,
+          senderNumber: data.senderNumber.trim(),
+          loginEmail: userRecord.email,
+          loginPassword: loginPassDisplay,
+          magicLoginUrl: magicLoginUrl || 'https://growix.belalkaram.dev/login',
+        }).catch((err) => console.error('[Resend] Error sending welcome email on order creation:', err));
+      } catch (emailErr) {
+        console.error('Error importing resend:', emailErr);
+      }
+    }
 
     // 🚀 Bidirectional Matching (Reverse Matching on checkout submit)
     let isAutoApproved = false;
@@ -284,7 +393,13 @@ export async function createOrderAction(data: {
     revalidatePath('/admin/coupons');
     revalidatePath('/admin');
 
-    return { success: true, orderId: newOrder.id, isAutoApproved };
+    return { 
+      success: true, 
+      orderId: newOrder.id, 
+      magicToken: magicToken || undefined, 
+      isAutoApproved,
+      isNewAccount: isGuestAccountCreated,
+    };
   } catch (error) {
     console.error('Error creating order:', error);
     return { success: false, error: 'حدث خطأ أثناء حفظ الطلب، يرجى المحاولة مرة أخرى' };
@@ -322,6 +437,44 @@ export async function approveOrderCore(params: {
       approvalType,
       adminNotes,
     }).catch((err) => console.error('Telegram dispatch error on order approval:', err));
+
+    // 📧 Send Instant Approval Email via Resend
+    try {
+      const [orderRecord] = await db
+        .select({
+          orderId: orders.id,
+          userId: orders.userId,
+          packageId: orders.packageId,
+          userName: users.name,
+          userEmail: users.email,
+        })
+        .from(orders)
+        .innerJoin(users, eq(orders.userId, users.id))
+        .where(eq(orders.id, orderId))
+        .limit(1);
+
+      if (orderRecord && orderRecord.userEmail) {
+        const { createMagicLoginToken, buildMagicLoginUrl } = await import('@/lib/magic-auth');
+        const token = await createMagicLoginToken(orderRecord.userId);
+        const magicLoginUrl = await buildMagicLoginUrl(token);
+
+        let pkgName = 'باقة GROWIX';
+        if (orderRecord.packageId === 'bundle-vip') pkgName = 'باقة VIP الشاملة (12 أداة + كورس)';
+        else if (orderRecord.packageId === 'bundle-premium') pkgName = 'باقة Premium (12 أداة + داتا مصر)';
+        else if (orderRecord.packageId === 'single-tool') pkgName = 'باقة أداة فردية';
+
+        const { sendOrderApprovedEmail } = await import('@/lib/resend');
+        sendOrderApprovedEmail({
+          to: orderRecord.userEmail,
+          customerName: orderRecord.userName,
+          packageName: pkgName,
+          orderId: orderRecord.orderId,
+          magicLoginUrl,
+        }).catch((err) => console.error('[Resend] Error sending approval email:', err));
+      }
+    } catch (emailErr) {
+      console.error('Error dispatching approval email:', emailErr);
+    }
 
     return { success: true };
   } catch (error) {

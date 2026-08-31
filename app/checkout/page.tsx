@@ -3,6 +3,8 @@
 import React, { useState, useEffect, Suspense, useRef } from 'react';
 import Link from 'next/link';
 import { 
+  User,
+  Mail,
   ArrowRight, 
   CheckCircle2, 
   Copy, 
@@ -39,8 +41,20 @@ import { trackMetaEvent } from '@/components/FacebookPixel';
 function CheckoutContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { status } = useSession();
+  const { data: session, status } = useSession();
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Guest details state
+  const [customerName, setCustomerName] = useState('');
+  const [customerEmail, setCustomerEmail] = useState('');
+
+  // Auto-populate from active session if logged in
+  useEffect(() => {
+    if (session?.user) {
+      if (session.user.name && !customerName) setCustomerName(session.user.name);
+      if (session.user.email && !customerEmail) setCustomerEmail(session.user.email);
+    }
+  }, [session]);
 
   const [packages, setPackages] = useState<PricingPackage[]>(SITE_CONFIG.packages);
 
@@ -234,16 +248,25 @@ function CheckoutContent() {
   };
 
   const handleOrderSubmit = async () => {
-    // 1. If user is guest/unauthenticated, redirect to login while preserving full checkout choices
-    if (status === 'unauthenticated') {
-      const returnUrl = `/checkout?package=${activePkgId}${
-        activePkgId === 'single-tool' ? `&tool=${selectedToolId}` : ''
-      }${appliedCoupon ? `&coupon=${appliedCoupon.code}` : ''}${
-        senderNumber ? `&sender=${encodeURIComponent(senderNumber)}` : ''
-      }&method=${activePaymentMethod}`;
+    // 1. If guest (not logged in), validate Name and Email
+    if (!session?.user) {
+      if (!customerName.trim() || customerName.trim().length < 2) {
+        setOrderMessage({ type: 'error', text: 'يرجى إدخال اسمك بالكامل (حرفين على الأقل) لإنشاء حسابك وتفعيل اشتراكك' });
+        const nameElement = document.getElementById('step-customer-details');
+        if (nameElement) {
+          nameElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        return;
+      }
 
-      router.push(`/login?callbackUrl=${encodeURIComponent(returnUrl)}`);
-      return;
+      if (!customerEmail.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerEmail.trim())) {
+        setOrderMessage({ type: 'error', text: 'يرجى إدخال بريد إلكتروني صحيح لاستلام بيانات الدخول والبرامج' });
+        const emailElement = document.getElementById('step-customer-details');
+        if (emailElement) {
+          emailElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        return;
+      }
     }
 
     // 2. Validate Egyptian Mobile Number / InstaPay Handle
@@ -291,7 +314,7 @@ function CheckoutContent() {
 
     setIsSubmittingOrder(true);
     setOrderMessage(null);
-    setUploadStatusText('جاري معالجة الطلب...');
+    setUploadStatusText('جاري معالجة وتأكيد الطلب...');
 
     // 4. Upload Receipt Image to Cloudflare R2
     let receiptUrl: string | undefined = undefined;
@@ -313,7 +336,7 @@ function CheckoutContent() {
     receiptUrl = uploadRes.url;
     receiptKey = uploadRes.key;
 
-    setUploadStatusText('جاري توثيق وتأكيد الطلب...');
+    setUploadStatusText('جاري توثيق وتأكيد الطلب وإنشاء الحساب...');
 
     // Determine paymentMethod and paymentProvider according to business logic
     let resolvedPaymentMethod = 'electronic-wallet';
@@ -342,6 +365,8 @@ function CheckoutContent() {
       couponCode: appliedCoupon ? appliedCoupon.code : undefined,
       receiptUrl,
       receiptKey,
+      customerName: customerName.trim(),
+      customerEmail: customerEmail.trim(),
     });
 
     setIsSubmittingOrder(false);
@@ -359,8 +384,12 @@ function CheckoutContent() {
         order_id: res.orderId,
       });
 
-      // Direct instant redirection to My Orders page without WhatsApp
-      router.push(`/my-orders?orderId=${res.orderId}&success=1`);
+      // If magicToken is available (for guest), automatically login and redirect!
+      if (res.magicToken) {
+        router.push(`/magic-login?token=${res.magicToken}&orderId=${res.orderId}&success=1`);
+      } else {
+        router.push(`/my-orders?orderId=${res.orderId}&success=1`);
+      }
     }
   };
 
@@ -805,17 +834,82 @@ function CheckoutContent() {
           </div>
         </div>
 
-        {/* STEP 3: Phone Number Input */}
-        <div className="bg-white rounded-3xl p-5 sm:p-7 border border-gray-200 space-y-4 shadow-sm text-[#0B1220]">
+        {/* STEP 3: Customer Details & Sender Phone Number */}
+        <div id="step-customer-details" className="bg-white rounded-3xl p-5 sm:p-7 border border-gray-200 space-y-5 shadow-sm text-[#0B1220] scroll-mt-24">
           <div className="flex items-center justify-between">
             <label className="block text-sm sm:text-base font-extrabold text-[#0B1220] flex items-center gap-2">
               <div className="w-7 h-7 rounded-lg bg-[#0F9D58]/10 text-[#0F9D58] flex items-center justify-center font-black text-xs border border-[#0F9D58]/20">3</div>
-              <span>أدخل رقم الهاتف / الحساب الذي قمت بتحويل مبلغ ({finalPayableAmount} ج) منه:</span>
+              <span>بيانات المشترك ورقم التحويل:</span>
             </label>
             <span className="text-xs text-gray-400">خطوة 3 من 4</span>
           </div>
 
+          {/* If Logged in, show active account banner */}
+          {session?.user ? (
+            <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center gap-3 text-xs">
+              <div className="w-8 h-8 rounded-xl bg-[#0F9D58] text-white flex items-center justify-center font-black shrink-0">
+                <CheckCircle2 className="w-4 h-4" />
+              </div>
+              <div className="min-w-0">
+                <span className="font-extrabold text-emerald-950 block truncate">
+                  أنت مسجل الدخول حالياً كـ: {session.user.name || 'عميل GROWIX'}
+                </span>
+                <span className="text-emerald-700 block text-[11px] truncate">
+                  البريد المسجل: {session.user.email} (سيتم ربط الباقة بحسابك فوراً)
+                </span>
+              </div>
+            </div>
+          ) : (
+            /* If Guest, show Name & Email inputs */
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+              {/* Full Name */}
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1.5 flex items-center gap-1.5">
+                  <User className="w-3.5 h-3.5 text-[#0F9D58]" />
+                  <span>الاسم بالكامل <span className="text-red-500">*</span></span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={customerName}
+                  onChange={(e) => setCustomerName(e.target.value)}
+                  placeholder="مثال: أحمد محمد"
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl text-sm font-bold text-[#0B1220] placeholder:text-gray-400 focus:bg-white focus:outline-none focus:border-[#0F9D58] focus:ring-2 focus:ring-[#0F9D58]/20 transition-all"
+                />
+              </div>
+
+              {/* Email Address */}
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1.5 flex items-center justify-between">
+                  <span className="flex items-center gap-1.5">
+                    <Mail className="w-3.5 h-3.5 text-[#0F9D58]" />
+                    <span>البريد الإلكتروني <span className="text-red-500">*</span></span>
+                  </span>
+                  <span className="text-[10px] text-gray-500 font-normal">لاستلام تفاصيل الدخول</span>
+                </label>
+                <input
+                  type="email"
+                  required
+                  value={customerEmail}
+                  onChange={(e) => setCustomerEmail(e.target.value)}
+                  placeholder="example@domain.com"
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl text-sm font-bold text-[#0B1220] placeholder:text-gray-400 focus:bg-white focus:outline-none focus:border-[#0F9D58] focus:ring-2 focus:ring-[#0F9D58]/20 transition-all dir-ltr text-right"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Sender Phone Number Input */}
           <div>
+            <label className="block text-xs font-bold text-gray-700 mb-1.5 flex items-center justify-between">
+              <span className="flex items-center gap-1.5">
+                <Smartphone className="w-3.5 h-3.5 text-[#0F9D58]" />
+                <span>رقم الهاتف / الحساب الذي قمت بالتحويل منه <span className="text-red-500">*</span></span>
+              </span>
+              <span className="text-[10px] text-[#0F9D58] font-extrabold bg-[#0F9D58]/10 px-2 py-0.5 rounded-md">
+                هو نفسه كلمة مرور حسابك
+              </span>
+            </label>
             <input
               type="tel"
               required
@@ -825,6 +919,15 @@ function CheckoutContent() {
               className="w-full px-4 py-3.5 rounded-2xl bg-gray-50 border border-gray-300 text-sm font-bold text-[#0B1220] placeholder:text-gray-400 focus:bg-white focus:outline-none focus:border-[#0F9D58] focus:ring-2 focus:ring-[#0F9D58]/20 transition-all dir-rtl"
             />
           </div>
+
+          {!session?.user && (
+            <div className="p-3 bg-emerald-50/60 border border-emerald-200/80 rounded-xl text-[11px] text-emerald-900 leading-relaxed flex items-start gap-2">
+              <Sparkles className="w-4 h-4 text-[#0F9D58] shrink-0 mt-0.5" />
+              <span>
+                <strong>تنبيه ذكي:</strong> سيتم إنشاء حسابك فوراً وتعيين رقم هاتفك المحوّل منه ككلمة مرور لتتمكن من تسجيل الدخول في أي وقت، كما سيصلك بريد إلكتروني فوري يحتوي على زر الدخول السريع بنقرة واحدة وروابط الأدوات.
+              </span>
+            </div>
+          )}
         </div>
 
         {/* STEP 4: Direct Cloudflare R2 Receipt Image Upload */}

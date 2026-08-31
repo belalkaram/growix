@@ -476,7 +476,7 @@ export interface TelegramNewUserPayload {
   userEmail: string;
   userPhone?: string | null;
   role?: string;
-  source: 'web_register' | 'admin_manual' | 'admin_auto';
+  source: 'web_register' | 'admin_manual' | 'admin_auto' | 'google_oauth' | 'guest_checkout';
   autoPassword?: string;
   createdAt?: Date;
 }
@@ -511,6 +511,12 @@ export async function sendTelegramNewUserAlert(payload: TelegramNewUserPayload):
     } else if (payload.source === 'admin_auto') {
       sourceTitle = '⚡ <b>تم توليد حساب مستخدم تلقائي (1-Click)!</b>';
       sourceLabel = '🤖 تم التوليد بنقرة واحدة من لوحة التحكم (Auto Generated)';
+    } else if (payload.source === 'google_oauth') {
+      sourceTitle = '🌐 <b>تسجيل حساب جديد عبر Google!</b>';
+      sourceLabel = 'Google OAuth 1-Click';
+    } else if (payload.source === 'guest_checkout') {
+      sourceTitle = '⚡ <b>إنشاء حساب تلقائي لمشتري من صفحة الشيك أوت!</b>';
+      sourceLabel = 'Guest Checkout Auto Account';
     }
 
     const roleBadge = payload.role === 'admin' 
@@ -704,6 +710,3 @@ ${statusEmoji} ${statusTitle}
     return { success: false, error: err?.message };
   }
 }
-
-
-

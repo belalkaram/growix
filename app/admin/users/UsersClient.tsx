@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { deleteUserAction, updateUserRole } from '@/lib/actions/users';
+import { getMagicLoginLinkForAdminAction } from '@/lib/magic-auth';
 import { CreateUserModal } from './CreateUserModal';
 import { EditUserModal } from './EditUserModal';
 import { CreateOrderModal, PackageOption, ToolOption } from '@/app/admin/orders/CreateOrderModal';
@@ -24,7 +25,9 @@ import {
   Beaker,
   User,
   PackagePlus,
-  Send
+  Send,
+  Key,
+  Copy
 } from 'lucide-react';
 
 interface UserRecord {
@@ -60,6 +63,7 @@ export const UsersClient: React.FC<UsersClientProps> = ({
   const [editingUser, setEditingUser] = useState<UserRecord | null>(null);
   const [orderModalUser, setOrderModalUser] = useState<UserRecord | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [copiedMagicUserId, setCopiedMagicUserId] = useState<string | null>(null);
 
   const paidSet = new Set(paidUserIds);
 
@@ -107,6 +111,21 @@ export const UsersClient: React.FC<UsersClientProps> = ({
         prev.map((u) => (u.id === userId ? { ...u, role: nextRole } : u))
       );
       router.refresh();
+    }
+  };
+
+  const handleCopyMagicLink = async (userId: string) => {
+    try {
+      const res = await getMagicLoginLinkForAdminAction(userId);
+      if (res.success && res.magicUrl) {
+        await navigator.clipboard.writeText(res.magicUrl);
+        setCopiedMagicUserId(userId);
+        setTimeout(() => setCopiedMagicUserId(null), 3000);
+      } else {
+        alert(res.error || 'فشل في توليد رابط الدخول السريع');
+      }
+    } catch (e) {
+      alert('حدث خطأ أثناء نسخ الرابط');
     }
   };
 
@@ -287,6 +306,20 @@ export const UsersClient: React.FC<UsersClientProps> = ({
                             <Send className="w-4 h-4" />
                           </a>
                         )}
+
+                        {/* Magic Login Link Copy Button */}
+                        <button
+                          type="button"
+                          onClick={() => handleCopyMagicLink(u.id)}
+                          className={`p-1.5 rounded-xl transition-all cursor-pointer ${
+                            copiedMagicUserId === u.id
+                              ? 'bg-amber-500 text-black font-bold'
+                              : 'bg-amber-500/10 hover:bg-amber-500/20 text-amber-300'
+                          }`}
+                          title="نسخ رابط الدخول السريع المباشر (Magic Link) لإرساله للعميل"
+                        >
+                          {copiedMagicUserId === u.id ? <Check className="w-4 h-4" /> : <Key className="w-4 h-4" />}
+                        </button>
 
                         {/* Add Subscription Order Button */}
                         <button

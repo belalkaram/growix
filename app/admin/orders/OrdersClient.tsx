@@ -16,12 +16,14 @@ import {
   PlusCircle, 
   Search, 
   Filter,
-  Check
+  Check,
+  Key
 } from 'lucide-react';
 import { OrderStatusButtons } from './OrderStatusButtons';
 import { OrderReceiptViewer } from './OrderReceiptViewer';
 import { OrderTestToggle } from './OrderTestToggle';
 import { CreateOrderModal, UserOption, PackageOption, ToolOption } from './CreateOrderModal';
+import { getMagicLoginLinkForAdminAction } from '@/lib/magic-auth';
 
 export interface OrderAdminRow {
   id: string;
@@ -61,9 +63,26 @@ export const OrdersClient: React.FC<OrdersClientProps> = ({
   toolsList = [],
 }) => {
   const router = useRouter();
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [orders, setOrders] = useState<OrderAdminRow[]>(initialOrders);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [copiedMagicOrderId, setCopiedMagicOrderId] = useState<string | null>(null);
+
+  const handleCopyMagicLink = async (userId: string, orderId: string) => {
+    try {
+      const res = await getMagicLoginLinkForAdminAction(userId);
+      if (res.success && res.magicUrl) {
+        await navigator.clipboard.writeText(res.magicUrl);
+        setCopiedMagicOrderId(orderId);
+        setTimeout(() => setCopiedMagicOrderId(null), 3000);
+      } else {
+        alert(res.error || 'فشل في توليد رابط الدخول السريع');
+      }
+    } catch (e) {
+      alert('حدث خطأ أثناء نسخ الرابط');
+    }
+  };
 
   const pendingCount = initialOrders.filter((o) => o.status === 'pending').length;
   const approvedCount = initialOrders.filter((o) => o.status === 'approved').length;
@@ -354,7 +373,31 @@ export const OrdersClient: React.FC<OrdersClientProps> = ({
 
                       {/* Action Buttons */}
                       <td className="p-4">
-                        <OrderStatusButtons orderId={ord.id} currentStatus={ord.status} />
+                        <div className="flex items-center gap-2">
+                          <OrderStatusButtons orderId={ord.id} currentStatus={ord.status} />
+                          <button
+                            type="button"
+                            onClick={() => handleCopyMagicLink(ord.userId, ord.id)}
+                            className={`p-2 rounded-xl border text-xs font-bold flex items-center gap-1 transition-all cursor-pointer ${
+                              copiedMagicOrderId === ord.id
+                                ? 'bg-amber-500 text-black border-amber-400 font-black'
+                                : 'bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border-amber-500/30'
+                            }`}
+                            title="نسخ رابط الدخول المباشر لحساب هذا العميل (Magic Link)"
+                          >
+                            {copiedMagicOrderId === ord.id ? (
+                              <>
+                                <Check className="w-3.5 h-3.5" />
+                                <span>تم النسخ!</span>
+                              </>
+                            ) : (
+                              <>
+                                <Key className="w-3.5 h-3.5" />
+                                <span className="hidden xl:inline">رابط الدخول</span>
+                              </>
+                            )}
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
