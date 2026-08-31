@@ -4,7 +4,7 @@ import { SITE_CONFIG } from '@/config/site';
 const resendApiKey = process.env.RESEND_API_KEY;
 const resend = resendApiKey ? new Resend(resendApiKey) : null;
 
-const DEFAULT_FROM = process.env.RESEND_FROM_EMAIL || 'GROWIX Platform <onboarding@resend.dev>';
+const DEFAULT_FROM = process.env.RESEND_FROM_EMAIL || 'GROWIX <support@belalkaram.dev>';
 const SITE_URL = process.env.NEXTAUTH_URL || 'https://growix.belalkaram.dev';
 
 export interface WelcomeEmailParams {
