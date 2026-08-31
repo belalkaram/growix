@@ -31,7 +31,7 @@ import { SITE_CONFIG, SITE_PRICING, PricingPackage } from '@/config/site';
 import { GrowixLogo } from '@/components/GrowixLogo';
 import { CustomToolSelector } from '@/components/CustomToolSelector';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
+import { useSession, signIn } from 'next-auth/react';
 import { createOrderAction } from '@/lib/actions/orders';
 import { validateCouponAction } from '@/lib/actions/coupons';
 import { getAllPackagesAction } from '@/lib/actions/packages';
@@ -299,42 +299,31 @@ function CheckoutContent() {
       }
     }
 
-    // 3. 🛑 MANDATORY PAYMENT RECEIPT VALIDATION
-    if (!receiptFile) {
-      setOrderMessage({
-        type: 'error',
-        text: 'يرجى إرفاق صورة أو لقطة شاشة لإثبات التحويل أولاً لتأكيد طلبك وتفعيل باقتك فوراً 🖼️'
-      });
-      const uploadElement = document.getElementById('step-receipt-upload');
-      if (uploadElement) {
-        uploadElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
-      return;
-    }
-
     setIsSubmittingOrder(true);
     setOrderMessage(null);
     setUploadStatusText('جاري معالجة وتأكيد الطلب...');
 
-    // 4. Upload Receipt Image to Cloudflare R2
+    // 3. Upload Receipt Image to Cloudflare R2 if provided
     let receiptUrl: string | undefined = undefined;
     let receiptKey: string | undefined = undefined;
 
-    setUploadStatusText('جاري رفع صورة الإثبات إلى السيرفر الآمن (R2)...');
-    const formData = new FormData();
-    formData.append('file', receiptFile);
-    formData.append('senderNumber', isEgyptianPhone ? normalizedPhone : cleanInput);
+    if (receiptFile) {
+      setUploadStatusText('جاري رفع صورة الإثبات إلى السيرفر الآمن (R2)...');
+      const formData = new FormData();
+      formData.append('file', receiptFile);
+      formData.append('senderNumber', isEgyptianPhone ? normalizedPhone : cleanInput);
 
-    const uploadRes = await uploadReceiptAction(formData);
-    if (!uploadRes.success) {
-      setIsSubmittingOrder(false);
-      setUploadStatusText('');
-      setOrderMessage({ type: 'error', text: uploadRes.error || 'فشل في رفع صورة الإثبات، يرجى المحاولة مرة أخرى' });
-      return;
+      const uploadRes = await uploadReceiptAction(formData);
+      if (!uploadRes.success) {
+        setIsSubmittingOrder(false);
+        setUploadStatusText('');
+        setOrderMessage({ type: 'error', text: uploadRes.error || 'فشل في رفع صورة الإثبات، يرجى المحاولة مرة أخرى' });
+        return;
+      }
+
+      receiptUrl = uploadRes.url;
+      receiptKey = uploadRes.key;
     }
-
-    receiptUrl = uploadRes.url;
-    receiptKey = uploadRes.key;
 
     setUploadStatusText('جاري توثيق وتأكيد الطلب وإنشاء الحساب...');
 
@@ -369,28 +358,38 @@ function CheckoutContent() {
       customerEmail: customerEmail.trim(),
     });
 
-    setIsSubmittingOrder(false);
-    setUploadStatusText('');
-
     if (!res.success) {
+      setIsSubmittingOrder(false);
+      setUploadStatusText('');
       setOrderMessage({ type: 'error', text: res.error || 'حدث خطأ أثناء حفظ الطلب' });
-    } else {
-      // Trigger Meta Pixel Purchase Event
-      trackMetaEvent('Purchase', {
-        value: finalPayableAmount,
-        currency: 'EGP',
-        content_name: currentPkg.name,
-        content_type: 'product',
-        order_id: res.orderId,
-      });
+      return;
+    }
 
-      // If magicToken is available (for guest), automatically login and redirect!
-      if (res.magicToken) {
-        router.push(`/magic-login?token=${res.magicToken}&orderId=${res.orderId}&success=1`);
-      } else {
-        router.push(`/my-orders?orderId=${res.orderId}&success=1`);
+    // Trigger Meta Pixel Purchase Event
+    trackMetaEvent('Purchase', {
+      value: finalPayableAmount,
+      currency: 'EGP',
+      content_name: currentPkg.name,
+      content_type: 'product',
+      order_id: res.orderId,
+    });
+
+    setUploadStatusText('تم تأكيد الطلب وإنشاء الحساب بنجاح! جاري التوجيه...');
+
+    // If magicToken is available (for guest), perform background login
+    if (res.magicToken) {
+      try {
+        await signIn('credentials', {
+          magicToken: res.magicToken,
+          redirect: false,
+        });
+      } catch (authErr) {
+        console.error('Silent auto login error:', authErr);
       }
     }
+
+    // Direct hard navigation to success page to guarantee session persistence
+    window.location.href = `/success?orderId=${res.orderId}`;
   };
 
   return (

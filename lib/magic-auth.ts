@@ -2,7 +2,7 @@
 
 import { db } from '@/db';
 import { magicTokens, users } from '@/db/schema';
-import { eq, and, gt, isNull } from 'drizzle-orm';
+import { eq, and, gt, isNull, or } from 'drizzle-orm';
 import { auth } from '@/lib/auth';
 import crypto from 'crypto';
 
@@ -62,7 +62,10 @@ export async function validateAndConsumeMagicToken(token: string): Promise<{
         and(
           eq(magicTokens.token, cleanToken),
           gt(magicTokens.expiresAt, new Date()),
-          isNull(magicTokens.usedAt)
+          or(
+            isNull(magicTokens.usedAt),
+            gt(magicTokens.usedAt, new Date(Date.now() - 2 * 60 * 1000))
+          )
         )
       )
       .limit(1);
@@ -70,17 +73,19 @@ export async function validateAndConsumeMagicToken(token: string): Promise<{
     if (!records || records.length === 0) {
       return { 
         success: false, 
-        error: 'رابط الدخول السريع منتهي الصلاحية أو تم استخدامه مسبقاً. يرجى تسجيل الدخول العادي بالإيميل ورقم الهاتف.' 
+        error: 'رابط الدخول السريع منتهي الصلاحية أو غير صالح. يرجى تسجيل الدخول بالإيميل ورقم هاتفك.' 
       };
     }
 
     const rec = records[0];
 
-    // Mark token as used
-    await db
-      .update(magicTokens)
-      .set({ usedAt: new Date() })
-      .where(eq(magicTokens.id, rec.tokenId));
+    // Mark token as used if not already marked
+    if (!rec.usedAt) {
+      await db
+        .update(magicTokens)
+        .set({ usedAt: new Date() })
+        .where(eq(magicTokens.id, rec.tokenId));
+    }
 
     // Update user's last login timestamp
     await db

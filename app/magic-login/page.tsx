@@ -38,11 +38,11 @@ function MagicLoginContent() {
           setStatus('success');
           setTimeout(() => {
             const dest = orderId ? `/my-orders?orderId=${orderId}&success=1` : '/my-orders';
-            router.push(dest);
-          }, 1200);
+            window.location.href = dest;
+          }, 1000);
         } else {
           setStatus('error');
-          setErrorMessage('رابط الدخول السريع غير صالح أو منتهي الصلاحية أو تم استخدامه مسبقاً.');
+          setErrorMessage('رابط الدخول السريع غير صالح أو منتهي الصلاحية. يرجى تسجيل الدخول بالإيميل ورقم هاتفك المحول منه.');
         }
       } catch (err: any) {
         if (!isMounted) return;
