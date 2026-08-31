@@ -54,18 +54,15 @@ function isValidImageSignature(buffer: Buffer): boolean {
  */
 export async function uploadReceiptAction(formData: FormData) {
   try {
-    // 1. Mandatory Session Authentication
     const session = await auth();
-    if (!session?.user?.id) {
-      return { success: false, error: 'يجب تسجيل الدخول أولاً لإرفاق إيصال التحويل' };
-    }
+    const senderNumber = (formData.get('senderNumber') as string) || 'unknown';
 
-    // 2. Rate Limiting (Max 5 receipt uploads per 10 mins per user)
+    // 1. Rate Limiting (Max 5 receipt uploads per 10 mins per user/IP)
     const rateLimit = await checkRateLimit({
       action: 'api',
       maxRequests: 5,
       windowMs: 10 * 60 * 1000,
-      customIdentifier: `receipt:${session.user.id}`,
+      customIdentifier: session?.user?.id ? `receipt:${session.user.id}` : `receipt:${senderNumber}`,
       errorMessage: 'تم إرفاق عدة ملفات مؤخراً. يرجى الانتظار قليلاً أو التواصل مع الدعم الفني.',
     });
 
@@ -74,7 +71,6 @@ export async function uploadReceiptAction(formData: FormData) {
     }
 
     const file = formData.get('file') as File | null;
-    const senderNumber = (formData.get('senderNumber') as string) || 'unknown';
 
     if (!file || !(file instanceof File)) {
       return { success: false, error: 'لم يتم اختيار ملف الصورة' };
