@@ -75,7 +75,7 @@ export const PricingSection: React.FC<PricingSectionProps> = ({ packages, tools,
                 transition={{ duration: 0.4 }}
                 className={`rounded-3xl p-6 sm:p-8 flex flex-col justify-between transition-all duration-300 relative ${
                   isPopular
-                    ? 'bg-[#0B1220] text-white border-2 border-[#2ECC8F] shadow-2xl z-10 glow-navy ring-4 ring-[#2ECC8F]/10 scale-[1.02]'
+                    ? 'bg-[#0B1220] text-white border-2 border-[#2ECC8F] shadow-2xl z-10 glow-navy ring-4 ring-[#2ECC8F]/10 md:scale-[1.02]'
                     : pkg.id === 'bundle-premium'
                     ? 'bg-gradient-to-b from-[#F0FDF6] to-white text-[#0B1220] border-2 border-[#0F9D58]/30 hover:border-[#0F9D58] hover:shadow-xl'
                     : 'bg-[#F7F9FA] text-[#0B1220] border border-gray-200 hover:border-[#0F9D58] hover:shadow-xl'

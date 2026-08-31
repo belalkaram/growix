@@ -17,12 +17,14 @@ export async function GET(req: NextRequest) {
     );
   }
 
+  const userId = session.user.id;
+
   // 2. Download Rate Limiting (10 downloads per 5 minutes per user)
   const rateLimit = await checkRateLimit({
     action: 'api',
     maxRequests: 10,
     windowMs: 5 * 60 * 1000,
-    customIdentifier: `download:${session.user.id}`,
+    customIdentifier: `download:${userId}`,
     errorMessage: 'تم تجاوز الحد الأقصى لعدد مرات التحميل المتتالية. يرجى الانتظار بضع دقائق والمحاولة مرة أخرى.',
   });
 
@@ -121,7 +123,7 @@ export async function GET(req: NextRequest) {
 
     getClientIp().then(ip =>
       db.insert(fileDownloads).values({
-        userId: session.user.id!,
+        userId,
         orderId,
         fileKey: sanitizedKey,
         fileName,

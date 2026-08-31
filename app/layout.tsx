@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { IBM_Plex_Sans_Arabic } from 'next/font/google';
 import { Suspense } from 'react';
 import { GlobalNavigationLoader } from '@/components/GlobalNavigationLoader';
@@ -14,6 +14,15 @@ const ibmPlexSansArabic = IBM_Plex_Sans_Arabic({
   variable: '--font-ibm-plex-sans-arabic',
   display: 'swap',
 });
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: 'cover',
+  themeColor: '#0B1220',
+};
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://growix.belalkaram.dev'),
