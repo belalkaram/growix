@@ -23,7 +23,8 @@ import {
   FolderDown,
   FolderOpen,
   Tag,
-  Radio
+  Radio,
+  FileSpreadsheet
 } from 'lucide-react';
 
 interface AdminSidebarProps {
@@ -55,6 +56,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({ userEmail }) => {
     { label: 'اللوحة الرئيسية', href: '/admin', icon: LayoutDashboard },
     { label: 'طلبات الاشتراك والتحويلات', href: '/admin/orders', icon: PackageCheck },
     { label: 'سجل تحويلات الـ Webhook', href: '/admin/transactions', icon: Radio },
+    { label: 'تصدير واستخراج البيانات', href: '/admin/export', icon: FileSpreadsheet },
     { label: 'الكوبونات وقسائم الخصم', href: '/admin/coupons', icon: Tag },
     { label: 'ملفات الباقات (R2)', href: '/admin/files', icon: FolderDown },
     { label: 'فيديوهات الشرح', href: '/admin/videos', icon: Wrench },
