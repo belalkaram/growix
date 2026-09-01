@@ -17,13 +17,16 @@ import {
   Search, 
   Filter,
   Check,
-  Key
+  Key,
+  Trash2,
+  Loader2
 } from 'lucide-react';
 import { OrderStatusButtons } from './OrderStatusButtons';
 import { OrderReceiptViewer } from './OrderReceiptViewer';
 import { OrderTestToggle } from './OrderTestToggle';
 import { CreateOrderModal, UserOption, PackageOption, ToolOption } from './CreateOrderModal';
 import { getMagicLoginLinkForAdminAction } from '@/lib/magic-auth';
+import { deleteOrderAction } from '@/lib/actions/orders';
 
 export interface OrderAdminRow {
   id: string;
@@ -68,6 +71,22 @@ export const OrdersClient: React.FC<OrdersClientProps> = ({
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [copiedMagicOrderId, setCopiedMagicOrderId] = useState<string | null>(null);
+  const [deletingOrderId, setDeletingOrderId] = useState<string | null>(null);
+
+  const handleDeleteOrder = async (orderId: string, customerName?: string | null) => {
+    if (!confirm(`هل أنت متأكد من حذف هذا الطلب ${customerName ? `للعميل (${customerName})` : ''} نهائياً؟`)) {
+      return;
+    }
+    setDeletingOrderId(orderId);
+    const res = await deleteOrderAction(orderId);
+    setDeletingOrderId(null);
+    if (res.success) {
+      setOrders((prev) => prev.filter((o) => o.id !== orderId));
+      router.refresh();
+    } else {
+      alert(res.error || 'فشل في حذف الطلب');
+    }
+  };
 
   const handleCopyMagicLink = async (userId: string, orderId: string) => {
     try {
@@ -395,6 +414,20 @@ export const OrdersClient: React.FC<OrdersClientProps> = ({
                                 <Key className="w-3.5 h-3.5" />
                                 <span className="hidden xl:inline">رابط الدخول</span>
                               </>
+                            )}
+                          </button>
+
+                          <button
+                            type="button"
+                            disabled={deletingOrderId === ord.id}
+                            onClick={() => handleDeleteOrder(ord.id, ord.userName)}
+                            className="p-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 text-xs font-bold flex items-center gap-1 transition-all cursor-pointer disabled:opacity-50"
+                            title="حذف هذا الطلب نهائياً"
+                          >
+                            {deletingOrderId === ord.id ? (
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            ) : (
+                              <Trash2 className="w-3.5 h-3.5" />
                             )}
                           </button>
                         </div>

@@ -76,3 +76,19 @@ export async function getAllTransactionsForAdmin(filter?: {
 
   return await query;
 }
+
+export async function deleteTransactionAction(transactionId: number) {
+  const session = await auth();
+  if (!session?.user || (session.user as { role?: string }).role !== 'admin') {
+    return { success: false, error: 'غير مصرح بالوصول' };
+  }
+
+  try {
+    await db.delete(paymentTransactions).where(eq(paymentTransactions.id, transactionId));
+    return { success: true };
+  } catch (error) {
+    console.error('Error deleting transaction:', error);
+    return { success: false, error: 'حدث خطأ أثناء حذف المعاملة' };
+  }
+}
+

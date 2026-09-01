@@ -18,10 +18,13 @@ import {
   Calendar,
   Clock,
   User,
-  CreditCard
+  CreditCard,
+  Trash2,
+  Loader2
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { deleteTransactionAction } from '@/lib/actions/transactions';
 
 interface TransactionItem {
   id: number;
@@ -61,6 +64,25 @@ export function TransactionsClient({ initialTransactions }: { initialTransaction
   
   const [selectedTx, setSelectedTx] = useState<TransactionItem | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+
+  const handleDeleteTransaction = async (id: number, txCode?: string) => {
+    if (!confirm(`هل أنت متأكد من حذف هذه المعاملة (${txCode || id}) نهائياً من سجل الـ Webhook؟`)) {
+      return;
+    }
+    setDeletingId(id);
+    const res = await deleteTransactionAction(id);
+    setDeletingId(null);
+    if (res.success) {
+      setTransactions((prev) => prev.filter((t) => t.id !== id));
+      if (selectedTx?.id === id) {
+        setSelectedTx(null);
+      }
+      router.refresh();
+    } else {
+      alert(res.error || 'فشل في حذف المعاملة');
+    }
+  };
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -429,15 +451,31 @@ export function TransactionsClient({ initialTransactions }: { initialTransaction
                         )}
                       </td>
 
-                      {/* View Raw SMS button */}
+                      {/* Actions: View Raw SMS & Delete */}
                       <td className="p-4 text-center">
-                        <button
-                          onClick={() => setSelectedTx(tx)}
-                          className="px-3 py-1.5 bg-white/5 hover:bg-white/10 hover:text-white text-gray-300 rounded-lg text-xs font-bold transition-all border border-white/10 inline-flex items-center gap-1.5"
-                        >
-                          <Eye className="w-3.5 h-3.5 text-[#2ECC8F]" />
-                          <span>عرض الرسالة</span>
-                        </button>
+                        <div className="flex items-center justify-center gap-1.5">
+                          <button
+                            onClick={() => setSelectedTx(tx)}
+                            className="px-2.5 py-1.5 bg-white/5 hover:bg-white/10 hover:text-white text-gray-300 rounded-lg text-xs font-bold transition-all border border-white/10 inline-flex items-center gap-1 cursor-pointer"
+                            title="عرض تفاصيل الرسالة"
+                          >
+                            <Eye className="w-3.5 h-3.5 text-[#2ECC8F]" />
+                            <span>عرض</span>
+                          </button>
+
+                          <button
+                            onClick={() => handleDeleteTransaction(tx.id, tx.transactionId)}
+                            disabled={deletingId === tx.id}
+                            className="p-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 rounded-lg text-xs transition-all cursor-pointer disabled:opacity-50"
+                            title="حذف هذا السجل"
+                          >
+                            {deletingId === tx.id ? (
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            ) : (
+                              <Trash2 className="w-3.5 h-3.5" />
+                            )}
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -518,11 +556,25 @@ export function TransactionsClient({ initialTransactions }: { initialTransaction
               </div>
             )}
 
-            {/* Close Button */}
-            <div className="pt-2 flex justify-end">
+            {/* Modal Actions */}
+            <div className="pt-2 flex items-center justify-between border-t border-white/10">
+              <button
+                type="button"
+                onClick={() => handleDeleteTransaction(selectedTx.id, selectedTx.transactionId)}
+                disabled={deletingId === selectedTx.id}
+                className="px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 font-bold text-xs rounded-xl transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+              >
+                {deletingId === selectedTx.id ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Trash2 className="w-3.5 h-3.5" />
+                )}
+                <span>حذف هذه المعاملة</span>
+              </button>
+
               <button
                 onClick={() => setSelectedTx(null)}
-                className="px-5 py-2 bg-white/10 hover:bg-white/15 text-white font-bold text-xs rounded-xl transition-colors"
+                className="px-5 py-2 bg-white/10 hover:bg-white/15 text-white font-bold text-xs rounded-xl transition-colors cursor-pointer"
               >
                 إغلاق
               </button>
