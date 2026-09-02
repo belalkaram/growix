@@ -31,7 +31,7 @@ export async function getPackages(): Promise<PricingPackage[]> {
   } catch (error) {
     console.error('Database fetch error (getPackages), falling back to static config:', error);
   }
-  return SITE_CONFIG.packages;
+  return [...SITE_CONFIG.packages, ...(SITE_CONFIG.standalonePackages || [])];
 }
 
 // 1.1. Fetch single package by id with DB fallback
@@ -61,7 +61,7 @@ export async function getPackageById(id: string): Promise<PricingPackage | null>
   } catch (error) {
     console.error(`Database fetch error (getPackageById: ${id}), falling back to static config:`, error);
   }
-  return SITE_CONFIG.packages.find((p) => p.id === id) || null;
+  return SITE_CONFIG.packages.find((p) => p.id === id) || SITE_CONFIG.standalonePackages?.find((p) => p.id === id) || null;
 }
 
 // 2. Fetch all active tools with DB fallback

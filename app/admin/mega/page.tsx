@@ -25,6 +25,7 @@ import {
 const PACKAGE_OPTIONS = [
   { value: 'all', label: 'جميع الباقات (للكل)' },
   { value: 'bundle-vip', label: 'باقة VIP (الشاملة)' },
+  { value: 'courses-500gb', label: 'باقة كورسات الـ 500 جيجا (+500 GB MEGA)' },
   { value: 'bundle-premium', label: 'باقة Premium' },
   { value: 'single-tool', label: 'باقة أداة واحدة' },
 ];

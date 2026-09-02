@@ -55,7 +55,10 @@ function CheckoutContent() {
     }
   }, [session]);
 
-  const [packages, setPackages] = useState<PricingPackage[]>(SITE_CONFIG.packages);
+  const [packages, setPackages] = useState<PricingPackage[]>([
+    ...SITE_CONFIG.packages,
+    ...(SITE_CONFIG.standalonePackages || []),
+  ]);
 
   useEffect(() => {
     getAllPackagesAction().then((pkgs) => {
@@ -75,6 +78,7 @@ function CheckoutContent() {
   const [userToolId, setUserToolId] = useState<string | null>(null);
 
   const activePkgId = userPkgId ?? (
+    initialPkgParam === 'courses-500gb' || initialPkgParam === 'courses' ? 'courses-500gb' :
     initialPkgParam === 'single-tool' ? 'single-tool' :
     initialPkgParam === 'bundle-premium' ? 'bundle-premium' :
     'bundle-vip'

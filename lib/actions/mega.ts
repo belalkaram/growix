@@ -21,10 +21,18 @@ export async function getMegaLinksForOrderAction(packageId: string): Promise<{
       .where(eq(megaLinks.isActive, true))
       .orderBy(asc(megaLinks.sortOrder), asc(megaLinks.createdAt));
 
-    // Filter by package: include if packageId matches or is 'all'
-    const filtered = links.filter(
-      (l) => l.packageId === packageId || l.packageId === 'all'
-    );
+    // Filter by package: include if packageId matches, is 'all', or if VIP/Courses packages match
+    const filtered = links.filter((l) => {
+      if (l.packageId === 'all') return true;
+      if (l.packageId === packageId) return true;
+      if (
+        (packageId === 'bundle-vip' || packageId === 'courses-500gb') &&
+        (l.packageId === 'courses-500gb' || l.packageId === 'bundle-vip')
+      ) {
+        return true;
+      }
+      return false;
+    });
 
     return { megaLinks: filtered };
   } catch (error: any) {

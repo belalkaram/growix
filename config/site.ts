@@ -58,6 +58,11 @@ export const SITE_PRICING = {
   singleToolOriginalPrice: '700',
   singleToolCtaText: 'اختر برنامجك واشترك بـ 200 ج',
 
+  // Baket 500GB Mega Courses (باقة الكورسات الـ 500 جيجا المنفصلة)
+  coursesPackagePrice: '200',
+  coursesPackageOriginalPrice: '1000',
+  coursesPackageCtaText: 'احصل على باقة الكورسات بـ 200 ج',
+
   currency: 'جنية',
 };
 
@@ -411,6 +416,31 @@ export const SITE_CONFIG = {
         { text: 'باقي البرامج الـ 11 والكورسات الشاملة', included: false }
       ],
       ctaText: SITE_PRICING.singleToolCtaText
+    }
+  ] as PricingPackage[],
+
+  // Standalone Hidden Packages (Accessible via dedicated landing pages & checkout directly)
+  standalonePackages: [
+    {
+      id: 'courses-500gb',
+      name: 'باقة كورسات الـ 500 جيجا الشاملة (+500 GB MEGA)',
+      badge: '🎓 الأضخم في الوطن العربي',
+      isPopular: true,
+      originalPrice: SITE_PRICING.coursesPackageOriginalPrice,
+      discountedPrice: SITE_PRICING.coursesPackagePrice,
+      currency: SITE_PRICING.currency,
+      period: 'وصول دائم وسحابي لجميع الكورسات بدون اشتراكات',
+      description: 'المكتبة السحابية الشاملة لكورسات التسويق، الإعلانات الممولة، الميديا باينج، التجارة الإلكترونية، الدروب شيبنج، التصميم، المونتاج، والذكاء الاصطناعي على سيرفرات MEGA فائقة السرعة.',
+      features: [
+        { text: 'أكثر من 500 جيجابايت كورسات وفيديوهات مسجلة عملية خطوة بخطوة', included: true, highlight: true },
+        { text: 'أكثر من 30 كورس عملي في 7 مجالات تسويقية وتجارية شاملة', included: true, highlight: true },
+        { text: 'روابط مجلدات سحابية منظمة ومباشرة على سيرفرات MEGA السريعة', included: true, highlight: true },
+        { text: 'إعلانات فيسبوك، تيك توك، جوجل، سناب، وتجارة إلكترونية ودروب شيبنج', included: true, highlight: true },
+        { text: 'تصميم ومونتاج، ذكاء اصطناعي، سيو، كتابة إعلانات، وبيزنس فريلانس', included: true },
+        { text: 'تحديثات سحابية مستمرة ودائمة بدون أي مصاريف أو اشتراكات شهرية', included: true, highlight: true },
+        { text: 'برامج وأدوات الـ 12 التسويقية', included: false }
+      ],
+      ctaText: SITE_PRICING.coursesPackageCtaText
     }
   ] as PricingPackage[],
 

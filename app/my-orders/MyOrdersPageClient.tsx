@@ -62,7 +62,10 @@ export const MyOrdersPageClient: React.FC<MyOrdersPageClientProps> = ({ orders, 
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [watchedVideos, setWatchedVideos] = useState<Set<number>>(new Set());
   const [downloadedFiles, setDownloadedFiles] = useState<Set<string>>(new Set());
-  const [activeTab, setActiveTab] = useState<'videos' | 'courses' | 'tools' | 'bonus'>('videos');
+  const hasCoursesOrder = orders.some((o) => o.packageId === 'courses-500gb');
+  const [activeTab, setActiveTab] = useState<'videos' | 'courses' | 'tools' | 'bonus'>(
+    hasCoursesOrder && !orders.some((o) => o.packageId === 'bundle-vip') ? 'courses' : 'videos'
+  );
   const [isInstructionsOpen, setIsInstructionsOpen] = useState(false);
 
   const handleCopyOrderId = (orderId: string) => {
@@ -336,7 +339,14 @@ export const MyOrdersPageClient: React.FC<MyOrdersPageClientProps> = ({ orders, 
                       </div>
 
                       <h3 className="text-lg font-black text-[#0B1220] flex items-center gap-2 pt-1">
-                        {ord.packageId === 'bundle-vip' ? (
+                        {ord.packageId === 'courses-500gb' ? (
+                          <>
+                            <div className="w-8 h-8 rounded-xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-purple-500 shrink-0">
+                              <Sparkles className="w-4 h-4" />
+                            </div>
+                            <span>باقة كورسات الـ 500 جيجا الشاملة (+500 GB MEGA)</span>
+                          </>
+                        ) : ord.packageId === 'bundle-vip' ? (
                           <>
                             <div className="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-500 shrink-0">
                               <Crown className="w-4 h-4" />

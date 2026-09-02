@@ -107,6 +107,7 @@ export const CreateOrderModal: React.FC<CreateOrderModalProps> = ({
     if (newPkgId === 'bundle-vip') setAmount('500');
     else if (newPkgId === 'bundle-premium') setAmount('300');
     else if (newPkgId === 'single-tool') setAmount('200');
+    else if (newPkgId === 'courses-500gb') setAmount('200');
     else {
       const custom = packages.find((p) => p.id === newPkgId);
       if (custom) {
@@ -328,7 +329,7 @@ export const CreateOrderModal: React.FC<CreateOrderModalProps> = ({
               <span>2. تحديد الباقة / الاشتراك</span>
             </label>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
               {/* VIP Bundle */}
               <button
                 type="button"
@@ -369,6 +370,26 @@ export const CreateOrderModal: React.FC<CreateOrderModalProps> = ({
                 <p className="text-[10px] text-gray-400 leading-tight">الـ 12 أداة تسويق + داتا مصر الكاملة</p>
               </button>
 
+              {/* Courses 500GB */}
+              <button
+                type="button"
+                onClick={() => handlePackageChange('courses-500gb')}
+                className={`p-3 rounded-2xl border text-right transition-all cursor-pointer ${
+                  packageId === 'courses-500gb'
+                    ? 'bg-purple-500/15 border-purple-500/50 text-white ring-1 ring-purple-500/30'
+                    : 'bg-white/5 border-white/10 text-gray-300 hover:border-white/20'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <span className="font-black text-xs text-purple-400 flex items-center gap-1">
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>الكورسات 500GB</span>
+                  </span>
+                  <span className="text-xs font-black text-white">200 ج</span>
+                </div>
+                <p className="text-[10px] text-gray-400 leading-tight">+500 جيجا كورسات تسويق وتجارة على MEGA</p>
+              </button>
+
               {/* Single Tool */}
               <button
                 type="button"
@@ -382,7 +403,7 @@ export const CreateOrderModal: React.FC<CreateOrderModalProps> = ({
                 <div className="flex items-center justify-between mb-1">
                   <span className="font-black text-xs text-cyan-400 flex items-center gap-1">
                     <Wrench className="w-3.5 h-3.5" />
-                    <span>باقة برنامج واحد</span>
+                    <span>برنامج واحد</span>
                   </span>
                   <span className="text-xs font-black text-white">200 ج</span>
                 </div>

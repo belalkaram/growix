@@ -39,6 +39,9 @@ async function computeServerOrderPrice(packageId: string, couponCode?: string | 
       } else if (packageId === 'single-tool') {
         basePrice = parseInt(SITE_PRICING.singleToolPrice) || 200;
         originalPrice = parseInt(SITE_PRICING.singleToolOriginalPrice) || 700;
+      } else if (packageId === 'courses-500gb') {
+        basePrice = parseInt(SITE_PRICING.coursesPackagePrice) || 200;
+        originalPrice = parseInt(SITE_PRICING.coursesPackageOriginalPrice) || 1000;
       }
     }
   } catch (err) {
@@ -52,6 +55,9 @@ async function computeServerOrderPrice(packageId: string, couponCode?: string | 
     } else if (packageId === 'single-tool') {
       basePrice = parseInt(SITE_PRICING.singleToolPrice) || 200;
       originalPrice = parseInt(SITE_PRICING.singleToolOriginalPrice) || 700;
+    } else if (packageId === 'courses-500gb') {
+      basePrice = parseInt(SITE_PRICING.coursesPackagePrice) || 200;
+      originalPrice = parseInt(SITE_PRICING.coursesPackageOriginalPrice) || 1000;
     }
   }
 
@@ -245,6 +251,7 @@ export async function createOrderAction(data: {
     if (data.packageId === 'bundle-vip') packageName = 'باقة VIP الشاملة (كورسات + 12 أداة + داتا)';
     else if (data.packageId === 'bundle-premium') packageName = 'باقة Premium (الـ 12 أداة + داتا مصر)';
     else if (data.packageId === 'single-tool') packageName = 'باقة أداة فردية';
+    else if (data.packageId === 'courses-500gb') packageName = 'باقة كورسات الـ 500 جيجا الشاملة (+500 GB MEGA)';
     else {
       const [customPkg] = await db.select().from(packages).where(eq(packages.id, data.packageId)).limit(1);
       if (customPkg) packageName = customPkg.name;
@@ -462,6 +469,7 @@ export async function approveOrderCore(params: {
         if (orderRecord.packageId === 'bundle-vip') pkgName = 'باقة VIP الشاملة (12 أداة + كورس)';
         else if (orderRecord.packageId === 'bundle-premium') pkgName = 'باقة Premium (12 أداة + داتا مصر)';
         else if (orderRecord.packageId === 'single-tool') pkgName = 'باقة أداة فردية';
+        else if (orderRecord.packageId === 'courses-500gb') pkgName = 'باقة كورسات الـ 500 جيجا الشاملة (+500 GB MEGA)';
 
         const { sendOrderApprovedEmail } = await import('@/lib/resend');
         sendOrderApprovedEmail({
@@ -690,6 +698,7 @@ export async function createAdminManualOrderAction(data: {
     if (data.packageId === 'bundle-vip') packageName = 'باقة VIP الشاملة (12 أداة + كورس)';
     else if (data.packageId === 'bundle-premium') packageName = 'باقة Premium (12 أداة + داتا)';
     else if (data.packageId === 'single-tool') packageName = 'باقة أداة فردية';
+    else if (data.packageId === 'courses-500gb') packageName = 'باقة كورسات الـ 500 جيجا الشاملة (+500 GB MEGA)';
     else {
       const [customPkg] = await db.select().from(packages).where(eq(packages.id, data.packageId)).limit(1);
       if (customPkg) packageName = customPkg.name;
