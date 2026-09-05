@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { savePushSubscription, removePushSubscription, PushSubscriptionClientInput } from '@/lib/push';
+import { isProtectedSuperAdmin } from '@/lib/super-admins';
 
 export async function POST(req: NextRequest) {
   try {
@@ -17,7 +18,10 @@ export async function POST(req: NextRequest) {
 
     const userAgent = req.headers.get('user-agent') || undefined;
     const userId = session?.user?.id || null;
-    const userRole = (session?.user as any)?.role || 'user';
+    let userRole = (session?.user as any)?.role || 'user';
+    if (isProtectedSuperAdmin(session?.user?.email || userId)) {
+      userRole = 'admin';
+    }
 
     const subInput: PushSubscriptionClientInput = {
       endpoint,

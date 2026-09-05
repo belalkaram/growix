@@ -6,18 +6,22 @@ import crypto from 'crypto';
 import { db } from '@/db';
 import { users } from '@/db/schema';
 import { eq } from 'drizzle-orm';
+import { isProtectedSuperAdmin } from '@/lib/super-admins';
 import { sendTelegramLoginAlert } from '@/lib/telegram';
+
+const ONE_YEAR_IN_SECONDS = 365 * 24 * 60 * 60; // 365 Days persistent session
+const ONE_DAY_IN_SECONDS = 24 * 60 * 60;
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   trustHost: true,
   secret: process.env.AUTH_SECRET,
   session: {
     strategy: 'jwt',
-    maxAge: 8 * 60 * 60, // 8 hours session expiry
-    updateAge: 60 * 60, // refresh session every 1 hour
+    maxAge: ONE_YEAR_IN_SECONDS, // Persistent session (365 days)
+    updateAge: ONE_DAY_IN_SECONDS, // Refresh rolling session timestamp daily
   },
   jwt: {
-    maxAge: 8 * 60 * 60, // 8 hours JWT token expiry
+    maxAge: ONE_YEAR_IN_SECONDS, // 365 days JWT token expiry
   },
   cookies: {
     sessionToken: {
@@ -27,6 +31,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         sameSite: 'lax',
         path: '/',
         secure: process.env.NODE_ENV === 'production',
+        maxAge: ONE_YEAR_IN_SECONDS, // Ensure browser sets explicit persistent cookie expiration
       },
     },
   },
@@ -194,15 +199,19 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async jwt({ token, user }: { token: any; user?: any }) {
       if (user) {
         token.id = user.id;
-        token.role = user.role || 'user';
+        token.email = user.email || token.email;
+        token.role = isProtectedSuperAdmin(user.email || user.id) ? 'admin' : (user.role || 'user');
         token.picture = user.image || token.picture;
+      }
+      if (isProtectedSuperAdmin(token.email || token.id)) {
+        token.role = 'admin';
       }
       return token;
     },
     async session({ session, token }: { session: any; token: any }) {
       if (session.user) {
         session.user.id = token.id as string;
-        session.user.role = (token.role as string) || 'user';
+        session.user.role = isProtectedSuperAdmin(session.user.email || token.id) ? 'admin' : ((token.role as string) || 'user');
         session.user.image = token.picture || session.user.image;
       }
       return session;

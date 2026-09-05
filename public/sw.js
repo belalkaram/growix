@@ -40,7 +40,6 @@ self.addEventListener('push', (event) => {
     body: data.body || '',
     icon: data.icon || '/logo.png',
     badge: data.badge || '/logo.png',
-    image: data.image || undefined,
     data: {
       url: data.url || '/',
       eventId: data.eventId || undefined,
@@ -48,16 +47,31 @@ self.addEventListener('push', (event) => {
       timestamp: data.timestamp || Date.now(),
       ...data.metadata,
     },
-    vibrate: [200, 100, 200],
     tag: data.tag || `growix-${Date.now()}`,
     renotify: true,
-    requireInteraction: true,
     dir: 'rtl',
     lang: 'ar',
   };
 
+  if (data.image) {
+    options.image = data.image;
+  }
+
   event.waitUntil(
-    self.registration.showNotification(title, options)
+    (async () => {
+      try {
+        await self.registration.showNotification(title, options);
+      } catch (err) {
+        console.warn('[SW] showNotification full options failed, falling back to basic options:', err);
+        // Fallback for strict Apple iOS WebKit
+        await self.registration.showNotification(title, {
+          body: data.body || '',
+          icon: '/logo.png',
+          data: { url: data.url || '/' },
+          tag: data.tag || `growix-${Date.now()}`,
+        });
+      }
+    })()
   );
 });
 

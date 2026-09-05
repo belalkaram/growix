@@ -18,6 +18,15 @@ function LoginContent() {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
 
+  React.useEffect(() => {
+    try {
+      const saved = localStorage.getItem('growix_remember_me');
+      if (saved !== null) {
+        setRememberMe(saved === 'true');
+      }
+    } catch {}
+  }, []);
+
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -27,6 +36,12 @@ function LoginContent() {
     setLoading(true);
 
     try {
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.setItem('growix_remember_me', rememberMe ? 'true' : 'false');
+        } catch {}
+      }
+
       const res = await signIn('credentials', {
         email,
         password,

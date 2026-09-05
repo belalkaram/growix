@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
-import { sendWebPushToAdmins, sendWebPushNotification } from '@/lib/push';
+import { sendWebPushToAdmins, sendWebPushNotification, savePushSubscription } from '@/lib/push';
+import { isProtectedSuperAdmin } from '@/lib/super-admins';
 
 export async function POST(req: NextRequest) {
   try {
     const session = await auth();
-    if (!session?.user || (session.user as any).role !== 'admin') {
+    const isAdmin = (session?.user as any)?.role === 'admin' || isProtectedSuperAdmin(session?.user?.email || session?.user?.id);
+
+    if (!session?.user || !isAdmin) {
       return NextResponse.json(
         { success: false, error: 'غير مصرح لك بإرسال إشعارات الاختبار (خاص بالمسؤولين فقط)' },
         { status: 403 }
@@ -23,9 +26,9 @@ export async function POST(req: NextRequest) {
     }
 
     const testPayload = {
-      title: '🔔 إشعار اختبار Web Push من GROWIX',
-      body: 'تهانينا! نظام الإشعارات الفورية (Web Push) يعمل الآن بكفاءة وسرعة على هاتفك iPhone.',
-      url: '/admin/settings',
+      title: '🔔 إشعار تجريبي فوري من GROWIX',
+      body: 'تهانينا! نظام الإشعارات الفورية (Web Push) يعمل الآن بكفاءة وسرعة فائقة على هاتفك iPhone.',
+      url: '/admin',
       type: 'test' as const,
       tag: `test-push-${Date.now()}`,
       timestamp: Date.now(),
@@ -33,6 +36,21 @@ export async function POST(req: NextRequest) {
 
     let result;
     if (targetSubscription) {
+      // Ensure this active device is saved to database with admin role
+      try {
+        await savePushSubscription(
+          {
+            endpoint: targetSubscription.endpoint,
+            keys: targetSubscription.keys,
+            userAgent: req.headers.get('user-agent') || undefined,
+          },
+          session?.user?.id,
+          'admin'
+        );
+      } catch (saveErr) {
+        console.warn('[WebPush] Error upserting test subscription:', saveErr);
+      }
+
       result = await sendWebPushNotification(
         [
           {
@@ -50,14 +68,14 @@ export async function POST(req: NextRequest) {
     if (result.sentCount > 0) {
       return NextResponse.json({
         success: true,
-        message: `تم إرسال إشعار الاختبار بنجاح إلى ${result.sentCount} جهاز!`,
+        message: `تم إرسال إشعار الاختبار بنجاح إلى ${result.sentCount} جهاز! تفقد شاشة هاتفك الآن 🚀`,
         sentCount: result.sentCount,
         failedCount: result.failedCount,
       });
     } else {
       return NextResponse.json({
         success: false,
-        error: result.error || 'لم يتم العثور على أجهزة مشتركة حالياً. يرجى تفعيل الإشعارات أولاً من هاتفك.',
+        error: result.error || 'لم يتم العثور على أجهزة مشتركة حالياً. يرجى الضغط على زر "تفعيل الإشعارات" من هاتفك أولاً والتأكد من إضافته للشاشة الرئيسية.',
       });
     }
   } catch (err: any) {

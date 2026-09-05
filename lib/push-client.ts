@@ -1,11 +1,12 @@
 'use client';
 
 /**
- * Converts a base64 string to a Uint8Array for PushManager subscription
+ * Converts a URL-safe base64 string to a Uint8Array for PushManager subscription
  */
 export function urlBase64ToUint8Array(base64String: string): Uint8Array {
-  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
-  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const cleanString = base64String.trim();
+  const padding = '='.repeat((4 - (cleanString.length % 4)) % 4);
+  const base64 = (cleanString + padding).replace(/-/g, '+').replace(/_/g, '/');
   const rawData = window.atob(base64);
   const outputArray = new Uint8Array(rawData.length);
   for (let i = 0; i < rawData.length; ++i) {
@@ -31,7 +32,7 @@ export function isPushSupported(): boolean {
  */
 export function isIosDevice(): boolean {
   if (typeof window === 'undefined') return false;
-  const ua = window.navigator.userAgent;
+  const ua = window.navigator.userAgent || '';
   const isIos = /iPad|iPhone|iPod/.test(ua);
   const isIpadOs = navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1;
   return isIos || isIpadOs;
@@ -62,7 +63,7 @@ export function getNotificationPermission(): NotificationPermission | 'unsupport
  * Registers the Service Worker at /sw.js
  */
 export async function registerServiceWorker(): Promise<ServiceWorkerRegistration | null> {
-  if (!('serviceWorker' in navigator)) return null;
+  if (typeof window === 'undefined' || !('serviceWorker' in navigator)) return null;
 
   try {
     const registration = await navigator.serviceWorker.register('/sw.js', {
@@ -83,8 +84,18 @@ export async function getActiveSubscription(): Promise<PushSubscription | null> 
   if (!isPushSupported()) return null;
 
   try {
-    const registration = await navigator.serviceWorker.ready;
-    return await registration.pushManager.getSubscription();
+    let registration = await registerServiceWorker();
+    if (!registration) {
+      // Fallback with timeout to prevent hanging on Safari iOS
+      const readyPromise = navigator.serviceWorker.ready;
+      const timeoutPromise = new Promise<null>((resolve) => setTimeout(() => resolve(null), 3000));
+      registration = await Promise.race([readyPromise, timeoutPromise]);
+    }
+
+    if (registration && registration.pushManager) {
+      return await registration.pushManager.getSubscription();
+    }
+    return null;
   } catch (err) {
     console.error('Error fetching push subscription:', err);
     return null;
@@ -122,14 +133,19 @@ export async function subscribeUserToPush(): Promise<{
       };
     }
 
-    // 2. Register / Ensure Service Worker is ready
+    // 2. Register / Ensure Service Worker is active
     let registration = await registerServiceWorker();
     if (!registration) {
       registration = await navigator.serviceWorker.ready;
     }
-    await navigator.serviceWorker.ready;
+    if (!registration) {
+      return {
+        success: false,
+        error: 'تعذر تشغيل الـ Service Worker على هذا الجهاز.',
+      };
+    }
 
-    // 3. Get VAPID Public Key with multiple bulletproof fallbacks
+    // 3. Get VAPID Public Key with multiple fallbacks
     const DEFAULT_VAPID_PUBLIC_KEY = 'BFbxB4bgdf7Gma1CyYovMBWe5oHKQ7Q6qvw_m5jJnAidpqq2IgqoHPmp2al8r_Pv-xbOzmmWl2CqMgRkWP8HvYg';
     let publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
     if (!publicKey) {
@@ -150,12 +166,17 @@ export async function subscribeUserToPush(): Promise<{
       publicKey = DEFAULT_VAPID_PUBLIC_KEY;
     }
 
-    // 4. Subscribe with PushManager
+    // 4. Subscribe with PushManager using standard Uint8Array
     const applicationServerKey = urlBase64ToUint8Array(publicKey);
-    const subscription = await registration.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: applicationServerKey.buffer as ArrayBuffer,
-    });
+    
+    // Check if subscription already exists
+    let subscription = await registration.pushManager.getSubscription();
+    if (!subscription) {
+      subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: applicationServerKey as any,
+      });
+    }
 
     // 5. Send subscription to backend
     const subJSON = subscription.toJSON();
@@ -205,5 +226,34 @@ export async function unsubscribeUserFromPush(): Promise<{ success: boolean; err
   } catch (err: any) {
     console.error('Error unsubscribing from push:', err);
     return { success: false, error: err?.message };
+  }
+}
+
+/**
+ * Silently synchronizes the device's current push subscription with the backend.
+ * Called automatically when user logs in or loads the page to bind userId / admin role.
+ */
+export async function syncDevicePushSubscription(): Promise<boolean> {
+  if (!isPushSupported()) return false;
+  try {
+    const perm = getNotificationPermission();
+    if (perm !== 'granted') return false;
+
+    const sub = await getActiveSubscription();
+    if (!sub) return false;
+
+    const subJSON = sub.toJSON();
+    if (!subJSON.endpoint || !subJSON.keys) return false;
+
+    const res = await fetch('/api/push/subscribe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(subJSON),
+    });
+
+    return res.ok;
+  } catch (err) {
+    console.debug('[WebPush] Silent sync skipped:', err);
+    return false;
   }
 }

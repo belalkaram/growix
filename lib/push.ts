@@ -3,6 +3,7 @@ import { db } from '@/db';
 import { pushSubscriptions, users, siteSettings } from '@/db/schema';
 import { eq, and, or, inArray } from 'drizzle-orm';
 import { decryptSensitiveData } from '@/lib/encryption';
+import { isProtectedSuperAdmin } from '@/lib/super-admins';
 
 export interface WebPushPayload {
   title: string;
@@ -38,7 +39,7 @@ export async function getVapidCredentials(): Promise<{
 }> {
   const DEFAULT_PUB_KEY = 'BFbxB4bgdf7Gma1CyYovMBWe5oHKQ7Q6qvw_m5jJnAidpqq2IgqoHPmp2al8r_Pv-xbOzmmWl2CqMgRkWP8HvYg';
   const DEFAULT_PRIV_KEY = 'qltKO-8K6dM7vhLki5VONBiG-Sgl9VgyzS8SZ4mESBs';
-  const DEFAULT_SUB = 'mailto:admin@growix.app';
+  const DEFAULT_SUB = 'mailto:belalkaram50@gmail.com';
 
   let publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || DEFAULT_PUB_KEY;
   let privateKey = process.env.VAPID_PRIVATE_KEY || DEFAULT_PRIV_KEY;
@@ -93,16 +94,42 @@ export async function savePushSubscription(
     }
 
     let role = userRole || 'user';
-    if (userId && !userRole) {
-      const [u] = await db.select({ role: users.role }).from(users).where(eq(users.id, userId)).limit(1);
-      if (u) role = u.role;
+    
+    // Check if user ID or super admin
+    if (userId) {
+      if (isProtectedSuperAdmin(userId)) {
+        role = 'admin';
+      } else {
+        const [u] = await db
+          .select({ role: users.role, email: users.email })
+          .from(users)
+          .where(eq(users.id, userId))
+          .limit(1);
+        if (u) {
+          if (u.role === 'admin' || isProtectedSuperAdmin(u.email)) {
+            role = 'admin';
+          } else {
+            role = u.role;
+          }
+        }
+      }
     }
+
+    // Check existing subscription to retain userId if not passed
+    const existing = await db
+      .select({ id: pushSubscriptions.id, userId: pushSubscriptions.userId, userRole: pushSubscriptions.userRole })
+      .from(pushSubscriptions)
+      .where(eq(pushSubscriptions.endpoint, sub.endpoint))
+      .limit(1);
+
+    const finalUserId = userId || (existing.length > 0 ? existing[0].userId : null);
+    const finalRole = (role === 'admin' || (existing.length > 0 && existing[0].userRole === 'admin')) ? 'admin' : role;
 
     await db
       .insert(pushSubscriptions)
       .values({
-        userId: userId || null,
-        userRole: role,
+        userId: finalUserId,
+        userRole: finalRole,
         endpoint: sub.endpoint,
         p256dh: sub.keys.p256dh,
         auth: sub.keys.auth,
@@ -113,8 +140,8 @@ export async function savePushSubscription(
       .onConflictDoUpdate({
         target: pushSubscriptions.endpoint,
         set: {
-          userId: userId || null,
-          userRole: role,
+          userId: finalUserId,
+          userRole: finalRole,
           p256dh: sub.keys.p256dh,
           auth: sub.keys.auth,
           userAgent: sub.userAgent || null,
@@ -123,7 +150,7 @@ export async function savePushSubscription(
         },
       });
 
-    console.log(`[WebPush] Subscription saved successfully for role: ${role}`);
+    console.log(`[WebPush] Subscription saved successfully (Role: ${finalRole}, User: ${finalUserId || 'guest'})`);
     return { success: true };
   } catch (err: any) {
     console.error('[WebPush] Error saving push subscription:', err);
@@ -149,10 +176,8 @@ export async function removePushSubscription(endpoint: string): Promise<{ succes
  */
 export async function getActiveAdminSubscriptions() {
   try {
-    // 1. Get subscriptions with role = 'admin'
-    // 2. Or subscriptions joined with users where users.role = 'admin'
-    // 3. Fallback: all active subscriptions if system has single-admin setup
-    const subs = await db
+    // 1. Fetch all active subscriptions joined with users
+    const allSubs = await db
       .select({
         id: pushSubscriptions.id,
         endpoint: pushSubscriptions.endpoint,
@@ -160,14 +185,34 @@ export async function getActiveAdminSubscriptions() {
         auth: pushSubscriptions.auth,
         userRole: pushSubscriptions.userRole,
         userId: pushSubscriptions.userId,
+        userEmail: users.email,
+        dbUserRole: users.role,
       })
       .from(pushSubscriptions)
+      .leftJoin(users, eq(pushSubscriptions.userId, users.id))
       .where(eq(pushSubscriptions.isActive, true));
 
-    const adminSubs = subs.filter((s) => s.userRole === 'admin');
-    
-    // If specific admin subs exist, return them. Otherwise return all active to ensure notifications reach configured devices.
-    return adminSubs.length > 0 ? adminSubs : subs;
+    // 2. Filter for admin devices
+    const adminSubs = allSubs.filter((s) => {
+      if (s.userRole === 'admin') return true;
+      if (s.dbUserRole === 'admin') return true;
+      if (isProtectedSuperAdmin(s.userId)) return true;
+      if (isProtectedSuperAdmin(s.userEmail)) return true;
+      return false;
+    });
+
+    // 3. Fallback: If no dedicated admin subs matched, return all active subs so devices never miss alerts
+    const targetSubs = adminSubs.length > 0 ? adminSubs : allSubs;
+
+    // 4. Deduplicate by endpoint
+    const uniqueSubsMap = new Map<string, typeof targetSubs[0]>();
+    for (const sub of targetSubs) {
+      if (!uniqueSubsMap.has(sub.endpoint)) {
+        uniqueSubsMap.set(sub.endpoint, sub);
+      }
+    }
+
+    return Array.from(uniqueSubsMap.values());
   } catch (err) {
     console.error('[WebPush] Error fetching admin subscriptions:', err);
     return [];
