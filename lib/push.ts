@@ -234,7 +234,7 @@ export async function sendWebPushNotification(
 
   if (!subscriptions || subscriptions.length === 0) {
     console.log('[WebPush] No active subscriptions found to deliver push notification.');
-    return { success: true, sentCount: 0, failedCount: 0 };
+    return { success: false, sentCount: 0, failedCount: 0, error: 'لم يتم العثور على أجهزة مشتركة نشطة حالياً في قاعدة البيانات.' };
   }
 
   const notificationString = JSON.stringify({
@@ -253,6 +253,7 @@ export async function sendWebPushNotification(
 
   let sentCount = 0;
   let failedCount = 0;
+  let lastErrorMessage = '';
   const expiredEndpoints: string[] = [];
 
   const results = await Promise.allSettled(
@@ -276,6 +277,7 @@ export async function sendWebPushNotification(
       } catch (err: any) {
         failedCount++;
         const statusCode = err?.statusCode;
+        lastErrorMessage = err?.message || String(err);
         console.error(`[WebPush] Delivery failed for endpoint (status ${statusCode}):`, err?.message || err);
 
         // 404 (Not Found) or 410 (Gone) indicates the subscription is expired / revoked by user or iOS
@@ -300,9 +302,10 @@ export async function sendWebPushNotification(
   }
 
   return {
-    success: sentCount > 0 || subscriptions.length === 0,
+    success: sentCount > 0,
     sentCount,
     failedCount,
+    error: sentCount === 0 && failedCount > 0 ? `تعذر تسليم الإشعار (${failedCount} جهاز لم يستجب - ${lastErrorMessage || 'يرجى إعادة تفعيل الإشعارات'})` : undefined,
   };
 }
 
